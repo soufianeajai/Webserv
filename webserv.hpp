@@ -36,7 +36,7 @@ public:
 class Route {
 private:
     std::string path;
-    std::vector<std::string> allowedMethods;
+    std::string allowedMethods[3];
     std::string defaultFile;
     bool autoindex = false;
     std::string redirect;
@@ -73,13 +73,14 @@ public:
     bool isDefaultServer() const;
 };
 
+
 // Connection Handler
 class Connection {
 private:
     int clientFd; // File descriptor for the client's socket connection
     Request request; // The current HTTP request being handled for this connection
     Response response; // The HTTP response being prepared for this connection
-    enum Status { READING, PROCESSING, WRITING, DONE }; // The current status of the connection (reading request, processing, writing response, or done)
+    enum Status {READING, PROCESSING, WRITING, DONE}; // The current status of the connection (reading request, processing, writing response, or done)
     Status status; // The current status of the connection
     Buffer inputBuffer; // Buffer for incoming data from the client (used during reading)
     Buffer outputBuffer; // Buffer for outgoing data to the client (used during writing)
@@ -96,17 +97,21 @@ public:
 // HTTP Request Parser
 class Request {
 private:
-    std::string method; // HTTP method of the request (e.g., GET, POST)
-    std::string uri; // URI of the request (e.g., "/index.html")
+//start-line    request-line   = method <single space> url <single space> HTTP-version
+    std::string method; // HTTP method of the request (e.g., GET, POST) status code (invalid method) = 501 (RFC 9112) 
+    std::string url; // URL of the request (e.g., "/index.html") status code (valid but not found) = 404  / (Method Not Allowed in this route) 405 (RFC 9112) 
     std::string version; // HTTP version (e.g., "HTTP/1.1")
+    // for invalid input, syntax errors ... 400 Bad Request
+ //headers   
     std::map<std::string, std::string> headers; // Headers of the HTTP request (e.g., "Host", "Content-Length")
-    std::vector<char> body;  // Raw body data, could be binary
+//empty line \r\n or \n  or /r means end of the headers
+// If the method = POST then there is a body.
+    std::vector<uint8_t> body; // Raw body data, could be binary
     bool isParsed; // Whether the request has been completely parsed
-    size_t contentLength = 0; // Content length specified in the headers
-    bool isChunked = false; // Whether the request uses chunked transfer encoding
+    std::string boundary; //Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
 public:
-    Request() = default; // Default constructor
+    Request(); // Default constructor
     
     bool parse(const std::string& raw); // Parses a raw HTTP request string and populates the attributes
     const std::string& getMethod() const; // Returns the HTTP method
@@ -118,13 +123,18 @@ public:
 // HTTP Response Builder
 class Response {
 private:
-    int statusCode = 200; // HTTP status code (e.g., 200 OK, 404 Not Found)
+//start-line    
+    std::string version; // HTTP version (e.g., "HTTP/1.1")
+    int statusCode; // HTTP status code (e.g., 200 OK, 404 Not Found)
+    std::string Reason Phrase //: OK (a textual explanation of the status code).
+//headers   
     std::map<std::string, std::string> headers; // HTTP response headers (e.g., "Content-Type", "Content-Length")
-    std::vector<char> body; // Body of the response (e.g., the HTML content, binary ...)
+//empty line \r\n or \n or \r means end of the headers
+    std::vector<uint8_t> body; // Body of the response (e.g., the HTML content, binary ...)
     bool isReady = false; // Whether the response is fully prepared and ready to be sent
 
 public:
-    Response() = default; // Default constructor
+    Response(); // Default constructor
 
     void setStatusCode(int code); // Sets the HTTP status code for the response
     void addHeader(const std::string& key, const std::string& value); // Adds a header to the response
@@ -135,15 +145,15 @@ public:
 // Buffer for I/O operations
 class Buffer {
 private:
-    std::vector<char> data; // Vector to hold the buffered data
+    std::vector<uint8_t> data; // Vector to hold the buffered data
     size_t readPos = 0; // Current position in the buffer for reading
     size_t writePos = 0; // Current position in the buffer for writing
 
 public:
     Buffer(size_t initialSize = 8192); // Constructor initializes the buffer with a default size (8KB)
 
-    bool write(const char* data, size_t len); // Writes data to the buffer
-    bool read(char* data, size_t len); // Reads data from the buffer
+    bool write(const uint8_t* data, size_t len); // Writes data to the buffer
+    bool read(uint8_t* data, size_t len); // Reads data from the buffer
     size_t available() const; // Returns the number of bytes available for reading
     void clear(); // Clears the buffer (resets read and write positions)
 };
