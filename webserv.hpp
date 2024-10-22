@@ -1,145 +1,37 @@
 #ifndef WEBSERV_HPP
 #define WEBSERV_HPP
 
-#include <iostream>
-#include <map>
 #include <vector>
+#include <map>
 #include <set>
+#include <string>
+#include <cstdint>
+#include <iostream>
 
-class WebServer {
+// Constant for default buffer size
+const size_t DEFAULT_BUFFER_SIZE = 8192;
+
+// Utility class for managing HTTP headers
+class HeaderManager {
 private:
-    Config config;
-    std::vector<Server> servers;
-    PollHandler pollHandler;
-    std::map<int, Connection*> connections;
+    std::map<std::string, std::string> headers;
 
 public:
-    WebServer(const std::string& configFile);
-    
-    bool initialize();
-    void run();
-    void handleNewConnection(int serverFd);
-    void handleConnection(Connection* conn);
-};
+    void addHeader(const std::string& key, const std::string& value) {
+        headers[key] = value;
+    }
 
-// config Parser
-class Config {
-private:
-    std::vector<Server> servers;
-public:
-    Config(const std::string& configFile);
-    bool parseConfig(const std::string& configFile);
-    const std::vector<Server>& getServers() const;
-};
+    const std::string& getHeader(const std::string& key) const {
+        return headers.at(key);
+    }
 
+    void clear() {
+        headers.clear();
+    }
 
-class Route {
-private:
-    std::string path;
-    std::string allowedMethods[3];
-    std::string defaultFile;
-    bool autoindex = false;
-    std::string redirect;
-    std::string uploadDir;
-    std::set<std::string> cgiExtensions;
-
-public:
-    Route(const std::string& path);
-    bool matches(const std::string& uri) const;
-    bool isMethodAllowed(const std::string& method) const;
-    bool handleRequest(const Request& req, Response& res);
-};
-
-class Server {
-private:
-    std::string host;
-    std::vector<int> ports;
-    std::vector<std::string> serverNames; 
-    std::string serverRoot;
-    std::map<std::string, Route> routes;
-    std::map<int, std::string> error_pages;
-    size_t clientMaxBodySize;
-    std::set<int> listenSockets; 
-    std::map<int, struct sockaddr_in> serverAddrs;
-    bool isDefault;
-
-public:
-    Server(const std::string& host, const std::vector<int>& ports);
-    
-    bool setup();
-    bool listen();
-    const std::string& getServerName() const;
-    const std::map<std::string, Route>& getRoutes() const;
-    bool isDefaultServer() const;
-};
-
-
-// Connection Handler
-class Connection {
-private:
-    int clientFd; // File descriptor for the client's socket connection
-    Request request; // The current HTTP request being handled for this connection
-    Response response; // The HTTP response being prepared for this connection
-    enum Status {READING, PROCESSING, WRITING, DONE}; // The current status of the connection (reading request, processing, writing response, or done)
-    Status status; // The current status of the connection
-    Buffer inputBuffer; // Buffer for incoming data from the client (used during reading)
-    Buffer outputBuffer; // Buffer for outgoing data to the client (used during writing)
-
-public:
-    Connection(int fd); // Constructor initializes the connection with the client's file descriptor
-    
-    bool handleRead(); // Handles reading data from the client's socket into the input buffer
-    bool handleWrite(); // Handles writing data from the output buffer to the client's socket
-    void process(); // Processes the request and prepares the response based on the request
-    bool isDone() const; // Returns whether the connection is finished (request processed and response sent)
-};
-
-// HTTP Request Parser
-class Request {
-private:
-//start-line    request-line   = method <single space> url <single space> HTTP-version
-    std::string method; // HTTP method of the request (e.g., GET, POST) status code (invalid method) = 501 (RFC 9112) 
-    std::string url; // URL of the request (e.g., "/index.html") status code (valid but not found) = 404  / (Method Not Allowed in this route) 405 (RFC 9112) 
-    std::string version; // HTTP version (e.g., "HTTP/1.1")
-    // for invalid input, syntax errors ... 400 Bad Request
- //headers   
-    std::map<std::string, std::string> headers; // Headers of the HTTP request (e.g., "Host", "Content-Length")
-//empty line \r\n or \n  or /r means end of the headers
-// If the method = POST then there is a body.
-    std::vector<uint8_t> body; // Raw body data, could be binary
-    bool isParsed; // Whether the request has been completely parsed
-    std::string boundary; //Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-
-public:
-    Request(); // Default constructor
-    
-    bool parse(const std::string& raw); // Parses a raw HTTP request string and populates the attributes
-    const std::string& getMethod() const; // Returns the HTTP method
-    const std::string& getUri() const; // Returns the requested URI
-    const std::string& getBody() const; // Returns the body of the request
-    bool isValid() const; // Checks if the request is valid (e.g., properly formatted and complete)
-};
-
-// HTTP Response Builder
-class Response {
-private:
-//start-line    
-    std::string version; // HTTP version (e.g., "HTTP/1.1")
-    int statusCode; // HTTP status code (e.g., 200 OK, 404 Not Found)
-    std::string Reason Phrase //: OK (a textual explanation of the status code).
-//headers   
-    std::map<std::string, std::string> headers; // HTTP response headers (e.g., "Content-Type", "Content-Length")
-//empty line \r\n or \n or \r means end of the headers
-    std::vector<uint8_t> body; // Body of the response (e.g., the HTML content, binary ...)
-    bool isReady = false; // Whether the response is fully prepared and ready to be sent
-
-public:
-    Response(); // Default constructor
-
-    void setStatusCode(int code); // Sets the HTTP status code for the response
-    void addHeader(const std::string& key, const std::string& value); // Adds a header to the response
-    void setBody(const std::string& content); // Sets the body content of the response
-    std::string build() const; // Builds the complete HTTP response string to be sent to the client
+    const std::map<std::string, std::string>& getAllHeaders() const {
+        return headers;
+    }
 };
 
 // Buffer for I/O operations
@@ -150,10 +42,164 @@ private:
     size_t writePos = 0; // Current position in the buffer for writing
 
 public:
-    Buffer(size_t initialSize = 8192); // Constructor initializes the buffer with a default size (8KB)
+    Buffer(size_t initialSize = DEFAULT_BUFFER_SIZE) : data(initialSize) {}
 
-    bool write(const uint8_t* data, size_t len); // Writes data to the buffer
-    bool read(uint8_t* data, size_t len); // Reads data from the buffer
-    size_t available() const; // Returns the number of bytes available for reading
-    void clear(); // Clears the buffer (resets read and write positions)
+    bool write(const uint8_t* data, size_t len) {
+        // Write data to the buffer and update write position
+        // Implement write logic...
+    }
+
+    bool read(uint8_t* data, size_t len) {
+        // Read data from the buffer and update read position
+        // Implement read logic...
+    }
+
+    size_t available() const {
+        return writePos - readPos;
+    }
+
+    void clear() {
+        readPos = writePos = 0;
+    }
 };
+// Connection Handler
+class Connection {
+private:
+    int clientFd; // File descriptor for the client's socket connection
+    Request request; // Current HTTP request being handled
+    Response response; // HTTP response being prepared
+    enum Status { READING, PROCESSING, WRITING, DONE } status; // Current status of the connection
+    Buffer inputBuffer; // Buffer for incoming data
+    Buffer outputBuffer; // Buffer for outgoing data
+
+public:
+    Connection(int fd) : clientFd(fd), status(READING) {}
+// Handles reading data from the socket
+    bool handleRead(){
+    // Read data from the socket into inputBuffer
+    // Then parse the request
+    if (request.parse(inputBuffer)) {
+        // Successfully parsed request
+        status = PROCESSING;
+    }
+}
+    bool handleWrite(); // Handles writing data to the socket
+    void process(); // Processes the request and prepares the response
+    bool isDone() const { return status == DONE; }
+};
+
+
+// HTTP Request Parser
+class Request {
+private:
+    std::string method; // HTTP method
+    std::string url; // Requested URL
+    std::string version; // HTTP version
+    HeaderManager headerManager; // Manages headers
+    std::vector<uint8_t> body; // Raw body data
+    bool isParsed; // Whether the request has been completely parsed
+
+public:
+    Request() : isParsed(false) {}
+
+    bool parse(const Buffer& buffer); // Parses a raw HTTP request string
+    const std::string& getMethod() const { return method; }
+    const std::string& getUrl() const { return url; }
+    const std::vector<uint8_t>& getBody() const { return body; }
+    bool isValid() const; // Checks if the request is valid
+};
+
+// HTTP Response Builder
+class Response {
+private:
+    std::string version; // HTTP version
+    int statusCode; // HTTP status code
+    std::string reasonPhrase; // Reason phrase
+    HeaderManager headerManager; // Manages response headers
+    std::vector<uint8_t> body; // Body of the response
+    bool isReady = false; // Whether the response is fully prepared
+
+public:
+    Response() : statusCode(200) {}
+
+    void setStatusCode(int code) { statusCode = code; }
+    void addHeader(const std::string& key, const std::string& value) {
+        headerManager.addHeader(key, value);
+    }
+
+    void setBody(const std::vector<uint8_t>& content) { body = content; }
+    std::string build() const; // Builds the complete HTTP response string
+};
+
+// Route Class
+class Route {
+private:
+    std::string path;
+    std::set<std::string> allowedMethods; // Set for allowed HTTP methods
+    std::string defaultFile;
+    bool autoindex = false;
+    std::string redirect;
+    std::string uploadDir;
+    std::set<std::string> cgiExtensions;
+
+public:
+    Route(const std::string& path) : path(path) {}
+    bool matches(const std::string& uri) const;
+    bool isMethodAllowed(const std::string& method) const;
+    bool handleRequest(const Request& req, Response& res);
+};
+
+// Server Class
+class Server {
+private:
+    std::string host;
+    std::vector<int> ports;
+    std::vector<std::string> serverNames; 
+    std::string serverRoot;
+    std::map<std::string, Route> routes;
+    std::map<int, std::string> errorPages;
+    size_t clientMaxBodySize;
+    bool isDefault;
+
+public:
+    Server(const std::string& host, const std::vector<int>& ports) 
+        : host(host), ports(ports) {}
+
+    bool setup(); // Sets up the server
+    bool listen(); // Starts listening for connections
+    const std::string& getServerName() const { return serverNames.empty() ? host : serverNames[0]; }
+    const std::map<std::string, Route>& getRoutes() const { return routes; }
+    bool isDefaultServer() const { return isDefault; }
+};
+
+
+// Web Server Class
+class WebServer {
+private:
+    Config config; // Configuration manager
+    std::map<int, Connection*> connections; // Active connections
+
+public:
+    WebServer(const std::string& configFile) : config(configFile) {}
+
+    bool initialize(); // Initializes the server
+    void run(); // Main server loop
+    void handleNewConnection(int serverFd); // Handles new connections
+    void handleConnection(Connection* conn); // Handles existing connections
+};
+
+// Config Parser Class
+class Config {
+private:
+    std::vector<Server> servers; // List of servers parsed from configuration
+
+public:
+    Config(const std::string& configFile) {
+        parseConfig(configFile);
+    }
+
+    bool parseConfig(const std::string& configFile);
+    const std::vector<Server>& getServers() const { return servers; }
+};
+
+#endif
