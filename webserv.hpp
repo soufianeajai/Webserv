@@ -136,8 +136,8 @@ class Route {
 private:
     std::string path;
     std::set<std::string> allowedMethods; // Set for allowed HTTP methods
-    std::string defaultFile;
     bool autoindex = false;
+    std::string defaultFile;
     std::string redirect;
     std::string uploadDir;
     std::set<std::string> cgiExtensions;
@@ -159,7 +159,7 @@ private:
     std::map<std::string, Route> routes;
     std::map<int, std::string> errorPages;
     size_t clientMaxBodySize;
-    bool isDefault;
+//    bool isDefault;
 
 public:
     Server(const std::string& host, const std::vector<int>& ports) 
@@ -169,7 +169,7 @@ public:
     bool listen(); // Starts listening for connections
     const std::string& getServerName() const { return serverNames.empty() ? host : serverNames[0]; }
     const std::map<std::string, Route>& getRoutes() const { return routes; }
-    bool isDefaultServer() const { return isDefault; }
+//    bool isDefaultServer() const { return isDefault; }
 };
 
 
