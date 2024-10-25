@@ -1,0 +1,29 @@
+#pragma once
+#include <string>
+#include <map>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+
+class HttpMessage {
+protected:
+    std::map<std::string, std::string> headers;
+    std::string body;
+    std::string version;
+    // we can just version "HTTP/1.1" , snmon  :  400 Bad Request 
+
+public :
+    HttpMessage();
+// this after validation of header , can store it in map container
+    void addHeader(const std::string& key, const std::string& value);
+
+    std::string getHeader(const std::string& key) const;
+
+    void setBody(const std::string& bodyContent);
+
+    std::string getBody() const;
+
+    std::string getVersion() const;
+ 
+    virtual std::string toString() const;
+};
