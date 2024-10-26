@@ -4,15 +4,17 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <vector>
 
 class HttpMessage {
 protected:
     std::map<std::string, std::string> headers;
-    std::string body;
+    std::vector<uint8_t> body; // Raw body data
     std::string version;
-    // we can just version "HTTP/1.1" , snmon  :  400 Bad Request 
+    // we can just version "HTTP/1.1" , sinmon  :  400 Bad Request ...
 
 public :
+    const static unsigned int LimitRequestBody = 10485760;
     HttpMessage();
 // this after validation of header , can store it in map container
     void addHeader(const std::string& key, const std::string& value);
