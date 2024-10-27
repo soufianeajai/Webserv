@@ -1,22 +1,14 @@
 #pragma once
 #include "HttpMessage.hpp"
-
-enum class HttpMethod {
+#include "Buffer.hpp"
+enum HttpMethod {
     GET,
     POST,
     DELETE,
     UNKNOWN
 };
-enum class State {
-    // General States
+enum State {
     INITIALIZED,              // Parser just initialized or reset
-    MESSAGE_COMPLETE,         // Entire message parsed successfully
-    ERROR_INVALID_METHOD,     // Invalid HTTP method detected
-    ERROR_INVALID_URI,        // Invalid URI format
-    ERROR_INVALID_VERSION,    // HTTP version format error
-    ERROR_INVALID_HEADER,     // Invalid header format
-    ERROR_INVALID_BODY,       // Body parsing error
-    ERROR_INCOMPLETE_MESSAGE, // Unexpected end of input
     // Request Line States
     METHOD_START,             // Start parsing method
     METHOD_PARSING,           // Parsing method characters
@@ -47,7 +39,15 @@ enum class State {
     CHUNK_DATA,               // Parsing chunk data
     CHUNK_DATA_END,           // End of chunk data, expect CRLF
     CHUNK_END,                // End of a chunk
-    BODY_END                  // End of body
+    BODY_END,                 // End of body
+    // END OR ERRORS
+    MESSAGE_COMPLETE,         // Entire message parsed successfully
+    ERROR_INVALID_METHOD,     // Invalid HTTP method detected
+    ERROR_INVALID_URI,        // Invalid URI format
+    ERROR_INVALID_VERSION,    // HTTP version format error
+    ERROR_INVALID_HEADER,     // Invalid header format
+    ERROR_INVALID_BODY,       // Body parsing error
+    ERROR_INCOMPLETE_MESSAGE  // Unexpected end of input
 };
 
 class HttpRequest :  public HttpMessage{
@@ -55,23 +55,21 @@ private:
     HttpMethod method;
     std::string url;
     State currentState;
+    void parseRequestLine(std::string& RequestLine);
+    void parseHeaders(const std::string& headersLine);
+    void parseBody(const std::vector<uint8_t>& body);
 public:
     HttpRequest();
 
-    void setMethod(const std::string& methodStr) ;
+    void setMethod(const std::string& methodStr);
 
-    HttpMethod getMethod() const ;
+    HttpMethod getMethod() const;
 
-    void setUrl(const std::string& url) ;
+    void setUrl(const std::string& url);
 
     std::string getUrl() const ;
-    //assembling the pieces (method version header and body)
-    // override toString to include request line
-    std::string toString() const override ;
-
-
-    //TODO: need parsing request from fd  ,  POSSIBLE CREATE ANOTHER CLASS HttpParser just for parsing 
-
+    std::string toString() const;
+    void parse(Buffer& requestBuffer);
 };
 
 /* rules of parsing in the RFC 7230
