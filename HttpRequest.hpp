@@ -1,41 +1,60 @@
 #pragma once
 #include "HttpMessage.hpp"
-class HttpMessage {
-protected:
-    std::map<std::string, std::string> headers;
-    std::vector<uint8_t> body; // Raw body data
-    std::string version;
-    // we can just version "HTTP/1.1" , sinmon  :  400 Bad Request ...
 
-public :
-    const static unsigned int LimitRequestBody = 10485760;
-    HttpMessage();
-// this after validation of header , can store it in map container
-    void addHeader(const std::string& key, const std::string& value);
-
-    std::string getHeader(const std::string& key) const;
-
-    void setBody(const std::string& bodyContent);
-
-    std::string getBody() const;
-
-    std::string getVersion() const;
- 
-    virtual std::string toString() const;
-};
-
-
-enum HttpMethod {
+enum class HttpMethod {
     GET,
     POST,
     DELETE,
     UNKNOWN
+};
+enum class State {
+    // General States
+    INITIALIZED,              // Parser just initialized or reset
+    MESSAGE_COMPLETE,         // Entire message parsed successfully
+    ERROR_INVALID_METHOD,     // Invalid HTTP method detected
+    ERROR_INVALID_URI,        // Invalid URI format
+    ERROR_INVALID_VERSION,    // HTTP version format error
+    ERROR_INVALID_HEADER,     // Invalid header format
+    ERROR_INVALID_BODY,       // Body parsing error
+    ERROR_INCOMPLETE_MESSAGE, // Unexpected end of input
+    // Request Line States
+    METHOD_START,             // Start parsing method
+    METHOD_PARSING,           // Parsing method characters
+    METHOD_END,               // End of method, expect space
+    URI_START,                // Start parsing URI
+    URI_PARSING,              // Parsing URI characters
+    URI_END,                  // End of URI, expect space
+    VERSION_START,            // Start parsing version after "HTTP/"
+    VERSION_PARSE,            // Parsing "HTTP/1.1" as a whole
+    VERSION_MAJOR,            // Parsing major version number
+    VERSION_MINOR,            // Parsing minor version number
+    REQUEST_LINE_END,         // End of the request line, expect CRLF
+    // Header Parsing States
+    HEADER_START,             // Start a new header
+    HEADER_NAME,              // Parsing header name
+    HEADER_COLON,             // Expect colon after header name
+    HEADER_VALUE_START,       // Start parsing header value
+    HEADER_VALUE,             // Parsing header value characters
+    HEADER_END,               // End of each header, expect CRLF
+    HEADERS_COMPLETE,         // Final CRLF after headers
+    // Body Parsing States
+    BODY_START,               // Start parsing body
+    BODY_PARSING,             // Parsing body content
+    BODY_CONTENT_LENGTH,      // Parsing body with Content-Length
+    CHUNK_SIZE_START,         // Start parsing chunk size
+    CHUNK_SIZE,               // Parsing chunk size
+    CHUNK_EXTENSION,          // Parsing chunk extension (optional)
+    CHUNK_DATA,               // Parsing chunk data
+    CHUNK_DATA_END,           // End of chunk data, expect CRLF
+    CHUNK_END,                // End of a chunk
+    BODY_END                  // End of body
 };
 
 class HttpRequest :  public HttpMessage{
 private:
     HttpMethod method;
     std::string url;
+    State currentState;
 public:
     HttpRequest();
 
