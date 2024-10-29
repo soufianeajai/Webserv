@@ -10,15 +10,9 @@ enum State {
     FIRST_SP,              // End of method, expect space
     URI_START,               // Start parsing URI 
     URI_PATH_PARSING,        // Parsing raw URI path characters (no query handling)
+    DECODE_URI,              // decode chars in the URI like %20 is a ' '
     SECOND_SP,                 // End of URI, expect space
-    VERSION_H,               // Expect 'H' of HTTP/
-    VERSION_T1,              // Expect first 'T' of HTTP/
-    VERSION_T2,              // Expect second 'T' of HTTP/
-    VERSION_P,               // Expect 'P' of HTTP/
-    VERSION_SLASH,           // Expect '/' after HTTP
-    VERSION_MAJOR,           // Parsing major version number
-    VERSION_DOT,             // Expect '.' between major and minor
-    VERSION_MINOR,           // Parsing minor version number
+    VERSION_HTTP,               // Expect  HTTP/1.1
     REQUEST_LINE_CR,         // Expect CR
     REQUEST_LINE_LF,         // Expect LF
 
@@ -118,15 +112,9 @@ protected:
     void    handleFirstSP(uint8_t byte);
     void    handleURIStart(uint8_t byte);
     void    handleURIPathParsing(uint8_t byte);
+    void    handleDecodeURI(uint8_t byte);
     void    handleSecondSP(uint8_t byte);
-    void    handleVersionH(uint8_t byte);
-    void    handleVersionT1(uint8_t byte);
-    void    handleVersionT2(uint8_t byte);
-    void    handleVersionP(uint8_t byte);
-    void    handleVersionSlash(uint8_t byte);
-    void    handleVersionMajor(uint8_t byte);
-    void    handleVersionDot(uint8_t byte);
-    void    handleVersionMinor(uint8_t byte);
+    void    handleVersionHTTP(uint8_t byte);
     void    handleRequestLineCR(uint8_t byte);
     void    handleRequestLineLF(uint8_t byte);
     

@@ -9,15 +9,9 @@ const std::map<State, HttpRequest::StateHandler> HttpRequest::stateHandlers = {
     {State::FIRST_SP, &HttpRequest::handleFirstSP},
     {State::URI_START, &HttpRequest::handleURIStart},
     {State::URI_PATH_PARSING, &HttpRequest::handleURIPathParsing},
+    {State::DECODE_URI, &HttpRequest::handleDecodeURI},
     {State::SECOND_SP, &HttpRequest::handleSecondSP},
-    {State::VERSION_H, &HttpRequest::handleVersionH},
-    {State::VERSION_T1, &HttpRequest::handleVersionT1},
-    {State::VERSION_T2, &HttpRequest::handleVersionT2},
-    {State::VERSION_P, &HttpRequest::handleVersionP},
-    {State::VERSION_SLASH, &HttpRequest::handleVersionSlash},
-    {State::VERSION_MAJOR, &HttpRequest::handleVersionMajor},
-    {State::VERSION_DOT, &HttpRequest::handleVersionDot},
-    {State::VERSION_MINOR, &HttpRequest::handleVersionMinor},
+    {State::VERSION_HTTP, &HttpRequest::handleVersionHTTP},
     {State::REQUEST_LINE_CR, &HttpRequest::handleRequestLineCR},
     {State::REQUEST_LINE_LF, &HttpRequest::handleRequestLineLF},
 // header
@@ -78,7 +72,7 @@ void HttpRequest::handleInitialized(uint8_t byte){
 
 void HttpRequest::handleMethodStart(uint8_t byte) {
     if (byte == 'G' || byte == 'P' || byte == 'D') {
-        holder = byte;
+        method = byte;
         currentState = State::METHOD_PARSING;
     }
     else
@@ -86,23 +80,18 @@ void HttpRequest::handleMethodStart(uint8_t byte) {
 }
 void HttpRequest::handleMethodParsing(uint8_t byte) {
     std::string expectedMethod;
-    if (holder[0] == 'G')
+    if (method[0] == 'G')
         expectedMethod = "GET";
-    else if (holder[0] == 'P')
+    else if (method[0] == 'P')
         expectedMethod = "POST";
     else
         expectedMethod = "DELETE";
-    size_t holderNextByte = holder.length();
-    if (holderNextByte >= expectedMethod.length()) {
-        if (byte == expectedMethod[holderNextByte]) {
-            holder += byte; 
-            if (holder == expectedMethod) {
+    size_t methodNextByte = method.length();
+    if (methodNextByte < expectedMethod.length()) {
+        if (byte == expectedMethod[methodNextByte]) {
+            method += byte; 
+            if (method == expectedMethod)
                 currentState = State::FIRST_SP;
-                method = expectedMethod;
-                holder.clear();
-            }
-            // else
-            //     currentState = State::METHOD_PARSING;
             return;
         }
     }    
@@ -126,27 +115,84 @@ void HttpRequest::handleURIStart(uint8_t byte) {
 void HttpRequest::handleURIPathParsing(uint8_t byte) {
 // Check for end of URI (space before HTTP version)
     if (byte == ' ')
-        currentState = State::VERSION_H;
-// Check max length
-    else if (uri.length() >= HttpRequest::MAX_URI_LENGTH)
+        currentState = State::VERSION_HTTP;
+// Check max length or invalid char
+    else if (uri.length() >= HttpRequest::MAX_URI_LENGTH ||!isValidPathChar(byte) )
         currentState = State::ERROR_INVALID_URI;
-    else if (!isValidPathChar(byte))
-        currentState = State::ERROR_INVALID_URI;
-// check for consecutive // in the uri
+// check for consecutive // in the uri if so ... do nothing 
     else if (byte == '/' && !uri.empty() && uri.back() == '/')
         currentState = State::URI_PATH_PARSING;
+    else if (byte == '%')
+    {
+        holder.clear();
+        currentState = State::DECODE_URI;
+    }
     else
         uri += byte;
 }
-void HttpRequest::handleVersionH(uint8_t byte) {
-// check if path is like /../../../root
+
+
+void HttpRequest::handleDecodeURI(uint8_t byte) {
+    if (holder.length() < 2 && std::isxdigit(byte)) {
+        holder += byte;
+        if (holder.length() == 2)
+        {
+            int value = std::stoi(holder, NULL, 16); 
+            uri += static_cast<char>(value);
+            holder.clear();
+            currentState = State::URI_PATH_PARSING;
+        }
+    }
+    else if (!std::isxdigit(byte))
+        currentState = State::ERROR_INVALID_URI;
+}
+
+void HttpRequest::handleVersionHTTP(uint8_t byte) {
+    std::string expectedHttpVersion = "HTTP/1.1";
+    size_t versiondNextByte = version.length();
     if (uriBehindRoot())
         currentState = State::ERROR_BAD_REQUEST;
-    else if (byte == 'H')
-        currentState = State::VERSION_T1;
+    else if (versiondNextByte < expectedHttpVersion.length()) {
+        if (byte == expectedHttpVersion[versiondNextByte]) {
+            version += byte; 
+            if (version == expectedHttpVersion)
+                currentState = State::REQUEST_LINE_CR;
+            return;
+        }
+    }    
+    currentState = State::ERROR_INVALID_VERSION;
+}
+
+void HttpRequest::handleRequestLineCR(uint8_t byte) {
+    if (byte == '\r')
+        currentState = State::REQUEST_LINE_LF;
     else
         currentState = State::ERROR_BAD_REQUEST;
 }
+void HttpRequest::handleRequestLineLF(uint8_t byte) {
+    if (byte == '\n')
+        currentState = State::HEADER_START;
+    else
+        currentState = State::ERROR_BAD_REQUEST;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 void HttpRequest::parse(uint8_t *buffer, int readSize) {
@@ -211,20 +257,17 @@ bool HttpRequest::isValidPathChar(uint8_t byte) {
         byte != '"' && byte != '\\' &&
         byte != '^' && byte != '`';      
     }
-bool    HttpRequest::uriBehindRoot()
-{
-    std::string tmp(uri);
-    char *res = strtok((char *)tmp.c_str(), "/");
+bool HttpRequest::uriBehindRoot() {
+    std::istringstream stream(uri);
+    std::string segment;
     int pos = 0;
-    while (res != NULL)
+
+    while (std::getline(stream, segment, '/'))
     {
-        if (!strcmp(res, ".."))
+        if (segment == "..")
             pos--;
-        else
+        else if (!segment.empty() && segment != ".")
             pos++;
-        if (pos < 0)
-            return (1);
-        res = strtok(NULL, "/");
     }
-    return (0);
+    return (pos < 0);
 }
