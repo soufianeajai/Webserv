@@ -1,11 +1,7 @@
 #pragma once
 #include "HttpMessage.hpp"
 
-
-
-
 class HttpResponse :  public HttpMessage{
-
 private:
     int statusCode;
     std::string reasonPhrase;

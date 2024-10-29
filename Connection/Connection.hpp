@@ -1,9 +1,4 @@
 #pragma once
-#include <vector>
-#include <cstddef>
-#include <stdexcept>
-#include <cstring>
-#include "Buffer.hpp"
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 
@@ -11,8 +6,6 @@
 class Connection {
 private:
     int clientSocketId;
-    // Buffer requestBuffer; 
-    // Buffer responseBuffer; 
     HttpRequest request;
     HttpResponse response;
     size_t bodySize;

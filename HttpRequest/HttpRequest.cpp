@@ -140,18 +140,13 @@ void HttpRequest::handleURIPathParsing(uint8_t byte) {
 }
 void HttpRequest::handleVersionH(uint8_t byte) {
 // check if path is like /../../../root
-    if (checkUriPosition())
+    if (uriBehindRoot())
         currentState = State::ERROR_BAD_REQUEST;
     else if (byte == 'H')
         currentState = State::VERSION_T1;
     else
         currentState = State::ERROR_BAD_REQUEST;
 }
-
-
-
-
-
 
 
 void HttpRequest::parse(uint8_t *buffer, int readSize) {
@@ -216,10 +211,10 @@ bool HttpRequest::isValidPathChar(uint8_t byte) {
         byte != '"' && byte != '\\' &&
         byte != '^' && byte != '`';      
     }
-bool    HttpRequest::checkUriPosition()
+bool    HttpRequest::uriBehindRoot()
 {
     std::string tmp(uri);
-    char *res = strtok((char*)tmp.c_str(), "/");
+    char *res = strtok((char *)tmp.c_str(), "/");
     int pos = 0;
     while (res != NULL)
     {

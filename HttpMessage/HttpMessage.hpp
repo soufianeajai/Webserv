@@ -1,10 +1,17 @@
 #pragma once
 #include <string>
 #include <map>
+#include <map>
+#include <set>
+#include <vector>
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <vector>
+#include <cstdint>
+#include <cstddef>
+#include <stdexcept>
+#include <cstring>
+
 
 class HttpMessage {
 protected:

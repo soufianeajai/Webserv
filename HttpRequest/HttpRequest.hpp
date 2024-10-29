@@ -1,6 +1,5 @@
 #pragma once
 #include "HttpMessage.hpp"
-#include "Buffer.hpp"
 
 enum State {
     INITIALIZED,              // Parser just initialized or reset
@@ -98,7 +97,7 @@ private:
     // void parseHeaders(const std::string& headersLine);
     // void parseBody(const std::vector<uint8_t>& bufferBody);
     bool isValidPathChar(uint8_t byte);
-    bool    checkUriPosition();
+    bool    uriBehindRoot();
 public:
     HttpRequest();
     void parse(uint8_t *buffer, int readSize);
