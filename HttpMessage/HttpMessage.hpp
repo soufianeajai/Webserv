@@ -1,10 +1,17 @@
 #pragma once
 #include <string>
 #include <map>
+#include <map>
+#include <set>
+#include <vector>
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <vector>
+#include <cstdint>
+#include <cstddef>
+#include <stdexcept>
+#include <cstring>
+
 
 class HttpMessage {
 protected:
@@ -14,18 +21,18 @@ protected:
     // we can just version "HTTP/1.1" , sinmon  :  400 Bad Request ...
 
 public :
-    const static unsigned int LimitRequestBody = 10485760;
     HttpMessage();
 // this after validation of header , can store it in map container
     void addHeader(const std::string& key, const std::string& value);
 
     std::string getHeader(const std::string& key) const;
 
-    void setBody(const std::string& bodyContent);
-
-    std::string getBody() const;
-
     std::string getVersion() const;
  
     virtual std::string toString() const;
+    void resetMessage(){
+        version.clear();
+        body.clear();
+        headers.clear();
+    }
 };
