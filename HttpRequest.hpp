@@ -8,10 +8,10 @@ enum State {
     // Request Line States
     METHOD_START,             // Start parsing method
     METHOD_PARSING,           // Parsing method characters
-    METHOD_END,              // End of method, expect space
+    FIRST_SP,              // End of method, expect space
     URI_START,               // Start parsing URI 
     URI_PATH_PARSING,        // Parsing raw URI path characters (no query handling)
-    URI_END,                 // End of URI, expect space
+    SECOND_SP,                 // End of URI, expect space
     VERSION_H,               // Expect 'H' of HTTP/
     VERSION_T1,              // Expect first 'T' of HTTP/
     VERSION_T2,              // Expect second 'T' of HTTP/
@@ -68,8 +68,10 @@ enum State {
     MESSAGE_COMPLETE,       // Parsing completed successfully
     
     // Error States
+    ERROR_BAD_REQUEST,
     ERROR_INVALID_METHOD,   // Invalid or unsupported method (not GET/POST/DELETE)
     ERROR_INVALID_URI,      // Invalid URI format
+    REQUEST_URI_TOO_LONG,    // URI too long
     ERROR_INVALID_VERSION,  // Invalid HTTP version
     ERROR_INVALID_HEADER,   // Malformed header
     ERROR_CONTENT_LENGTH,   // Invalid Content-Length
@@ -83,24 +85,27 @@ enum State {
 class HttpRequest :  public HttpMessage{
 private:
     std::string method;
-    std::string url;
+    std::string uri;
     typedef void (HttpRequest::*StateHandler)(uint8_t);
     StateHandler currentHandler;
     State currentState;
     int    statusCode;
     std::string holder;
     static const std::map<State, StateHandler> stateHandlers;
-    void parseRequestLine(std::string& RequestLine);
-    void parseHeaders(const std::string& headersLine);
-    void parseBody(const std::vector<uint8_t>& bufferBody);
+    static const std::map<State, int> errorState;
+    static const int  MAX_URI_LENGTH = 2048;
+    // void parseRequestLine(std::string& RequestLine);
+    // void parseHeaders(const std::string& headersLine);
+    // void parseBody(const std::vector<uint8_t>& bufferBody);
+    bool allowedCharURI(uint8_t byte);
 public:
     HttpRequest();
     void parse(uint8_t *buffer, int readSize);
     void processRequest();
     void setMethod(const std::string methodStr);
     std::string getMethod() const;
-    void setUrl(const std::string url);
-    std::string getUrl() const ;
+    void setUri(const std::string uri);
+    std::string getUri() const ;
     void reset();
     bool parsingCompleted() const;
     bool errorOccured() const;
@@ -110,10 +115,10 @@ protected:
     void    handleInitialized(uint8_t byte);
     void    handleMethodStart(uint8_t byte);
     void    handleMethodParsing(uint8_t byte);
-    void    handleMethodEnd(uint8_t byte);
+    void    handleFirstSP(uint8_t byte);
     void    handleURIStart(uint8_t byte);
     void    handleURIPathParsing(uint8_t byte);
-    void    handleURIEnd(uint8_t byte);
+    void    handleSecondSP(uint8_t byte);
     void    handleVersionH(uint8_t byte);
     void    handleVersionT1(uint8_t byte);
     void    handleVersionT2(uint8_t byte);

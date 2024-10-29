@@ -24,7 +24,7 @@ public :
  
     virtual std::string toString() const;
     void resetMessage(){
-        version = "";
+        version.clear();
         body.clear();
         headers.clear();
     }
