@@ -10,6 +10,7 @@ const std::map<State, HttpRequest::StateHandler> HttpRequest::stateHandlers = {
     {State::URI_START, &HttpRequest::handleURIStart},
     {State::URI_PATH_PARSING, &HttpRequest::handleURIPathParsing},
     {State::DECODE_URI, &HttpRequest::handleDecodeURI},
+    {State::URI_SKIP_QUERY_OR_FRAGMENT, &HttpRequest::handleSkipQF},
     {State::SECOND_SP, &HttpRequest::handleSecondSP},
     {State::VERSION_HTTP, &HttpRequest::handleVersionHTTP},
     {State::REQUEST_LINE_CR, &HttpRequest::handleRequestLineCR},
@@ -127,11 +128,17 @@ void HttpRequest::handleURIPathParsing(uint8_t byte) {
         holder.clear();
         currentState = State::DECODE_URI;
     }
+    else if (byte == '?' || byte == '#') {
+        currentState = State::URI_SKIP_QUERY_OR_FRAGMENT;
+    }
     else
         uri += byte;
 }
 
-
+void HttpRequest::handleSkipQF(uint8_t byte) {
+    if (byte == ' ')
+        currentState = State::VERSION_HTTP; 
+}
 void HttpRequest::handleDecodeURI(uint8_t byte) {
     if (holder.length() < 2 && std::isxdigit(byte)) {
         holder += byte;

@@ -11,6 +11,7 @@ enum State {
     URI_START,               // Start parsing URI 
     URI_PATH_PARSING,        // Parsing raw URI path characters (no query handling)
     DECODE_URI,              // decode chars in the URI like %20 is a ' '
+    URI_SKIP_QUERY_OR_FRAGMENT, // skip all chars after ? or #
     SECOND_SP,                 // End of URI, expect space
     VERSION_HTTP,               // Expect  HTTP/1.1
     REQUEST_LINE_CR,         // Expect CR
@@ -113,6 +114,7 @@ protected:
     void    handleURIStart(uint8_t byte);
     void    handleURIPathParsing(uint8_t byte);
     void    handleDecodeURI(uint8_t byte);
+    void    handleSkipQF(uint8_t byte);
     void    handleSecondSP(uint8_t byte);
     void    handleVersionHTTP(uint8_t byte);
     void    handleRequestLineCR(uint8_t byte);
