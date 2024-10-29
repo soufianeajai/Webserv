@@ -6,13 +6,14 @@
 
 class Buffer {
 private:
-    static const size_t MAX_BODY_SIZE = 10 * 1024 * 1024;
-    static const size_t CHUNK_SIZE = 8 * 1024;
     std::vector<uint8_t> data;
+    size_t readPos;
+    size_t writePos;
     size_t size;
 
 public:
-    Buffer() : size(0) {
+
+    Buffer() : size(0), readPos(0), writePos(0) {
         data.reserve(MAX_BODY_SIZE);
     }
 
@@ -28,6 +29,8 @@ public:
     void clear() {
         data.clear();
         size = 0;
+        readPos = 0;
+        writePos = 0;
     }
 
     // Method to get the current size of the buffer

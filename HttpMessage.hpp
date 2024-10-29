@@ -9,7 +9,7 @@
 class HttpMessage {
 protected:
     std::map<std::string, std::string> headers;
-    std::vector<uint8_t>& body; // Raw body data
+    std::vector<uint8_t> body; // Raw body data
     std::string version;
     // we can just version "HTTP/1.1" , sinmon  :  400 Bad Request ...
 
@@ -20,11 +20,12 @@ public :
 
     std::string getHeader(const std::string& key) const;
 
-    void setBody(const std::string& bodyContent);
-
-    std::string getBody() const;
-
     std::string getVersion() const;
  
     virtual std::string toString() const;
+    void resetMessage(){
+        version = "";
+        body.clear();
+        headers.clear();
+    }
 };
