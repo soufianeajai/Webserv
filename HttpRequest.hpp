@@ -97,7 +97,8 @@ private:
     // void parseRequestLine(std::string& RequestLine);
     // void parseHeaders(const std::string& headersLine);
     // void parseBody(const std::vector<uint8_t>& bufferBody);
-    bool allowedCharURI(uint8_t byte);
+    bool isValidPathChar(uint8_t byte);
+    bool    checkUriPosition();
 public:
     HttpRequest();
     void parse(uint8_t *buffer, int readSize);

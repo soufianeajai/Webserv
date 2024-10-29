@@ -11,8 +11,8 @@
 class Connection {
 private:
     int clientSocketId;
-    Buffer requestBuffer; 
-    Buffer responseBuffer; 
+    // Buffer requestBuffer; 
+    // Buffer responseBuffer; 
     HttpRequest request;
     HttpResponse response;
     size_t bodySize;
@@ -30,7 +30,4 @@ public:
     int getClientSocketId() const{
         return clientSocketId;
     };
-    Buffer& getRequestBuffer() {
-        return requestBuffer;
-    }
 };

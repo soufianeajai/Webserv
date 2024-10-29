@@ -93,7 +93,7 @@ void HttpRequest::handleMethodParsing(uint8_t byte) {
     else
         expectedMethod = "DELETE";
     size_t holderNextByte = holder.length();
-    if (holderNextByte < expectedMethod.length()) {
+    if (holderNextByte >= expectedMethod.length()) {
         if (byte == expectedMethod[holderNextByte]) {
             holder += byte; 
             if (holder == expectedMethod) {
@@ -101,8 +101,8 @@ void HttpRequest::handleMethodParsing(uint8_t byte) {
                 method = expectedMethod;
                 holder.clear();
             }
-            else
-                currentState = State::METHOD_PARSING;
+            // else
+            //     currentState = State::METHOD_PARSING;
             return;
         }
     }    
@@ -126,13 +126,26 @@ void HttpRequest::handleURIStart(uint8_t byte) {
 void HttpRequest::handleURIPathParsing(uint8_t byte) {
 // Check for end of URI (space before HTTP version)
     if (byte == ' ')
-    {
-        currentState = State::SECOND_SP;
-    }
+        currentState = State::VERSION_H;
 // Check max length
-    if (uri.length() >= HttpRequest::MAX_URI_LENGTH) {
+    else if (uri.length() >= HttpRequest::MAX_URI_LENGTH)
         currentState = State::ERROR_INVALID_URI;
-    }
+    else if (!isValidPathChar(byte))
+        currentState = State::ERROR_INVALID_URI;
+// check for consecutive // in the uri
+    else if (byte == '/' && !uri.empty() && uri.back() == '/')
+        currentState = State::URI_PATH_PARSING;
+    else
+        uri += byte;
+}
+void HttpRequest::handleVersionH(uint8_t byte) {
+// check if path is like /../../../root
+    if (checkUriPosition())
+        currentState = State::ERROR_BAD_REQUEST;
+    else if (byte == 'H')
+        currentState = State::VERSION_T1;
+    else
+        currentState = State::ERROR_BAD_REQUEST;
 }
 
 
@@ -148,6 +161,8 @@ void HttpRequest::parse(uint8_t *buffer, int readSize) {
         std::map<State, StateHandler>::const_iterator it = stateHandlers.find(currentState);
         if (it != stateHandlers.end())
             currentHandler = it->second;
+        else
+            break;
     }
     if (errorOccured())
     {
@@ -192,7 +207,7 @@ bool HttpRequest::errorOccured() const {
     Valid: A-Z, a-z, 0-9, -, ., _, ~, !, $, &, ', (, ), *, +, ,, ;, =, :, @
     No spaces, angle brackets, square brackets, curly brackets, quotes or backslash, ^ or `
 */
-bool isValidPathChar(uint8_t byte) {
+bool HttpRequest::isValidPathChar(uint8_t byte) {
     return (byte >= 33 && byte <= 126) &&
         byte != ' ' &&
         byte != '<' && byte != '>' &&
@@ -201,3 +216,20 @@ bool isValidPathChar(uint8_t byte) {
         byte != '"' && byte != '\\' &&
         byte != '^' && byte != '`';      
     }
+bool    HttpRequest::checkUriPosition()
+{
+    std::string tmp(uri);
+    char *res = strtok((char*)tmp.c_str(), "/");
+    int pos = 0;
+    while (res != NULL)
+    {
+        if (!strcmp(res, ".."))
+            pos--;
+        else
+            pos++;
+        if (pos < 0)
+            return (1);
+        res = strtok(NULL, "/");
+    }
+    return (0);
+}
