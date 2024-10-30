@@ -78,6 +78,7 @@ void HttpResponse::GenerateResponse(const Request& request)
 
 void HttpResponse::LoadPage()
 {
+    
     std::map<int, std::string>::iterator it = Pages.find(statusCode);
     if (it != Pages.end())
     {
