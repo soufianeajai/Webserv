@@ -62,23 +62,17 @@ HttpResponse::HttpResponse(int code, std::string url)
         case 505: reasonPhrase = "HTTP Version Not Supported"; break;
         default: reasonPhrase = "Unknown Status"; break;
     }
-}
-
-void HttpResponse::GenerateResponse(const Request& request)
-{
     addHeader("Content-Type", "text/html");
-    
-        //addHeader("Connection", "close"); // signall from listen socket fd for client 
+    LoadPage();
+    //addHeader("Connection", "close"); // signall from listen socket fd for client 
     // after we have body now we need set content-length
     addHeader("Content-Length", intToString(body.size()));
     addHeader("Date", getCurrentTimeFormatted());
     addHeader("Server", "WebServ 1337");
-    
 }
 
 void HttpResponse::LoadPage()
 {
-    
     std::map<int, std::string>::iterator it = Pages.find(statusCode);
     if (it != Pages.end())
     {
@@ -88,3 +82,30 @@ void HttpResponse::LoadPage()
             body.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
     }
 }
+
+
+std::vector<uint8_t> HttpResponse::buildResponseBuffer()
+{
+    std::vector<uint8_t> response;
+
+    // 1 status line example : HTTP/1.1 200 OK
+    std::ostringstream oss;
+    oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
+    response.insert(response.end(), oss.str().begin(), oss.str().end());
+
+    //2 APPEND headers !!
+    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+    {// Clear the buffer
+        oss.str(""); 
+        oss << it->first << ": " << it->second << "\r\n";
+        response.insert(response.end(), oss.str().begin(), oss.str().end());
+    }
+
+    response.push_back('\r');
+    response.push_back('\n');
+
+    // add body 
+    response.insert(response.end(), body.begin(), body.end());
+    return response;
+}
+
