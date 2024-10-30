@@ -5,15 +5,11 @@ class HttpResponse :  public HttpMessage{
 private:
     int statusCode;
     std::string reasonPhrase;
-    std::map<int, std::string> errorPages;
+    std::map<int, std::string> Pages;
+    
 public:
     HttpResponse();
-    
-    void setStatusCode(int code);
-
-    std::string getReasonPhrase() const;
-
-    std::string toString() const override;
-
+    void GenerateResponse(const Request& request);
+    void setReasonPhrase(int statusCode);
     void LoadErrorPage();
 };
