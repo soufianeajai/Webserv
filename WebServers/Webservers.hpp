@@ -1,6 +1,7 @@
 #pragma once
 #include "Server.hpp"
 
+
 class WebServer {
 private:
     std::map<int, Server> servers; // List of servers parsed from configuration int is like an ID or somthing ti identify the Server

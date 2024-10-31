@@ -2,11 +2,11 @@ NAME=webserv
 
 CPPFLAGS= -Wall -Wextra -Werror -std=c++98
 
-SRCS = main.cpp Connection.cpp HttpRequest.cpp HttpResponse.cpp HttpMessage.cpp Route.cpp Server.cpp WebServers.cpp 
+SRCS = main.cpp ServerSetup/Setup.cpp #Connection.cpp HttpRequest.cpp HttpResponse.cpp HttpMessage.cpp Route.cpp Server.cpp WebServers.cpp 
 
 CXX = c++
 
-OBJ = $(SRSC:.cpp=.o)
+OBJ = $(SRCS:.cpp=.o)
 
 all: $(NAME)
 
