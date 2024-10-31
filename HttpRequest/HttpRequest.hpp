@@ -22,6 +22,7 @@ enum State {
     HEADER_NAME,             // Parsing header name
     HEADER_COLON,            // Expect colon after header name
     HEADER_SPACE_AFTER_COLON, // Optional space after colon
+    HEADER_VALUE_START,
     HEADER_VALUE,            // Parsing header value
     HEADER_CR,               // Expect CR after header value
     HEADER_LF,               // Expect LF after CR
@@ -85,14 +86,18 @@ private:
     State currentState;
     int    statusCode;
     std::string holder;
+    std::string currentHeaderName;
+    std::string currentHeaderValue;
     static const std::map<State, StateHandler> stateHandlers;
     static const std::map<State, int> errorState;
     static const int  MAX_URI_LENGTH = 2048;
     // void parseRequestLine(std::string& RequestLine);
     // void parseHeaders(const std::string& headersLine);
     // void parseBody(const std::vector<uint8_t>& bufferBody);
-    bool isValidPathChar(uint8_t byte);
+    static bool isValidPathChar(uint8_t byte);
     bool    uriBehindRoot();
+    static bool isValidHeaderNameChar(uint8_t byte);
+    void addCurrentHeader();
 public:
     HttpRequest();
     void parse(uint8_t *buffer, int readSize);
@@ -124,7 +129,7 @@ protected:
     void    handleHeaderStart(uint8_t byte);
     void    handleHeaderName(uint8_t byte);
     void    handleHeaderColon(uint8_t byte);
-    void    handleHeaderSpaceAfterColon(uint8_t byte);
+    void    handleHeaderValueStart(uint8_t byte);
     void    handleHeaderValue(uint8_t byte);
     void    handleHeaderCR(uint8_t byte);
     void    handleHeaderLF(uint8_t byte);

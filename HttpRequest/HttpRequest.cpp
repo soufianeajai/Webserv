@@ -19,7 +19,7 @@ const std::map<State, HttpRequest::StateHandler> HttpRequest::stateHandlers = {
     {State::HEADER_START, &HttpRequest::handleHeaderStart},
     {State::HEADER_NAME, &HttpRequest::handleHeaderName},
     {State::HEADER_COLON, &HttpRequest::handleHeaderColon},
-    {State::HEADER_SPACE_AFTER_COLON, &HttpRequest::handleHeaderSpaceAfterColon},
+    {State::HEADER_SPACE_AFTER_COLON, &HttpRequest::handleHeaderValueStart},
     {State::HEADER_VALUE, &HttpRequest::handleHeaderValue},
     {State::HEADER_CR, &HttpRequest::handleHeaderCR},
     {State::HEADER_LF, &HttpRequest::handleHeaderLF},
@@ -183,6 +183,59 @@ void HttpRequest::handleRequestLineLF(uint8_t byte) {
         currentState = State::ERROR_BAD_REQUEST;
 }
 
+void HttpRequest::handleHeaderStart(uint8_t byte) {
+    if (!isValidHeaderNameChar(byte))
+        State::ERROR_INVALID_HEADER;
+    else if (byte == '\r')
+        State::HEADERS_END_LF;
+    else {
+        currentHeaderName += byte;
+        State::HEADER_NAME;
+    }
+
+}
+
+void HttpRequest::handleHeaderName(uint8_t byte) {
+    if (byte == ':')
+        currentState = State::HEADER_VALUE_START;
+    else if (!isValidHeaderNameChar(byte))
+        currentState = State::ERROR_BAD_REQUEST;
+    else
+        currentHeaderName += byte;
+}
+
+
+void HttpRequest::handleHeaderValueStart(uint8_t byte) {
+    if (byte == '\r')
+        currentState = State::HEADER_LF;
+    else {
+        currentHeaderValue += byte;
+        currentState = State::HEADER_VALUE;
+    }    
+}
+
+void HttpRequest::handleHeaderValue(uint8_t byte) {
+    if (byte == '\r')
+        currentState = State::HEADER_LF;
+    else
+        currentHeaderValue += byte;
+}
+
+void HttpRequest::handleHeaderLF(uint8_t byte) {
+    if (byte == '\n') {
+        addCurrentHeader();
+        currentState = State::HEADER_START;
+    }
+    else {
+        currentState = State::ERROR_BAD_REQUEST;
+    }    
+}
+void HttpRequest::handleHeadersEndLF(uint8_t byte) {
+    if (byte == '\n')
+        currentState = State::BODY_START;
+    else
+        currentState = State::ERROR_BAD_REQUEST;
+}
 
 
 
@@ -194,6 +247,23 @@ void HttpRequest::handleRequestLineLF(uint8_t byte) {
 
 
 
+bool HttpRequest::isValidHeaderNameChar(uint8_t byte) {
+    return std::isalnum(byte) || byte == '-' || byte == '_';
+}
+
+
+void HttpRequest::addCurrentHeader() {
+    if (!currentHeaderName.empty()) {
+        size_t start = currentHeaderValue.find_first_not_of(" \t");
+        size_t end = currentHeaderValue.find_last_not_of(" \t");
+        if (start != std::string::npos && end != std::string::npos) {
+            currentHeaderValue = currentHeaderValue.substr(start, end - start + 1);
+        }
+        headers[currentHeaderName] = currentHeaderValue;
+        currentHeaderName.clear();
+        currentHeaderValue.clear();
+    }
+}
 
 
 
