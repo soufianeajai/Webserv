@@ -22,6 +22,10 @@ std::string intToString(size_t number)
     return ss.str();
 }
 
+bool isCgiRequest(const std::string& url)
+{
+    
+}
 
 std::string getCurrentTimeFormatted()
 {
@@ -43,7 +47,7 @@ HttpResponse::HttpResponse(int code, std::string url)
     // add also pages default 200 with url (it will be updated every request possible!!)
     if (code < 400)
         Pages[code] = url;
-    // dynamic error from config file
+    // dynamic error from config file else we be default pages
     Pages[400] = "docs/errorPages/400.html";
     Pages[403] = "docs/errorPages/403.html";
     Pages[404] = "docs/errorPages/404.html";
@@ -63,7 +67,10 @@ HttpResponse::HttpResponse(int code, std::string url)
         default: reasonPhrase = "Unknown Status"; break;
     }
     addHeader("Content-Type", "text/html");
-    LoadPage();
+    if (isCgiRequest(url))
+        ProcessCgiRequest();
+    else
+        LoadPage();
     //addHeader("Connection", "close"); // signall from listen socket fd for client 
     // after we have body now we need set content-length
     addHeader("Content-Length", intToString(body.size()));
