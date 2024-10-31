@@ -100,7 +100,6 @@ void ServerSetup()
     int clientSocket;
     int numberOfFileDiscriptorsInFds = 1;
     int numberOfClients = 0;
-    int timewaitIndex = 0;
     // an infinit loop to keep the server running
     while (1)
     {
@@ -111,17 +110,10 @@ void ServerSetup()
                 - this is the number of elements in the fds array
                 - timeout in milliseconds
         */
-        int poll_fd = poll(fds, numberOfFileDiscriptorsInFds, 5000);
+        int poll_fd = poll(fds, numberOfFileDiscriptorsInFds, -1);
         if (poll_fd == -1) {
             perror("poll");
             exit(1);
-        } else if (poll_fd == 0) {
-            printf("Timeout occurred! No data for 5 seconds.\n");
-            timewaitIndex++;
-            if (timewaitIndex == 3) {
-                std::cout << "Server is shutting down\n";
-                break;
-            }
         }
 
         // detecing when a clients disconnect and closeing sokcects
@@ -143,7 +135,7 @@ void ServerSetup()
         }
 
         // Check if the server socket has an incoming connection 
-        if (fds[0].revents & POLLIN) {
+        if (fds[0].revents & POLLIN) { // check if the event POLLIN is occured on the server socket
             // accepting connection request
             /*
                 - The accept() function shall extract the first connection on the queue of pending connections, 
@@ -157,7 +149,6 @@ void ServerSetup()
                 continue;
             }
             numberOfClients++;
-            timewaitIndex = 0;
             // filling the fds struct with new pending connetion (client socket)
             if (numberOfFileDiscriptorsInFds < MAX_CLIENTS)
             {
