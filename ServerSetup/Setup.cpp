@@ -159,13 +159,10 @@ void ServerSetup()
                 std::cout << "has reached the max elements" << std::endl;
                 break;
             }
-            // Set client socket to non-blocking mode
-            fcntl(clientSocket, F_SETFL, O_NONBLOCK);
             // recieving data
             const char* httpResponse = 
                 "HTTP/1.1 200 OK\r\n"
                 "Content-Length: 13\r\n"
-                "Connection: close\r\n"
                 "\r\n"
                 "Connection OK!";
             send(clientSocket, httpResponse, strlen(httpResponse), 0);
@@ -176,7 +173,6 @@ void ServerSetup()
     for (int i = 1; i < numberOfFileDiscriptorsInFds; i++) {
         if (fds[i].revents & (POLLHUP | POLLERR)) {
             close(fds[i].fd);
-            fds[i].fd = -1;  // Mark as available
         }
     }
     close(serverSocket);
