@@ -231,10 +231,20 @@ void HttpRequest::handleHeaderLF(uint8_t byte) {
     }    
 }
 void HttpRequest::handleHeadersEndLF(uint8_t byte) {
-    if (byte == '\n')
+    if (byte == '\n' && (headers.find("Content-Length") == headers.end() && headers.find("Transfer-Encoding") == headers.end()))
+        currentState = State::MESSAGE_COMPLETE;
+    else if (byte == '\n')
         currentState = State::BODY_START;
     else
         currentState = State::ERROR_BAD_REQUEST;
+}
+
+void HttpRequest::handleBodyStart(uint8_t byte) {
+
+    if (headers.find("Transfer-Encoding") != headers.end() && headers["Transfer-Encoding"] == "chunked")
+    {
+        currentState = State::CHUNK_SIZE_START;
+    }
 }
 
 
@@ -244,8 +254,37 @@ void HttpRequest::handleHeadersEndLF(uint8_t byte) {
 
 
 
+void HttpRequest::handleTransfer(){
+    if (headers.find("Transfer-Encoding") != headers.end() && headers["Transfer-Encoding"] == "chunked")
+        isChunked = true;
+    if (headers.find("Content-Length") != headers.end()){
+        char c = 0;
+        std::istringstream nbr(headers["Content-Length"]);
+        nbr >> contentLength >> c;
+        if (contentLength <= 0 || c)
+            contentLength = -1;            
+    }
+    if (headers.find("Content-Type") != headers.end() && isValidMultipart(headers["Content-Type"])){
+        isMultipart = true;
+        // to continue
+    }
 
 
+}
+
+
+bool HttpRequest::isValidMultipart(std::string content) {
+// Format : Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+    std::size_t boundaryPos = content.find("boundary=");
+    if (boundaryPos != std::string::npos && boundaryPos == content.find("multipart/form-data; ") + 21)
+    {
+        boundary = content.substr(boundaryPos + 9);
+        return true;
+    }
+    else
+        boundary.clear();
+    return false;
+}
 
 bool HttpRequest::isValidHeaderNameChar(uint8_t byte) {
     return std::isalnum(byte) || byte == '-' || byte == '_';

@@ -88,6 +88,10 @@ private:
     std::string holder;
     std::string currentHeaderName;
     std::string currentHeaderValue;
+    bool isChunked; // init to false
+    bool isMultipart; // init to false
+    int contentLength; // init to -1
+    std::string boundary;
     static const std::map<State, StateHandler> stateHandlers;
     static const std::map<State, int> errorState;
     static const int  MAX_URI_LENGTH = 2048;
@@ -98,6 +102,8 @@ private:
     bool    uriBehindRoot();
     static bool isValidHeaderNameChar(uint8_t byte);
     void addCurrentHeader();
+    void handleTransfer();
+    bool isValidMultipart(std::string content);
 public:
     HttpRequest();
     void parse(uint8_t *buffer, int readSize);
