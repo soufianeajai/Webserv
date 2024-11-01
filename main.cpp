@@ -12,7 +12,7 @@ int main(int ac, char **av)
     for (std::map<int, Server>::iterator it = Config.webServer.getServers().begin(); it != Config.webServer.getServers().end(); it++)
     {
         std::cout << "------------------------------------------------" << std::endl;
-        std::cout << "Server " << it->first << std::endl;
+        std::cout << "                      Server " << it->first << std::endl;
         std::cout << "------------------------------------------------" << std::endl;
         std::cout << "Host: " << it->second.hostGetter() << std::endl;
         std::vector<int> ports = it->second.portGetter();
@@ -36,7 +36,7 @@ int main(int ac, char **av)
         std::cout << "Redirect Old Path: " << it->second.getRedirectPathOldPath() << std::endl;
         std::cout << "Redirect Code: " << it->second.getRedirectCode() << std::endl;
         std::cout << "------------------------------------------------" << std::endl;
-        std::cout << "Routes: " << std::endl;
+        std::cout << "                          Routes: " << std::endl;
         std::cout << "------------------------------------------------" << std::endl;
         std::map<std::string, Route> routes = it->second.getRoutes();
         if (routes.empty()) {
@@ -44,6 +44,7 @@ int main(int ac, char **av)
         }
         for (std::map<std::string, Route>::iterator it = routes.begin(); it != routes.end(); it++)
         {
+            std::cout << "*************************************************" << std::endl;
             std::cout << "Route: " << it->first << std::endl;
             std::cout << "Root: " << it->second.getRoot() << std::endl;
             std::cout << "Default File: " << it->second.getDefaultFile() << std::endl;
@@ -61,6 +62,7 @@ int main(int ac, char **av)
             {
                 std::cout << "Cgi Extension: " << *it << std::endl;
             }
+            std::cout << "*************************************************" << std::endl;
         }
     }
     // ServerSetup();
