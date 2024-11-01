@@ -3,7 +3,6 @@
 int serverFlag = 0;
 bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string> locationPath)
 {
-    
     // std::cout << "location ->" << std::endl;
     (void)server;
     std::string str;
@@ -35,14 +34,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                 // std::cout << "end location----->" << std::endl;
                 serverFlag = 1;
                 server.addRoute(route);
-
-                // std::cout << "server" << std::endl;
                 return true;  // Indicate that "server" was found to all recursive calls
-            }
-            else if (!std::cin.eof())
-            {
-                server.addRoute(route);
-                return true;  // Continue if "server" was not found
             }
             else
             {
@@ -59,7 +51,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         if (arr.size() < 2 || arr.size() > 4)
                         {
                             // std::cout << "Error: Invalid methods" << std::endl;
-                            return true;
+                            exit(1);
                         }
                         for (size_t i = 1; i < arr.size(); i++)
                         {
@@ -77,7 +69,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         if (arr.size() != 2)
                         {
                             // std::cout << "Error: Invalid root" << std::endl;
-                            return true;
+                            exit(1);
                         }
                         route.setRoot(arr[1]);
                         // std::cout << "|" << route.getRoot() << "|" << std::endl;
@@ -87,7 +79,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         if (arr.size() != 2)
                         {
                             // std::cout << "Error: Invalid default_file" << std::endl;
-                            return true;
+                            exit(1);
                         }
                         route.setDefaultFile(arr[1]);
                         // std::cout << "|" << route.getDefaultFile() << "|" << std::endl;
@@ -97,7 +89,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         if (arr.size() != 2)
                         {
                             // std::cout << "Error: Invalid autoindex" << std::endl;
-                            return true;
+                            exit(1);
                         }
                         if (arr[1] == "on")
                             route.setAutoindex(true);
@@ -106,7 +98,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         else
                         {
                             // std::cout << "Error: Invalid autoindex" << std::endl;
-                            return true;
+                            exit(1);
                         }
                         // if (route.getAutoindex())
                             // std::cout << "|" << "true" << "|" << std::endl;
@@ -118,7 +110,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         if (arr.size() < 2)
                         {
                             // std::cout << "Error: Invalid cgi_extension" << std::endl;
-                            return true;
+                            exit(1);
                         }
                         for (size_t i = 1; i < arr.size(); i++)
                         {
@@ -134,7 +126,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
             }
         }
     }
-    
+    server.addRoute(route);
     return false;  // Continue if "server" was not found
 }
 ParsingConfig parsingConfig(const std::string& configFile)
@@ -255,7 +247,6 @@ ParsingConfig parsingConfig(const std::string& configFile)
                         if (locationBlock(server, FILE, arr))
                             break;
                     }
-    
                 }
             }
             // std::cout << "-----------" << std::endl;
