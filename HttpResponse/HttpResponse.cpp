@@ -22,10 +22,6 @@ std::string intToString(size_t number)
     return ss.str();
 }
 
-bool isCgiRequest(const std::string& url)
-{
-    
-}
 
 std::string getCurrentTimeFormatted()
 {
@@ -41,42 +37,59 @@ std::string getCurrentTimeFormatted()
 }
 
 
-HttpResponse::HttpResponse(int code, std::string url)
+
+HttpResponse::HttpResponse(int index_connection, const Server &server):Pages(server.getErrorPages())
 {
-    //contractor just for preparation all data to need
-    // add also pages default 200 with url (it will be updated every request possible!!)
-    if (code < 400)
-        Pages[code] = url;
-    // dynamic error from config file else we be default pages
-    Pages[400] = "docs/errorPages/400.html";
-    Pages[403] = "docs/errorPages/403.html";
-    Pages[404] = "docs/errorPages/404.html";
-    Pages[405] = "docs/errorPages/405.html";
-    Pages[500] = "docs/errorPages/500.html";
-    Pages[505] = "docs/errorPages/505.html";
-    statusCode = code;
+    // i
+    statusCode = server.request.GetCode();
     switch (statusCode)
     {  
-        case 200: reasonPhrase = "OK"; break;
         case 400: reasonPhrase = "Bad Request"; break;
         case 403: reasonPhrase = "Forbidden"; break;
         case 404: reasonPhrase = "Not Found"; break;
         case 405: reasonPhrase = "Method Not Allowed"; break;
         case 500: reasonPhrase = "Internal Server Error"; break;
         case 505: reasonPhrase = "HTTP Version Not Supported"; break;
-        default: reasonPhrase = "Unknown Status"; break;
+        default: Pages[statusCode] = request.GetUrl(); break;
     }
-    addHeader("Content-Type", "text/html");
-    if (isCgiRequest(url))
-        ProcessCgiRequest();
-    else
-        LoadPage();
-    //addHeader("Connection", "close"); // signall from listen socket fd for client 
-    // after we have body now we need set content-length
-    addHeader("Content-Length", intToString(body.size()));
-    addHeader("Date", getCurrentTimeFormatted());
-    addHeader("Server", "WebServ 1337");
 }
+
+void HttpResponse::buildingHeaders()
+{
+
+}
+// HttpResponse::HttpResponse(const HttpRequest &request, const Server &server)
+// {
+
+//     contractor just for preparation all data to need
+//     add also pages default 200 with url (it will be updated every request possible!!)
+//     dynamic error from config file else we be default pages
+//     Pages[400] = "docs/errorPages/400.html";
+//     Pages[403] = "docs/errorPages/403.html";
+//     Pages[404] = "docs/errorPages/404.html";
+//     Pages[405] = "docs/errorPages/405.html";
+//     Pages[500] = "docs/errorPages/500.html";
+//     Pages[505] = "docs/errorPages/505.html";
+//     statusCode = code;
+//     switch (statusCode)
+//     {  
+//         case 200: reasonPhrase = "OK"; Pages[code] = url; break;
+//         case 400: reasonPhrase = "Bad Request"; break;
+//         case 403: reasonPhrase = "Forbidden"; break;
+//         case 404: reasonPhrase = "Not Found"; break;
+//         case 405: reasonPhrase = "Method Not Allowed"; break;
+//         case 500: reasonPhrase = "Internal Server Error"; break;
+//         case 505: reasonPhrase = "HTTP Version Not Supported"; break;
+//         default: reasonPhrase = "Unknown Status"; break;
+//     }
+//     addHeader("Content-Type", "text/html"); 
+//         LoadPage();
+//     //addHeader("Connection", "close"); // check just from request header
+//     // after we have body now we need set content-length
+//     addHeader("Content-Length", intToString(body.size()));
+//     addHeader("Date", getCurrentTimeFormatted());
+//     addHeader("Server", "WebServ 1337");
+// }
 
 void HttpResponse::LoadPage()
 {
