@@ -238,22 +238,6 @@ void HttpRequest::handleHeadersEndLF(uint8_t byte) {
     else
         currentState = State::ERROR_BAD_REQUEST;
 }
-
-void HttpRequest::handleBodyStart(uint8_t byte) {
-
-    if (headers.find("Transfer-Encoding") != headers.end() && headers["Transfer-Encoding"] == "chunked")
-    {
-        currentState = State::CHUNK_SIZE_START;
-    }
-}
-
-
-
-
-
-
-
-
 void HttpRequest::handleTransfer(){
     if (headers.find("Transfer-Encoding") != headers.end() && headers["Transfer-Encoding"] == "chunked")
         isChunked = true;
@@ -266,11 +250,206 @@ void HttpRequest::handleTransfer(){
     }
     if (headers.find("Content-Type") != headers.end() && isValidMultipart(headers["Content-Type"])){
         isMultipart = true;
-        // to continue
     }
-
-
+    
 }
+    /*
+    4\r\n                  # Chunk size (4 bytes)
+    Wiki\r\n               # Chunk data
+    5\r\n                  # Chunk size (5 bytes)
+    pedia\r\n             # Chunk data
+    0\r\n                 # Final chunk (size 0)
+    X-Custom: value\r\n   # Optional trailer
+    \r\n                  # End of trailers
+    */
+
+/*
+-----------------------------735323031399963618057233701
+Content-Disposition: form-data; name="username"
+
+johndoe
+-----------------------------735323031399963618057233701
+Content-Disposition: form-data; name="email"
+
+john.doe@example.com
+-----------------------------735323031399963618057233701
+*/
+void HttpRequest::handleBodyStart(uint8_t byte) {
+    handleTransfer();
+    if (isChunked)
+        currentState = State::CHUNK_SIZE_START;
+    else if (isMultipart)
+        currentState = State::BODY_BOUNDARY_START;
+    else if (contentLength > 0)
+        currentState = State::BODY_CONTENT_LENGTH;
+    else
+        currentState = State::MESSAGE_COMPLETE;
+}
+void HttpRequest::handleBodyBoundaryStart(uint8_t byte) {
+    if (byte == '-') {
+        holder += byte;
+        currentState = State::BODY_BOUNDARY_PARSING;
+    }
+    else
+        currentState = State::ERROR_BOUNDARY;
+}
+
+void HttpRequest::handleBodyBoundaryParsing(uint8_t byte) {
+    if (byte == '\r') {
+        std::string expectedBoundary = "--" + boundary;
+        if (holder == expectedBoundary) {
+            currentState = State::BODY_BOUNDARY_LF;
+        }
+        else if (holder == expectedBoundary + "--")
+            currentState = State::MESSAGE_COMPLETE;
+        else
+            currentState = State::ERROR_BOUNDARY;
+    }
+    else {
+        holder += byte;
+        if (holder.length() > boundary.length() + 4)
+            currentState = State::ERROR_BOUNDARY;
+    }   
+}
+
+void HttpRequest::handleBodyBoundaryLF(uint8_t byte) {
+    if (byte == '\n') {
+        currentState = State::BODY_PART_HEADER_START;
+        holder.clear();
+    }
+    else
+        currentState = State::ERROR_BOUNDARY;
+}
+
+
+void HttpRequest::handleBodyPartHeader(uint8_t byte) {
+    if (byte == '\r') {
+        currentState = State::BODY_PART_HEADER_LF;
+    }
+    else if (isValidHeaderNameChar(byte)) {
+        holder = byte;
+        currentState = State::BODY_PART_HEADER;
+    }
+    else
+        currentState = State::ERROR_BOUNDARY;
+}
+
+void HttpRequest::handleBodyPartHeaderLF(uint8_t byte) {
+    std::size_t namePos = holder.find("name=\"");
+    if (namePos != std::string::npos) {
+        namePos += 6;
+        std::size_t endPos = holder.find("\"", namePos);
+        if (endPos != std::string::npos)
+            fieldName = holder.substr(namePos, endPos - namePos);
+        else {
+            currentState = State::ERROR_BOUNDARY;
+            return;
+        }
+    }
+    if (byte == '\n')
+        currentState = State::BODY_PART_DATA;
+    else
+        currentState = State::ERROR_BOUNDARY;
+}
+
+void HttpRequest::handleBodyPartData(uint8_t byte) {
+    if (byte == '\r')
+        currentState = State::BODY_PART_END;
+    else if (!holder.empty())
+        formFields[holder] += byte;
+    else
+        currentState = State::ERROR_BOUNDARY;
+}
+
+void HttpRequest::handleBodyPartEnd(uint8_t byte) {
+    if (byte == '\n') {
+        holder.clear();
+        currentState = State::BODY_BOUNDARY_START;
+    }
+    else
+        currentState = State::ERROR_BOUNDARY;
+}
+
+
+
+
+void HttpRequest::handleChunkSizeStart(uint8_t byte) {
+    chunkbytesread = 0;
+    chunkSize = 0;
+    holder.clear();
+    if (std::isxdigit(byte)) {
+        holder += byte;
+        currentState = State::CHUNK_SIZE;
+    }
+    else
+        currentState = State::ERROR_CHUNK_SIZE;
+}
+
+void HttpRequest::handleChunkSize(uint8_t byte) {
+    if (std::isxdigit(byte)) {
+        holder += byte;
+        currentState = State::CHUNK_SIZE_CR;
+    }
+    else if (byte == '\r')
+        currentState = State::CHUNK_SIZE_LF;
+    else
+        currentState = State::ERROR_CHUNK_SIZE;
+}
+void HttpRequest::handleChunkSizeCR(uint8_t byte) {
+    if (byte == '\r')
+        currentState = State::CHUNK_SIZE_LF;
+    else
+        currentState = State::ERROR_CHUNK_SIZE;
+}
+
+void HttpRequest::handleChunkSizeLF(uint8_t byte) {
+    if (byte == '\n')
+    {
+        chunkSize = std::stoi(holder, NULL, 16);
+        if (chunkSize == 0)
+            currentState = State::CHUNK_TRAILER_CR;
+        else
+            currentState = State::CHUNK_DATA;
+
+    }
+    else
+        currentState = State::ERROR_CHUNK_SIZE;
+}
+void HttpRequest::handleChunkTrailerCR(uint8_t byte) {
+    if (byte == '\r')
+        currentState = State::CHUNK_TRAILER_LF;
+    else
+        currentState = State::ERROR_CHUNK_SIZE;
+}
+void HttpRequest::handleChunkTrailerLF(uint8_t byte) {
+    if (byte == '\n')
+        currentState = State::MESSAGE_COMPLETE ;
+    else
+        currentState = State::ERROR_CHUNK_SIZE;
+}
+
+void HttpRequest::handleChunkData(uint8_t byte) {
+    if (byte == '\r')
+        currentState = State::CHUNK_DATA_LF;
+    else if (chunkbytesread > chunkSize)
+        currentState = State::ERROR_CHUNK_SIZE;
+    else
+    {
+        body.push_back(byte);
+        chunkbytesread++;
+    }
+}
+
+void HttpRequest::handleChunkDataLF(uint8_t byte) {
+    if (byte == '\n')
+        currentState = State::CHUNK_SIZE_START;
+    else
+        currentState = State::ERROR_CHUNK_SIZE;  
+}
+
+
+
+
 
 
 bool HttpRequest::isValidMultipart(std::string content) {
@@ -387,3 +566,65 @@ bool HttpRequest::uriBehindRoot() {
     }
     return (pos < 0);
 }
+
+
+
+
+
+/*
+# Full HTTP Request with Multipart Form Data
+
+# Request Line (RFC 7230 Section 3.1.1)
+POST /upload HTTP/1.1
+# Host Header (RFC 7230 Section 5.4)
+Host: example.com
+# User Agent to identify client (RFC 7231 Section 5.5.3)
+User-Agent: Mozilla/5.0 (Compatible Multipart Client)
+# Content Type specifying multipart form data (RFC 7578 Section 4.2)
+Content-Type: multipart/form-data; boundary=---------------------------735323031399963618057233701
+
+# Request Body (RFC 7578 defines multipart/form-data format)
+-----------------------------735323031399963618057233701
+Content-Disposition: form-data; name="username"
+
+johndoe
+-----------------------------735323031399963618057233701
+Content-Disposition: form-data; name="email"
+
+john.doe@example.com
+-----------------------------735323031399963618057233701
+Content-Disposition: form-data; name="profile_picture"; filename="profile.jpg"
+Content-Type: image/jpeg
+
+[Binary image data would be here]
+-----------------------------735323031399963618057233701--
+
+# Breakdown of Key Components:
+
+# 1. Request Line
+# - Method: POST (indicates resource modification/creation)
+# - Path: /upload (endpoint for handling form submission)
+# - HTTP Version: 1.1 (current standard protocol version)
+
+# 2. Headers
+# - Host: Specifies the domain name of the server
+# - User-Agent: Identifies the client software
+# - Content-Type: Crucial for multipart form data
+#   * multipart/form-data indicates multiple parts
+#   * boundary is a unique marker separating form parts
+
+# 3. Multipart Form Data Structure
+# - Each part starts with the boundary
+# - Content-Disposition header for each part
+# - Optional Content-Type for file uploads
+# - Empty line separates headers from content
+# - Final boundary ends with '--'
+
+# Typical Server-Side Processing Flow:
+# 1. Parse Content-Type to extract boundary
+# 2. Split request body using boundary
+# 3. Process each part:
+#    - Extract name from Content-Disposition
+#    - Handle text fields or file uploads
+#    - Validate and process data
+*/

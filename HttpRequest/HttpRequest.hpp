@@ -92,12 +92,14 @@ private:
     bool isMultipart; // init to false
     int contentLength; // init to -1
     std::string boundary;
+    int chunkSize;  // init to 0;
+    int chunkbytesread; // init to 0
     static const std::map<State, StateHandler> stateHandlers;
     static const std::map<State, int> errorState;
+    std::map<std::string, std::string> formFields;
+    std::string fieldName;
+    std::string fieldValue;
     static const int  MAX_URI_LENGTH = 2048;
-    // void parseRequestLine(std::string& RequestLine);
-    // void parseHeaders(const std::string& headersLine);
-    // void parseBody(const std::vector<uint8_t>& bufferBody);
     static bool isValidPathChar(uint8_t byte);
     bool    uriBehindRoot();
     static bool isValidHeaderNameChar(uint8_t byte);
