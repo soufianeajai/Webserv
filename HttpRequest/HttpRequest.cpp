@@ -121,6 +121,7 @@ boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::hand
     errorState.insert(std::make_pair(ERROR_BAD_REQUEST, 400));
     errorState.insert(std::make_pair(ERROR_INVALID_METHOD, 501));
     errorState.insert(std::make_pair(ERROR_INVALID_URI, 400));
+    errorState.insert(std::make_pair(REQUEST_URI_TOO_LONG, 414));
     errorState.insert(std::make_pair(ERROR_INVALID_VERSION, 505));
     errorState.insert(std::make_pair(ERROR_INVALID_HEADER, 400));
     errorState.insert(std::make_pair(ERROR_CONTENT_LENGTH, 411));
@@ -129,7 +130,6 @@ boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::hand
     errorState.insert(std::make_pair(ERROR_INCOMPLETE, 400));
     errorState.insert(std::make_pair(ERROR_BUFFER_OVERFLOW, 400));
     errorState.insert(std::make_pair(ERROR_BINARY_DATA, 415));
-    errorState.insert(std::make_pair(REQUEST_URI_TOO_LONG, 414));
 };
 
 void HttpRequest::handleMethodStart(uint8_t byte) {
@@ -179,8 +179,10 @@ void HttpRequest::handleURIPathParsing(uint8_t byte) {
     if (byte == ' ')
         currentState = VERSION_HTTP;
 // Check max length or invalid char
-    else if (uri.length() >= HttpRequest::MAX_URI_LENGTH ||!isValidPathChar(byte) )
+    else if (!isValidPathChar(byte) )
         currentState = ERROR_INVALID_URI;
+    else if (uri.length() >= HttpRequest::MAX_URI_LENGTH)
+        currentState = REQUEST_URI_TOO_LONG;
 // check for consecutive // in the uri if so ... do nothing 
     else if (byte == '/' && !uri.empty() && uri.back() == '/')
         currentState = URI_PATH_PARSING;
@@ -606,16 +608,16 @@ void HttpRequest::parse(uint8_t *buffer, int readSize) {
     if (errorOccured())
     {
         std::map<State, int>::const_iterator it = errorState.find(currentState);
-            statusCode = it->second;
+        statusCode = it->second;
     }
-    // std::cout <<" method is : " << method << std::endl;
-    // std::cout <<" uri is : " << uri << std::endl;
-    // std::cout << "version is " << version << std::endl;
+     std::cout <<" method is : " << method << std::endl;
+     std::cout <<" uri is : " << uri << std::endl;
+     std::cout << "version is " << version << std::endl;
      std::cout <<" status code is : " << statusCode << std::endl;
-    // std::cout <<" isChunked are : " << isChunked << std::endl;
-    // std::cout <<" isMultipart are : " << isMultipart << std::endl;
-    // std::cout <<" contentLength are : " << contentLength << std::endl;
-    // std::cout <<" boundary are :                             " << boundary << std::endl;
+    std::cout <<" isChunked are : " << isChunked << std::endl;
+    std::cout <<" isMultipart are : " << isMultipart << std::endl;
+    std::cout <<" contentLength are : " << contentLength << std::endl;
+    std::cout <<" boundary are :                             " << boundary << std::endl;
 
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
         std::cout << it->first << ": " << it->second << std::endl;
@@ -655,12 +657,17 @@ bool HttpRequest::parsingCompleted() const {
     return currentState == MESSAGE_COMPLETE;
 }
 bool HttpRequest::errorOccured() const {
-    return (currentState == ERROR_INVALID_METHOD || currentState == ERROR_INVALID_URI
-    || currentState == ERROR_INVALID_VERSION || currentState == ERROR_INVALID_HEADER
-    || currentState == ERROR_CONTENT_LENGTH || currentState == ERROR_CHUNK_SIZE
-    || currentState == ERROR_BOUNDARY || currentState == ERROR_INCOMPLETE
-    || currentState == ERROR_BUFFER_OVERFLOW || currentState == ERROR_BINARY_DATA
-    || currentState == ERROR_BAD_REQUEST);
+    for (std::map<State, int>::const_iterator it = errorState.begin(); it != errorState.end(); it++){
+        if (it->first == currentState)
+            return true;
+    }
+    return false;
+    // return (currentState == ERROR_INVALID_METHOD || currentState == ERROR_INVALID_URI
+    // || currentState == ERROR_INVALID_VERSION || currentState == ERROR_INVALID_HEADER
+    // || currentState == ERROR_CONTENT_LENGTH || currentState == ERROR_CHUNK_SIZE
+    // || currentState == ERROR_BOUNDARY || currentState == ERROR_INCOMPLETE
+    // || currentState == ERROR_BUFFER_OVERFLOW || currentState == ERROR_BINARY_DATA
+    // || currentState == ERROR_BAD_REQUEST || currentState == REQUEST_URI_TOO_LONG );
 }
 /*
     RFC 7230 Sec 3.1.1: Any VCHAR except delimiters
