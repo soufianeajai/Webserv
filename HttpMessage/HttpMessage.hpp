@@ -7,10 +7,14 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <cstdint>
+// #include <cstdint>
+#include <sstream>
 #include <cstddef>
 #include <stdexcept>
 #include <cstring>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 
 // class HttpMessage {
