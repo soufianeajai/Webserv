@@ -1,6 +1,18 @@
 #include "ParsingConfig.hpp"
 
 int serverFlag = 0;
+
+int numberConversion(std::string &string)
+{
+    int number;
+    std::stringstream ss(string);
+    ss >> number;
+    if (ss.fail()) {            // Check for conversion success
+        std::cerr << "Conversion failed!" << std::endl;
+        exit(1);
+    } 
+    return number;
+}
 bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string> locationPath)
 {
     // std::cout << "location ->" << std::endl;
@@ -141,11 +153,11 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
     server.addRoute(route);
     return false;  // Continue if "server" was not found
 }
-ParsingConfig parsingConfig(const std::string& configFile)
+ParsingConfig parsingConfig(char *configFile)
 {
     ParsingConfig parsingConfig;
-    parsingConfig.configFile = configFile;
-    std::ifstream FILE(parsingConfig.configFile);
+
+    std::ifstream FILE(configFile);
     std::string str;
     int identifier = 0;
     while (str == "server" || getline(FILE, str))
@@ -186,7 +198,7 @@ ParsingConfig parsingConfig(const std::string& configFile)
                         }
                         for (size_t i = 1; i < arr.size(); i++)
                         {
-                            server.portSetter(std::stoi(arr[i]));
+                            server.portSetter(numberConversion(arr[i]));
                         }
                         std::vector<int> ports = server.portGetter();
                         for (size_t i = 0; i < ports.size(); i++)
@@ -240,7 +252,7 @@ ParsingConfig parsingConfig(const std::string& configFile)
                             }
                             i++;
                         }
-                        server.errorPagesSetter(std::stoi(arr[1]), arr[2]);
+                        server.errorPagesSetter(numberConversion(arr[1]), arr[2]);
                     }
                     else if (arr[0].find("client_body_size") != std::string::npos)
                     {
@@ -250,7 +262,7 @@ ParsingConfig parsingConfig(const std::string& configFile)
                             exit(1);
                         }
                         
-                        server.clientMaxBodySizeSetter(std::stoi(arr[1]));
+                        server.clientMaxBodySizeSetter(numberConversion(arr[1]));
                         // std::cout << "|" << server.clientMaxBodySizeGetter() << "|" << std::endl;
                     }
                     else if (arr[0].find("redirect") != std::string::npos)
@@ -272,7 +284,7 @@ ParsingConfig parsingConfig(const std::string& configFile)
                         }
                         server.setRedirectnewPath(arr[1]);
                         server.setRedirectPathOldPath(arr[2]);
-                        server.setRedirectCode(std::stoi(arr[3]));
+                        server.setRedirectCode(numberConversion(arr[3]));
                         // std::cout << "|" << server.getRedirectnewPath() << "|" << server.getRedirectPathOldPath() << "|" << server.getRedirectCode() << "|" << std::endl;
                     }
                     else if (arr[0].find("location") != std::string::npos)
