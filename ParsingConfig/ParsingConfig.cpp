@@ -15,8 +15,7 @@ int numberConversion(std::string &string)
 }
 bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string> locationPath)
 {
-    // std::cout << "location ->" << std::endl;
-    (void)server;
+
     std::string str;
     Route route;
     if (locationPath.size() < 2)
@@ -49,10 +48,18 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
             }
             else if (str == "server")
             {
-                // std::cout << "end location----->" << std::endl;
                 serverFlag = 1;
                 server.addRoute(route);
                 return true;  // Indicate that "server" was found to all recursive calls
+            }
+            else if (str.find("host") != std::string::npos || str.find("port") != std::string::npos 
+                || str.find("server_names") != std::string::npos || str.find("server_root") != std::string::npos 
+                || str.find("error_page") != std::string::npos || str.find("client_body_size") != std::string::npos 
+                || str.find("redirect") != std::string::npos)
+            {
+                serverFlag = 0;
+                server.addRoute(route);
+                return true;
             }
             else
             {
@@ -115,6 +122,11 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                             std::cout << "Error: Invalid autoindex" << std::endl;
                             exit(1);
                         }
+                        if (arr[1] != "on" && arr[1] != "off")
+                        {
+                            std::cout << "Error: Invalid autoindex" << std::endl;
+                            exit(1);
+                        }
                         if (arr[1] == "on")
                             route.setAutoindex(true);
                         else if (arr[1] == "off")
@@ -162,7 +174,7 @@ ParsingConfig parsingConfig(char *configFile)
     int identifier = 0;
     while (str == "server" || getline(FILE, str))
     {
-        if (str == "server" || serverFlag == 1)
+        if (str == "server" || serverFlag == 1) // Check if "server" was found in the recursive call
         {
             Server server;
             // std::cout << "server" << std::endl;
@@ -290,7 +302,7 @@ ParsingConfig parsingConfig(char *configFile)
                     else if (arr[0].find("location") != std::string::npos)
                     {
 
-                        if (locationBlock(server, FILE, arr))
+                        if (locationBlock(server, FILE, arr) && serverFlag == 1) // check dyal serverFlag ila kant chi location block flowel dyal server
                             break;
                     }
                 }
