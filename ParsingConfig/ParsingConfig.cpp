@@ -7,8 +7,13 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
     (void)server;
     std::string str;
     Route route;
-    if (locationPath.size() != 2)
+    if (locationPath.size() < 2)
         locationPath.push_back("/");
+    else if (locationPath.size() > 2)
+    {
+        std::cout << "Error: Invalid location" << std::endl;
+        exit(1);
+    }
     route.setPath(locationPath[1]);
     // std::cout << route.getPath() << std::endl;
     while (getline(FILE, str))
@@ -22,7 +27,8 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                 std::vector<std::string> arr;
                 while (getline(ss, to, ' '))
                 {
-                    arr.push_back(to);
+                    if (!to.empty())
+                        arr.push_back(to);
                 }
                 server.addRoute(route);
                 // std::cout << "end location------->" << std::endl;
@@ -43,18 +49,24 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     std::vector<std::string> arr;
                     while (getline(ss, to, ' '))
                     {
-                        arr.push_back(to);
+                        if (!to.empty())
+                            arr.push_back(to);
                     }
 
                     if (arr[0].find("methods") != std::string::npos)
                     {
                         if (arr.size() < 2 || arr.size() > 4)
                         {
-                            // std::cout << "Error: Invalid methods" << std::endl;
+                            std::cout << "Error: Invalid methods" << std::endl;
                             exit(1);
                         }
                         for (size_t i = 1; i < arr.size(); i++)
                         {
+                            if (arr[i] != "GET" && arr[i] != "POST" && arr[i] != "DELETE")
+                            {
+                                std::cout << "Error: Invalid methods" << std::endl;
+                                exit(1);
+                            }
                             route.addAllowedMethod(arr[i]);
                         }
                         // std::set<std::string> methods = route.getAllowedMethods();
@@ -68,7 +80,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     {
                         if (arr.size() != 2)
                         {
-                            // std::cout << "Error: Invalid root" << std::endl;
+                            std::cout << "Error: Invalid root" << std::endl;
                             exit(1);
                         }
                         route.setRoot(arr[1]);
@@ -78,7 +90,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     {
                         if (arr.size() != 2)
                         {
-                            // std::cout << "Error: Invalid default_file" << std::endl;
+                            std::cout << "Error: Invalid default_file" << std::endl;
                             exit(1);
                         }
                         route.setDefaultFile(arr[1]);
@@ -88,7 +100,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     {
                         if (arr.size() != 2)
                         {
-                            // std::cout << "Error: Invalid autoindex" << std::endl;
+                            std::cout << "Error: Invalid autoindex" << std::endl;
                             exit(1);
                         }
                         if (arr[1] == "on")
@@ -97,7 +109,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                             route.setAutoindex(false);
                         else
                         {
-                            // std::cout << "Error: Invalid autoindex" << std::endl;
+                            std::cout << "Error: Invalid autoindex" << std::endl;
                             exit(1);
                         }
                         // if (route.getAutoindex())
@@ -109,7 +121,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     {
                         if (arr.size() < 2)
                         {
-                            // std::cout << "Error: Invalid cgi_extension" << std::endl;
+                            std::cout << "Error: Invalid cgi_extension" << std::endl;
                             exit(1);
                         }
                         for (size_t i = 1; i < arr.size(); i++)
@@ -152,7 +164,8 @@ ParsingConfig parsingConfig(const std::string& configFile)
                     std::vector<std::string> arr;
                     while (getline(ss, to, ' '))
                     {
-                        arr.push_back(to);
+                        if (!to.empty())
+                            arr.push_back(to);
                     }
                     if (arr[0].find("host") != std::string::npos)
                     {
@@ -166,9 +179,9 @@ ParsingConfig parsingConfig(const std::string& configFile)
                     }
                     else if (arr[0].find("port") != std::string::npos)
                     {
-                        if (arr.size() < 2)
+                        if (arr.size() < 2 || arr[1] == " ")
                         {
-                            // std::cout << "Error: Invalid port" << std::endl;
+                            std::cout << "Error: Invalid port" << std::endl;
                             exit(1);
                         }
                         for (size_t i = 1; i < arr.size(); i++)
@@ -186,7 +199,7 @@ ParsingConfig parsingConfig(const std::string& configFile)
                     {
                         if (arr.size() < 2)
                         {
-                            // std::cout << "Error: Invalid server_names" << std::endl;
+                            std::cout << "Error: Invalid server_names" << std::endl;
                             exit(1);
                         }
                         for (size_t i = 1; i < arr.size(); i++)
@@ -204,7 +217,7 @@ ParsingConfig parsingConfig(const std::string& configFile)
                     {
                         if (arr.size() != 2)
                         {
-                            // std::cout << "Error: Invalid server_root" << std::endl;
+                            std::cout << "Error: Invalid server_root" << std::endl;
                             exit(1);
                         }
                         server.serverRootSetter(arr[1]);
@@ -214,18 +227,29 @@ ParsingConfig parsingConfig(const std::string& configFile)
                     {
                         if (arr.size() != 3)
                         {
-                            // std::cout << "Error: Invalid error_page" << std::endl;
+                            std::cout << "Error: Invalid error_page" << std::endl;
                             exit(1);
+                        }
+                        int i = 0;
+                        while (arr[1][i])
+                        {
+                            if (!isdigit(arr[1][i]))
+                            {
+                                std::cout << "Error: Invalid error_page" << std::endl;
+                                exit(1);
+                            }
+                            i++;
                         }
                         server.errorPagesSetter(std::stoi(arr[1]), arr[2]);
                     }
                     else if (arr[0].find("client_body_size") != std::string::npos)
                     {
-                        if (arr.size() != 2)
+                        if (arr.size() != 2 || !isdigit(arr[1][0]))
                         {
-                            // std::cout << "Error: Invalid client_body_size" << std::endl;
+                            std::cout << "Error: Invalid client_body_size" << std::endl;
                             exit(1);
                         }
+                        
                         server.clientMaxBodySizeSetter(std::stoi(arr[1]));
                         // std::cout << "|" << server.clientMaxBodySizeGetter() << "|" << std::endl;
                     }
@@ -233,8 +257,18 @@ ParsingConfig parsingConfig(const std::string& configFile)
                     {
                         if (arr.size() != 4)
                         {
-                            // std::cout << "Error: Invalid redirect" << std::endl;
+                            std::cout << "Error: Invalid redirect" << std::endl;
                             exit(1);
+                        }
+                        int i = 0;
+                        while (arr[3][i])
+                        {
+                            if (!isdigit(arr[3][i]))
+                            {
+                                std::cout << "Error: Invalid redirect status code" << std::endl;
+                                exit(1);
+                            }
+                            i++;
                         }
                         server.setRedirectnewPath(arr[1]);
                         server.setRedirectPathOldPath(arr[2]);
