@@ -48,7 +48,12 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
             }
             else if (str == "server")
             {
-                serverFlag = 1;
+                // claude ai m9awd 
+                FILE.seekg(-str.length() - 1, std::ios_base::cur); // Go back one line
+                if (FILE.fail()) {
+                    FILE.clear();
+                    FILE.seekg(0, std::ios_base::beg); // If seek fails, go to beginning
+                }
                 server.addRoute(route);
                 return true;  // Indicate that "server" was found to all recursive calls
             }
@@ -57,7 +62,12 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                 || str.find("error_page") != std::string::npos || str.find("client_body_size") != std::string::npos 
                 || str.find("redirect") != std::string::npos)
             {
-                serverFlag = 0;
+                // claude ai m9awd 
+                FILE.seekg(-str.length() - 1, std::ios_base::cur); // Go back one line
+                if (FILE.fail()) {
+                    FILE.clear();
+                    FILE.seekg(0, std::ios_base::beg); // If seek fails, go to beginning
+                }
                 server.addRoute(route);
                 return true;
             }
@@ -165,6 +175,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
     server.addRoute(route);
     return false;  // Continue if "server" was not found
 }
+
 ParsingConfig parsingConfig(char *configFile)
 {
     ParsingConfig parsingConfig;
@@ -174,11 +185,11 @@ ParsingConfig parsingConfig(char *configFile)
     int identifier = 0;
     while (str == "server" || getline(FILE, str))
     {
-        if (str == "server" || serverFlag == 1) // Check if "server" was found in the recursive call
+        if (str == "server") // Check if "server" was found in the recursive call
         {
             Server server;
             // std::cout << "server" << std::endl;
-            while (serverFlag == 1 || (getline(FILE, str) && str != "server"))
+            while ((getline(FILE, str) && str != "server"))
             {
                 serverFlag = 0;
                 if (!str.empty())
