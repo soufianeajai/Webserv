@@ -4,11 +4,10 @@
 class ParsingConfig
 {
 public:
-    std::string configFile;
     WebServer webServer;
     ParsingConfig() {}
 };
 
 
 
-ParsingConfig parsingConfig(const std::string& configFile);
+ParsingConfig parsingConfig(char *configFile);
