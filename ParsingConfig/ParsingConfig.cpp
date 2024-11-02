@@ -48,7 +48,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
             }
             else if (str == "server")
             {
-                // claude ai m9awd 
+
                 FILE.seekg(-str.length() - 1, std::ios_base::cur); // Go back one line
                 if (FILE.fail()) {
                     FILE.clear();
@@ -62,7 +62,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                 || str.find("error_page") != std::string::npos || str.find("client_body_size") != std::string::npos 
                 || str.find("redirect") != std::string::npos)
             {
-                // claude ai m9awd 
+
                 FILE.seekg(-str.length() - 1, std::ios_base::cur); // Go back one line
                 if (FILE.fail()) {
                     FILE.clear();
