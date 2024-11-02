@@ -22,17 +22,5 @@ protected:
 
 public :
     HttpMessage();
-// this after validation of header , can store it in map container
-    void addHeader(const std::string& key, const std::string& value);
-
-    std::string getHeader(const std::string& key) const;
-
-    std::string getVersion() const;
- 
-    virtual std::string toString() const;
-    void resetMessage(){
-        version.clear();
-        body.clear();
-        headers.clear();
-    }
+    void resetMessage();
 };

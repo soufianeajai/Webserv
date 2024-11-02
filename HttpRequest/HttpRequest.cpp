@@ -1,83 +1,144 @@
 #include "HttpRequest.hpp"
-#include "Connection.hpp"
+//#include "Connection.hpp"
 
-const std::map<State, HttpRequest::StateHandler> HttpRequest::stateHandlers = {
-    {State::INITIALIZED, &HttpRequest::handleInitialized},
-//Sart line
-    {State::METHOD_START, &HttpRequest::handleMethodStart},
-    {State::METHOD_PARSING, &HttpRequest::handleMethodParsing},
-    {State::FIRST_SP, &HttpRequest::handleFirstSP},
-    {State::URI_START, &HttpRequest::handleURIStart},
-    {State::URI_PATH_PARSING, &HttpRequest::handleURIPathParsing},
-    {State::DECODE_URI, &HttpRequest::handleDecodeURI},
-    {State::URI_SKIP_QUERY_OR_FRAGMENT, &HttpRequest::handleSkipQF},
-    {State::SECOND_SP, &HttpRequest::handleSecondSP},
-    {State::VERSION_HTTP, &HttpRequest::handleVersionHTTP},
-    {State::REQUEST_LINE_CR, &HttpRequest::handleRequestLineCR},
-    {State::REQUEST_LINE_LF, &HttpRequest::handleRequestLineLF},
-// header
-    {State::HEADER_START, &HttpRequest::handleHeaderStart},
-    {State::HEADER_NAME, &HttpRequest::handleHeaderName},
-    {State::HEADER_COLON, &HttpRequest::handleHeaderColon},
-    {State::HEADER_SPACE_AFTER_COLON, &HttpRequest::handleHeaderValueStart},
-    {State::HEADER_VALUE, &HttpRequest::handleHeaderValue},
-    {State::HEADER_CR, &HttpRequest::handleHeaderCR},
-    {State::HEADER_LF, &HttpRequest::handleHeaderLF},
-    {State::HEADERS_END_CR, &HttpRequest::handleHeadersEndCR},
-    {State::HEADERS_END_LF, &HttpRequest::handleHeadersEndLF},
-// body
-    {State::BODY_START, &HttpRequest::handleBodyStart},
-    {State::BODY_CONTENT_LENGTH, &HttpRequest::handleBodyContentLength},
-//chunked body
-    {State::CHUNK_SIZE_START, &HttpRequest::handleChunkSizeStart},
-    {State::CHUNK_SIZE, &HttpRequest::handleChunkSize},
-    {State::CHUNK_SIZE_CR, &HttpRequest::handleChunkSizeCR},
-    {State::CHUNK_SIZE_LF, &HttpRequest::handleChunkSizeLF},
-    {State::CHUNK_DATA, &HttpRequest::handleChunkData},
-    {State::CHUNK_DATA_CR, &HttpRequest::handleChunkDataCR},
-    {State::CHUNK_DATA_LF, &HttpRequest::handleChunkDataLF},
-    {State::CHUNK_TRAILER_START, &HttpRequest::handleChunkTrailerStart},
-    {State::CHUNK_TRAILER_CR, &HttpRequest::handleChunkTrailerCR},
-    {State::CHUNK_TRAILER_LF, &HttpRequest::handleChunkTrailerLF},
-// multipart body
-    {State::BODY_BOUNDARY_START, &HttpRequest::handleBodyBoundaryStart},
-    {State::BODY_BOUNDARY_PARSING, &HttpRequest::handleBodyBoundaryParsing},
-    {State::BODY_BOUNDARY_CR, &HttpRequest::handleBodyBoundaryCR},
-    {State::BODY_BOUNDARY_LF, &HttpRequest::handleBodyBoundaryLF},
-    {State::BODY_PART_HEADER_START, &HttpRequest::handleBodyPartHeaderStart},
-    {State::BODY_PART_HEADER, &HttpRequest::handleBodyPartHeader},
-    {State::BODY_PART_HEADER_CR, &HttpRequest::handleBodyPartHeaderCR},
-    {State::BODY_PART_HEADER_LF, &HttpRequest::handleBodyPartHeaderLF},
-    {State::BODY_PART_DATA, &HttpRequest::handleBodyPartData},
-    {State::BODY_PART_END, &HttpRequest::handleBodyPartEnd}
-};
-const std::map<State, int> HttpRequest::errorState{
-    {State::ERROR_BAD_REQUEST, 400},
-    {State::ERROR_INVALID_METHOD, 501},
-    {State::ERROR_INVALID_URI, 400},
-    {State::ERROR_INVALID_VERSION, 505},
-    {State::ERROR_INVALID_HEADER, 400},
-    {State::ERROR_CONTENT_LENGTH, 411},
-    {State::ERROR_CHUNK_SIZE, 400},
-    {State::ERROR_BOUNDARY, 400},
-    {State::ERROR_INCOMPLETE, 400},
-    {State::ERROR_BUFFER_OVERFLOW, 400},
-    {State::ERROR_BINARY_DATA, 415},
-    {State::REQUEST_URI_TOO_LONG, 414}
-};
-HttpRequest::HttpRequest():HttpMessage(), method(""), uri(""), currentState(INITIALIZED), statusCode(200){};
+// const std::map<State, HttpRequest::StateHandler> HttpRequest::stateHandlers = {
+//     {INITIALIZED, &HttpRequest::handleInitialized},
+// //Sart line
+//     {METHOD_START, &HttpRequest::handleMethodStart},
+//     {METHOD_PARSING, &HttpRequest::handleMethodParsing},
+//     {FIRST_SP, &HttpRequest::handleFirstSP},
+//     {URI_START, &HttpRequest::handleURIStart},
+//     {URI_PATH_PARSING, &HttpRequest::handleURIPathParsing},
+//     {DECODE_URI, &HttpRequest::handleDecodeURI},
+//     {URI_SKIP_QUERY_OR_FRAGMENT, &HttpRequest::handleSkipQF},
+//     {SECOND_SP, &HttpRequest::handleSecondSP},
+//     {VERSION_HTTP, &HttpRequest::handleVersionHTTP},
+//     {REQUEST_LINE_CR, &HttpRequest::handleRequestLineCR},
+//     {REQUEST_LINE_LF, &HttpRequest::handleRequestLineLF},
+// // header
+//     {HEADER_START, &HttpRequest::handleHeaderStart},
+//     {HEADER_NAME, &HttpRequest::handleHeaderName},
+//     {HEADER_COLON, &HttpRequest::handleHeaderColon},
+//     {HEADER_SPACE_AFTER_COLON, &HttpRequest::handleHeaderValueStart},
+//     {HEADER_VALUE, &HttpRequest::handleHeaderValue},
+//     {HEADER_CR, &HttpRequest::handleHeaderCR},
+//     {HEADER_LF, &HttpRequest::handleHeaderLF},
+//     {HEADERS_END_CR, &HttpRequest::handleHeadersEndCR},
+//     {HEADERS_END_LF, &HttpRequest::handleHeadersEndLF},
+// // body
+//     {BODY_START, &HttpRequest::handleBodyStart},
+//     {BODY_CONTENT_LENGTH, &HttpRequest::handleBodyContentLength},
+// //chunked body
+//     {CHUNK_SIZE_START, &HttpRequest::handleChunkSizeStart},
+//     {CHUNK_SIZE, &HttpRequest::handleChunkSize},
+//     {CHUNK_SIZE_CR, &HttpRequest::handleChunkSizeCR},
+//     {CHUNK_SIZE_LF, &HttpRequest::handleChunkSizeLF},
+//     {CHUNK_DATA, &HttpRequest::handleChunkData},
+//     {CHUNK_DATA_CR, &HttpRequest::handleChunkDataCR},
+//     {CHUNK_DATA_LF, &HttpRequest::handleChunkDataLF},
+//     {CHUNK_TRAILER_START, &HttpRequest::handleChunkTrailerStart},
+//     {CHUNK_TRAILER_CR, &HttpRequest::handleChunkTrailerCR},
+//     {CHUNK_TRAILER_LF, &HttpRequest::handleChunkTrailerLF},
+// // multipart body
+//     {BODY_BOUNDARY_START, &HttpRequest::handleBodyBoundaryStart},
+//     {BODY_BOUNDARY_PARSING, &HttpRequest::handleBodyBoundaryParsing},
+//     {BODY_BOUNDARY_CR, &HttpRequest::handleBodyBoundaryCR},
+//     {BODY_BOUNDARY_LF, &HttpRequest::handleBodyBoundaryLF},
+//     {BODY_PART_HEADER_START, &HttpRequest::handleBodyPartHeaderStart},
+//     {BODY_PART_HEADER, &HttpRequest::handleBodyPartHeader},
+//     {BODY_PART_HEADER_CR, &HttpRequest::handleBodyPartHeaderCR},
+//     {BODY_PART_HEADER_LF, &HttpRequest::handleBodyPartHeaderLF},
+//     {BODY_PART_DATA, &HttpRequest::handleBodyPartData},
+//     {BODY_PART_END, &HttpRequest::handleBodyPartEnd}
+// };
+// const std::map<State, int> HttpRequest::errorState{
+//     {ERROR_BAD_REQUEST, 400},
+//     {ERROR_INVALID_METHOD, 501},
+//     {ERROR_INVALID_URI, 400},
+//     {ERROR_INVALID_VERSION, 505},
+//     {ERROR_INVALID_HEADER, 400},
+//     {ERROR_CONTENT_LENGTH, 411},
+//     {ERROR_CHUNK_SIZE, 400},
+//     {ERROR_BOUNDARY, 400},
+//     {ERROR_INCOMPLETE, 400},
+//     {ERROR_BUFFER_OVERFLOW, 400},
+//     {ERROR_BINARY_DATA, 415},
+//     {REQUEST_URI_TOO_LONG, 414}
+// };
 
-void HttpRequest::handleInitialized(uint8_t byte){
-    currentState = METHOD_START;
-}
+HttpRequest::HttpRequest():HttpMessage(), method(""), uri(""), currentState(METHOD_START), statusCode(200),
+holder(""), currentHeaderName(""), currentHeaderValue(""), isChunked(false), isMultipart(false), contentLength(-1),
+boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), fieldName(""){
+    // Initialize stateHandlers
+    stateHandlers.insert(std::make_pair(METHOD_START, &HttpRequest::handleMethodStart));
+    stateHandlers.insert(std::make_pair(METHOD_PARSING, &HttpRequest::handleMethodParsing));
+    stateHandlers.insert(std::make_pair(FIRST_SP, &HttpRequest::handleFirstSP));
+    stateHandlers.insert(std::make_pair(URI_START, &HttpRequest::handleURIStart));
+    stateHandlers.insert(std::make_pair(URI_PATH_PARSING, &HttpRequest::handleURIPathParsing));
+    stateHandlers.insert(std::make_pair(DECODE_URI, &HttpRequest::handleDecodeURI));
+    stateHandlers.insert(std::make_pair(URI_SKIP_QUERY_OR_FRAGMENT, &HttpRequest::handleSkipQF));
+//    stateHandlers.insert(std::make_pair(SECOND_SP, &HttpRequest::handleSecondSP));
+    stateHandlers.insert(std::make_pair(VERSION_HTTP, &HttpRequest::handleVersionHTTP));
+    stateHandlers.insert(std::make_pair(REQUEST_LINE_CR, &HttpRequest::handleRequestLineCR));
+    stateHandlers.insert(std::make_pair(REQUEST_LINE_LF, &HttpRequest::handleRequestLineLF));
+    stateHandlers.insert(std::make_pair(HEADER_START, &HttpRequest::handleHeaderStart));
+    stateHandlers.insert(std::make_pair(HEADER_NAME, &HttpRequest::handleHeaderName));
+//    stateHandlers.insert(std::make_pair(HEADER_COLON, &HttpRequest::handleHeaderColon));
+    stateHandlers.insert(std::make_pair(HEADER_VALUE_START, &HttpRequest::handleHeaderValueStart));
+    stateHandlers.insert(std::make_pair(HEADER_VALUE, &HttpRequest::handleHeaderValue));
+//    stateHandlers.insert(std::make_pair(HEADER_CR, &HttpRequest::handleHeaderCR));
+    stateHandlers.insert(std::make_pair(HEADER_LF, &HttpRequest::handleHeaderLF));
+//    stateHandlers.insert(std::make_pair(HEADERS_END_CR, &HttpRequest::handleHeadersEndCR));
+    stateHandlers.insert(std::make_pair(HEADERS_END_LF, &HttpRequest::handleHeadersEndLF));
+    stateHandlers.insert(std::make_pair(BODY_START, &HttpRequest::handleBodyStart));
+    stateHandlers.insert(std::make_pair(BODY_CONTENT_LENGTH, &HttpRequest::handleBodyContentLength));
+    stateHandlers.insert(std::make_pair(CHUNK_SIZE_START, &HttpRequest::handleChunkSizeStart));
+    stateHandlers.insert(std::make_pair(CHUNK_SIZE, &HttpRequest::handleChunkSize));
+    stateHandlers.insert(std::make_pair(CHUNK_SIZE_CR, &HttpRequest::handleChunkSizeCR));
+    stateHandlers.insert(std::make_pair(CHUNK_SIZE_LF, &HttpRequest::handleChunkSizeLF));
+    stateHandlers.insert(std::make_pair(CHUNK_DATA, &HttpRequest::handleChunkData));
+//    stateHandlers.insert(std::make_pair(CHUNK_DATA_CR, &HttpRequest::handleChunkDataCR));
+    stateHandlers.insert(std::make_pair(CHUNK_DATA_LF, &HttpRequest::handleChunkDataLF));
+//    stateHandlers.insert(std::make_pair(CHUNK_TRAILER_START, &HttpRequest::handleChunkTrailerStart));
+    stateHandlers.insert(std::make_pair(CHUNK_TRAILER_CR, &HttpRequest::handleChunkTrailerCR));
+    stateHandlers.insert(std::make_pair(CHUNK_TRAILER_LF, &HttpRequest::handleChunkTrailerLF));
+    stateHandlers.insert(std::make_pair(BODY_BOUNDARY_START, &HttpRequest::handleBodyBoundaryStart));
+    stateHandlers.insert(std::make_pair(BODY_BOUNDARY_PARSING, &HttpRequest::handleBodyBoundaryParsing));
+//    stateHandlers.insert(std::make_pair(BODY_BOUNDARY_CR, &HttpRequest::handleBodyBoundaryCR));
+    stateHandlers.insert(std::make_pair(BODY_BOUNDARY_LF, &HttpRequest::handleBodyBoundaryLF));
+    // stateHandlers.insert(std::make_pair(BODY_PART_HEADERLF2, &HttpRequest::handleBodyBoundaryLF2));
+    // stateHandlers.insert(std::make_pair(BODY_PART_HEADERCR2, &HttpRequest::handleBodyBoundaryCR2));
+//    stateHandlers.insert(std::make_pair(BODY_PART_HEADER_START, &HttpRequest::handleBodyPartHeaderStart));
+    stateHandlers.insert(std::make_pair(BODY_PART_HEADER, &HttpRequest::handleBodyPartHeader));
+//    stateHandlers.insert(std::make_pair(BODY_PART_HEADER_CR, &HttpRequest::handleBodyPartHeaderCR));
+    stateHandlers.insert(std::make_pair(BODY_PART_HEADER_LF, &HttpRequest::handleBodyPartHeaderLF));
+    stateHandlers.insert(std::make_pair(BODY_PART_HEADER_CR2, &HttpRequest::handleBodyPartHeaderCR2));
+    stateHandlers.insert(std::make_pair(BODY_PART_HEADER_LF2, &HttpRequest::handleBodyPartHeaderLF2));
+    stateHandlers.insert(std::make_pair(BODY_PART_DATA, &HttpRequest::handleBodyPartData));
+    stateHandlers.insert(std::make_pair(BODY_PART_END, &HttpRequest::handleBodyPartEnd));
+
+    // Initialize errorState
+    errorState.insert(std::make_pair(ERROR_BAD_REQUEST, 400));
+    errorState.insert(std::make_pair(ERROR_INVALID_METHOD, 501));
+    errorState.insert(std::make_pair(ERROR_INVALID_URI, 400));
+    errorState.insert(std::make_pair(ERROR_INVALID_VERSION, 505));
+    errorState.insert(std::make_pair(ERROR_INVALID_HEADER, 400));
+    errorState.insert(std::make_pair(ERROR_CONTENT_LENGTH, 411));
+    errorState.insert(std::make_pair(ERROR_CHUNK_SIZE, 400));
+    errorState.insert(std::make_pair(ERROR_BOUNDARY, 400));
+    errorState.insert(std::make_pair(ERROR_INCOMPLETE, 400));
+    errorState.insert(std::make_pair(ERROR_BUFFER_OVERFLOW, 400));
+    errorState.insert(std::make_pair(ERROR_BINARY_DATA, 415));
+    errorState.insert(std::make_pair(REQUEST_URI_TOO_LONG, 414));
+};
 
 void HttpRequest::handleMethodStart(uint8_t byte) {
     if (byte == 'G' || byte == 'P' || byte == 'D') {
         method = byte;
-        currentState = State::METHOD_PARSING;
+        currentState = METHOD_PARSING;
     }
     else
-        currentState =  State::ERROR_INVALID_METHOD;
+        currentState =  ERROR_INVALID_METHOD;
 }
 void HttpRequest::handleMethodParsing(uint8_t byte) {
     std::string expectedMethod;
@@ -92,44 +153,44 @@ void HttpRequest::handleMethodParsing(uint8_t byte) {
         if (byte == expectedMethod[methodNextByte]) {
             method += byte; 
             if (method == expectedMethod)
-                currentState = State::FIRST_SP;
+                currentState = FIRST_SP;
             return;
         }
     }    
-    currentState = State::ERROR_INVALID_METHOD;
+    currentState = ERROR_INVALID_METHOD;
 }
 
 void HttpRequest::handleFirstSP(uint8_t byte) {
     if (byte == ' ')
-        currentState = State::URI_START;
+        currentState = URI_START;
     else
-        currentState = State::ERROR_BAD_REQUEST;
+        currentState = ERROR_BAD_REQUEST;
 }
 void HttpRequest::handleURIStart(uint8_t byte) {
     if (byte == '/') {
-        currentState = State::URI_PATH_PARSING;
+        currentState = URI_PATH_PARSING;
         uri += byte;
     }
     else
-        currentState = State::ERROR_INVALID_URI;
+        currentState = ERROR_INVALID_URI;
 }
 void HttpRequest::handleURIPathParsing(uint8_t byte) {
 // Check for end of URI (space before HTTP version)
     if (byte == ' ')
-        currentState = State::VERSION_HTTP;
+        currentState = VERSION_HTTP;
 // Check max length or invalid char
     else if (uri.length() >= HttpRequest::MAX_URI_LENGTH ||!isValidPathChar(byte) )
-        currentState = State::ERROR_INVALID_URI;
+        currentState = ERROR_INVALID_URI;
 // check for consecutive // in the uri if so ... do nothing 
     else if (byte == '/' && !uri.empty() && uri.back() == '/')
-        currentState = State::URI_PATH_PARSING;
+        currentState = URI_PATH_PARSING;
     else if (byte == '%')
     {
         holder.clear();
-        currentState = State::DECODE_URI;
+        currentState = DECODE_URI;
     }
     else if (byte == '?' || byte == '#') {
-        currentState = State::URI_SKIP_QUERY_OR_FRAGMENT;
+        currentState = URI_SKIP_QUERY_OR_FRAGMENT;
     }
     else
         uri += byte;
@@ -137,7 +198,7 @@ void HttpRequest::handleURIPathParsing(uint8_t byte) {
 
 void HttpRequest::handleSkipQF(uint8_t byte) {
     if (byte == ' ')
-        currentState = State::VERSION_HTTP; 
+        currentState = VERSION_HTTP; 
 }
 void HttpRequest::handleDecodeURI(uint8_t byte) {
     if (holder.length() < 2 && std::isxdigit(byte)) {
@@ -147,59 +208,58 @@ void HttpRequest::handleDecodeURI(uint8_t byte) {
             int value = std::stoi(holder, NULL, 16); 
             uri += static_cast<char>(value);
             holder.clear();
-            currentState = State::URI_PATH_PARSING;
+            currentState = URI_PATH_PARSING;
         }
     }
     else if (!std::isxdigit(byte))
-        currentState = State::ERROR_INVALID_URI;
+        currentState = ERROR_INVALID_URI;
 }
 
 void HttpRequest::handleVersionHTTP(uint8_t byte) {
     std::string expectedHttpVersion = "HTTP/1.1";
     size_t versiondNextByte = version.length();
     if (uriBehindRoot())
-        currentState = State::ERROR_BAD_REQUEST;
+        currentState = ERROR_BAD_REQUEST;
     else if (versiondNextByte < expectedHttpVersion.length()) {
         if (byte == expectedHttpVersion[versiondNextByte]) {
             version += byte; 
             if (version == expectedHttpVersion)
-                currentState = State::REQUEST_LINE_CR;
+                currentState = REQUEST_LINE_CR;
             return;
         }
     }    
-    currentState = State::ERROR_INVALID_VERSION;
+    currentState = ERROR_INVALID_VERSION;
 }
 
 void HttpRequest::handleRequestLineCR(uint8_t byte) {
     if (byte == '\r')
-        currentState = State::REQUEST_LINE_LF;
+        currentState = REQUEST_LINE_LF;
     else
-        currentState = State::ERROR_BAD_REQUEST;
+        currentState = ERROR_BAD_REQUEST;
 }
 void HttpRequest::handleRequestLineLF(uint8_t byte) {
     if (byte == '\n')
-        currentState = State::HEADER_START;
+        currentState = HEADER_START;
     else
-        currentState = State::ERROR_BAD_REQUEST;
+        currentState = ERROR_BAD_REQUEST;
 }
 
 void HttpRequest::handleHeaderStart(uint8_t byte) {
-    if (!isValidHeaderNameChar(byte))
-        State::ERROR_INVALID_HEADER;
-    else if (byte == '\r')
-        State::HEADERS_END_LF;
+    if (byte == '\r')
+       currentState = HEADERS_END_LF;
+    else if (!isValidHeaderNameChar(byte))
+       currentState = ERROR_INVALID_HEADER;
     else {
         currentHeaderName += byte;
-        State::HEADER_NAME;
+       currentState = HEADER_NAME;
     }
-
 }
 
 void HttpRequest::handleHeaderName(uint8_t byte) {
     if (byte == ':')
-        currentState = State::HEADER_VALUE_START;
+        currentState = HEADER_VALUE_START;
     else if (!isValidHeaderNameChar(byte))
-        currentState = State::ERROR_BAD_REQUEST;
+        currentState = ERROR_BAD_REQUEST;
     else
         currentHeaderName += byte;
 }
@@ -207,16 +267,16 @@ void HttpRequest::handleHeaderName(uint8_t byte) {
 
 void HttpRequest::handleHeaderValueStart(uint8_t byte) {
     if (byte == '\r')
-        currentState = State::HEADER_LF;
+        currentState = HEADER_LF;
     else {
         currentHeaderValue += byte;
-        currentState = State::HEADER_VALUE;
+        currentState = HEADER_VALUE;
     }    
 }
 
 void HttpRequest::handleHeaderValue(uint8_t byte) {
     if (byte == '\r')
-        currentState = State::HEADER_LF;
+        currentState = HEADER_LF;
     else
         currentHeaderValue += byte;
 }
@@ -224,19 +284,19 @@ void HttpRequest::handleHeaderValue(uint8_t byte) {
 void HttpRequest::handleHeaderLF(uint8_t byte) {
     if (byte == '\n') {
         addCurrentHeader();
-        currentState = State::HEADER_START;
+        currentState = HEADER_START;
     }
     else {
-        currentState = State::ERROR_BAD_REQUEST;
+        currentState = ERROR_BAD_REQUEST;
     }    
 }
 void HttpRequest::handleHeadersEndLF(uint8_t byte) {
-    if (byte == '\n' && (headers.find("Content-Length") == headers.end() && headers.find("Transfer-Encoding") == headers.end()))
-        currentState = State::MESSAGE_COMPLETE;
-    else if (byte == '\n')
-        currentState = State::BODY_START;
+    // if (byte == '\n' && (headers.find("Content-Length") == headers.end() && headers.find("Transfer-Encoding") == headers.end()))
+    //     currentState = MESSAGE_COMPLETE;
+    if (byte == '\n')
+        currentState = BODY_START;
     else
-        currentState = State::ERROR_BAD_REQUEST;
+        currentState = ERROR_BAD_REQUEST;
 }
 void HttpRequest::handleTransfer(){
     if (headers.find("Transfer-Encoding") != headers.end() && headers["Transfer-Encoding"] == "chunked")
@@ -277,101 +337,14 @@ john.doe@example.com
 void HttpRequest::handleBodyStart(uint8_t byte) {
     handleTransfer();
     if (isChunked)
-        currentState = State::CHUNK_SIZE_START;
+        handleChunkSizeStart(byte);
     else if (isMultipart)
-        currentState = State::BODY_BOUNDARY_START;
+        handleBodyBoundaryStart(byte);
     else if (contentLength > 0)
-        currentState = State::BODY_CONTENT_LENGTH;
+        handleBodyContentLength(byte);
     else
-        currentState = State::MESSAGE_COMPLETE;
+        currentState = MESSAGE_COMPLETE;
 }
-void HttpRequest::handleBodyBoundaryStart(uint8_t byte) {
-    if (byte == '-') {
-        holder += byte;
-        currentState = State::BODY_BOUNDARY_PARSING;
-    }
-    else
-        currentState = State::ERROR_BOUNDARY;
-}
-
-void HttpRequest::handleBodyBoundaryParsing(uint8_t byte) {
-    if (byte == '\r') {
-        std::string expectedBoundary = "--" + boundary;
-        if (holder == expectedBoundary) {
-            currentState = State::BODY_BOUNDARY_LF;
-        }
-        else if (holder == expectedBoundary + "--")
-            currentState = State::MESSAGE_COMPLETE;
-        else
-            currentState = State::ERROR_BOUNDARY;
-    }
-    else {
-        holder += byte;
-        if (holder.length() > boundary.length() + 4)
-            currentState = State::ERROR_BOUNDARY;
-    }   
-}
-
-void HttpRequest::handleBodyBoundaryLF(uint8_t byte) {
-    if (byte == '\n') {
-        currentState = State::BODY_PART_HEADER_START;
-        holder.clear();
-    }
-    else
-        currentState = State::ERROR_BOUNDARY;
-}
-
-
-void HttpRequest::handleBodyPartHeader(uint8_t byte) {
-    if (byte == '\r') {
-        currentState = State::BODY_PART_HEADER_LF;
-    }
-    else if (isValidHeaderNameChar(byte)) {
-        holder = byte;
-        currentState = State::BODY_PART_HEADER;
-    }
-    else
-        currentState = State::ERROR_BOUNDARY;
-}
-
-void HttpRequest::handleBodyPartHeaderLF(uint8_t byte) {
-    std::size_t namePos = holder.find("name=\"");
-    if (namePos != std::string::npos) {
-        namePos += 6;
-        std::size_t endPos = holder.find("\"", namePos);
-        if (endPos != std::string::npos)
-            fieldName = holder.substr(namePos, endPos - namePos);
-        else {
-            currentState = State::ERROR_BOUNDARY;
-            return;
-        }
-    }
-    if (byte == '\n')
-        currentState = State::BODY_PART_DATA;
-    else
-        currentState = State::ERROR_BOUNDARY;
-}
-
-void HttpRequest::handleBodyPartData(uint8_t byte) {
-    if (byte == '\r')
-        currentState = State::BODY_PART_END;
-    else if (!holder.empty())
-        formFields[holder] += byte;
-    else
-        currentState = State::ERROR_BOUNDARY;
-}
-
-void HttpRequest::handleBodyPartEnd(uint8_t byte) {
-    if (byte == '\n') {
-        holder.clear();
-        currentState = State::BODY_BOUNDARY_START;
-    }
-    else
-        currentState = State::ERROR_BOUNDARY;
-}
-
-
-
 
 void HttpRequest::handleChunkSizeStart(uint8_t byte) {
     chunkbytesread = 0;
@@ -379,27 +352,27 @@ void HttpRequest::handleChunkSizeStart(uint8_t byte) {
     holder.clear();
     if (std::isxdigit(byte)) {
         holder += byte;
-        currentState = State::CHUNK_SIZE;
+        currentState = CHUNK_SIZE;
     }
     else
-        currentState = State::ERROR_CHUNK_SIZE;
+        currentState = ERROR_CHUNK_SIZE;
 }
 
 void HttpRequest::handleChunkSize(uint8_t byte) {
     if (std::isxdigit(byte)) {
         holder += byte;
-        currentState = State::CHUNK_SIZE_CR;
+        currentState = CHUNK_SIZE_CR;
     }
     else if (byte == '\r')
-        currentState = State::CHUNK_SIZE_LF;
+        currentState = CHUNK_SIZE_LF;
     else
-        currentState = State::ERROR_CHUNK_SIZE;
+        currentState = ERROR_CHUNK_SIZE;
 }
 void HttpRequest::handleChunkSizeCR(uint8_t byte) {
     if (byte == '\r')
-        currentState = State::CHUNK_SIZE_LF;
+        currentState = CHUNK_SIZE_LF;
     else
-        currentState = State::ERROR_CHUNK_SIZE;
+        currentState = ERROR_CHUNK_SIZE;
 }
 
 void HttpRequest::handleChunkSizeLF(uint8_t byte) {
@@ -407,32 +380,32 @@ void HttpRequest::handleChunkSizeLF(uint8_t byte) {
     {
         chunkSize = std::stoi(holder, NULL, 16);
         if (chunkSize == 0)
-            currentState = State::CHUNK_TRAILER_CR;
+            currentState = CHUNK_TRAILER_CR;
         else
-            currentState = State::CHUNK_DATA;
+            currentState = CHUNK_DATA;
 
     }
     else
-        currentState = State::ERROR_CHUNK_SIZE;
+        currentState = ERROR_CHUNK_SIZE;
 }
 void HttpRequest::handleChunkTrailerCR(uint8_t byte) {
     if (byte == '\r')
-        currentState = State::CHUNK_TRAILER_LF;
+        currentState = CHUNK_TRAILER_LF;
     else
-        currentState = State::ERROR_CHUNK_SIZE;
+        currentState = ERROR_CHUNK_SIZE;
 }
 void HttpRequest::handleChunkTrailerLF(uint8_t byte) {
     if (byte == '\n')
-        currentState = State::MESSAGE_COMPLETE ;
+        currentState = MESSAGE_COMPLETE ;
     else
-        currentState = State::ERROR_CHUNK_SIZE;
+        currentState = ERROR_CHUNK_SIZE;
 }
 
 void HttpRequest::handleChunkData(uint8_t byte) {
     if (byte == '\r')
-        currentState = State::CHUNK_DATA_LF;
+        currentState = CHUNK_DATA_LF;
     else if (chunkbytesread > chunkSize)
-        currentState = State::ERROR_CHUNK_SIZE;
+        currentState = ERROR_CHUNK_SIZE;
     else
     {
         body.push_back(byte);
@@ -442,10 +415,139 @@ void HttpRequest::handleChunkData(uint8_t byte) {
 
 void HttpRequest::handleChunkDataLF(uint8_t byte) {
     if (byte == '\n')
-        currentState = State::CHUNK_SIZE_START;
+        currentState = CHUNK_SIZE_START;
     else
-        currentState = State::ERROR_CHUNK_SIZE;  
+        currentState = ERROR_CHUNK_SIZE;  
 }
+
+
+
+void    HttpRequest::handleBodyContentLength(uint8_t byte) {
+    if (contentLength == -1 || currentState == MESSAGE_COMPLETE)
+        currentState = ERROR_CONTENT_LENGTH;
+    else if (contentLength == 0)
+        currentState = MESSAGE_COMPLETE;
+    else
+    {
+        body.push_back(byte);
+        contentLength--;
+    }
+
+}
+
+void HttpRequest::handleBodyBoundaryStart(uint8_t byte) {
+    if (byte == '-') {
+        holder += byte;
+        currentState = BODY_BOUNDARY_PARSING;
+    }
+    else
+        currentState = ERROR_BOUNDARY;
+}
+
+void HttpRequest::handleBodyBoundaryParsing(uint8_t byte) {
+    if (byte == '\r') {
+        std::string expectedBoundary = "--" + boundary;
+        if (holder == expectedBoundary) {
+            currentState = BODY_BOUNDARY_LF;
+        }
+        else if (holder == expectedBoundary + "--")
+            currentState = MESSAGE_COMPLETE;
+        else
+            currentState = ERROR_BOUNDARY;
+    }
+    else {
+        holder += byte;
+        if (holder.length() > boundary.length() + 4)
+            currentState = ERROR_BOUNDARY;
+    }   
+}
+
+void HttpRequest::handleBodyBoundaryLF(uint8_t byte) {
+    if (byte == '\n') {
+        currentState = BODY_PART_HEADER;
+        holder.clear();
+    }
+    else
+        currentState = ERROR_BOUNDARY;
+}
+// void HttpRequest::handleBodyBoundaryCR2(uint8_t byte) {
+//     if (byte == '\r') {
+//         currentState = BODY_PART_HEADERLF2;
+//     }
+//     else
+//         currentState = ERROR_BOUNDARY;
+// }
+// void HttpRequest::handleBodyBoundaryLF2(uint8_t byte) {
+//     if (byte == '\n') {
+//         currentState = BODY_PART_HEADER;
+//     }
+//     else
+//         currentState = ERROR_BOUNDARY;
+// }
+
+void HttpRequest::handleBodyPartHeader(uint8_t byte) {
+    if (byte == '\r') {
+        currentState = BODY_PART_HEADER_LF;
+    }
+    else
+        holder += byte;
+}
+
+void HttpRequest::handleBodyPartHeaderLF(uint8_t byte) {
+    std::size_t namePos = holder.find("name=");
+    if (namePos != std::string::npos) {
+        namePos += 6;
+        std::size_t endPos = holder.find("\"", namePos);
+        if (endPos != std::string::npos){
+            fieldName = holder.substr(namePos, endPos - namePos);
+            std::cout << "field " << fieldName << std::endl;
+            formFields.insert(std::make_pair(fieldName, ""));
+        }
+        else {
+            currentState = ERROR_BOUNDARY;
+            return;
+        }
+    }
+    if (byte == '\n')
+        currentState = BODY_PART_HEADER_CR2;
+    else
+        currentState = ERROR_BOUNDARY;
+}
+void HttpRequest::handleBodyPartHeaderCR2(uint8_t byte) {
+    if (byte == '\r')
+        currentState = BODY_PART_HEADER_LF2;
+    else
+        currentState = ERROR_BOUNDARY;
+}
+
+void HttpRequest::handleBodyPartHeaderLF2(uint8_t byte) {
+    if (byte == '\n')
+        currentState = BODY_PART_DATA;
+    else
+        currentState = ERROR_BOUNDARY;
+}
+void HttpRequest::handleBodyPartData(uint8_t byte) {
+//        std::cout << "fieldname = " << fieldName << " " << "value " << formFields[fieldName] << std::cout;
+    if (byte == '\r')
+        currentState = BODY_PART_END;
+    else if (!holder.empty())
+    {
+        formFields[fieldName] += byte;
+    }
+    else
+        currentState = ERROR_BOUNDARY;
+}
+
+void HttpRequest::handleBodyPartEnd(uint8_t byte) {
+    if (byte == '\n') {
+        holder.clear();
+        fieldName.clear();
+        currentState = BODY_BOUNDARY_START;
+    }
+    else
+        currentState = ERROR_BOUNDARY;
+}
+
 
 
 
@@ -493,6 +595,7 @@ void HttpRequest::addCurrentHeader() {
 void HttpRequest::parse(uint8_t *buffer, int readSize) {
     for(int i = 0; i < readSize && !errorOccured(); i++)
     {
+        std::cout << currentState << std::endl;
         (this->*currentHandler)(buffer[i]);
         std::map<State, StateHandler>::const_iterator it = stateHandlers.find(currentState);
         if (it != stateHandlers.end())
@@ -505,6 +608,27 @@ void HttpRequest::parse(uint8_t *buffer, int readSize) {
         std::map<State, int>::const_iterator it = errorState.find(currentState);
             statusCode = it->second;
     }
+    // std::cout <<" method is : " << method << std::endl;
+    // std::cout <<" uri is : " << uri << std::endl;
+    // std::cout << "version is " << version << std::endl;
+     std::cout <<" status code is : " << statusCode << std::endl;
+    // std::cout <<" isChunked are : " << isChunked << std::endl;
+    // std::cout <<" isMultipart are : " << isMultipart << std::endl;
+    // std::cout <<" contentLength are : " << contentLength << std::endl;
+    // std::cout <<" boundary are :                             " << boundary << std::endl;
+
+    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+        std::cout << it->first << ": " << it->second << std::endl;
+    }
+    std::cout <<" body is : " << std::endl;
+    for (std::vector<uint8_t>::const_iterator it = body.begin(); it != body.end(); ++it) {
+        std::cout << static_cast<char>(*it);
+    }
+    std::cout <<" form fields are : " << std::endl;
+    for(std::map<std::string, std::string>::const_iterator it = formFields.begin(); it != formFields.end(); it++){
+        std::cout << it->first << ": " << it->second << std::endl;
+    }
+    std::cout << std::endl;
 }
 
 
@@ -524,7 +648,7 @@ void HttpRequest::reset(){
     resetMessage();
     method.clear();
     uri.clear();
-    currentState = INITIALIZED;
+    currentState = METHOD_START;
     statusCode = 200;
 };
 bool HttpRequest::parsingCompleted() const {

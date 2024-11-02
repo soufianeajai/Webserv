@@ -1,9 +1,7 @@
 #pragma once
-#include "HttpMessage.hpp"
+#include "../HttpMessage/HttpMessage.hpp"
 
 enum State {
-    INITIALIZED,              // Parser just initialized or reset
-
     // Request Line States
     METHOD_START,             // Start parsing method
     METHOD_PARSING,           // Parsing method characters
@@ -52,10 +50,14 @@ enum State {
     BODY_BOUNDARY_PARSING,  // Parsing boundary
     BODY_BOUNDARY_CR,       // Expect CR after boundary
     BODY_BOUNDARY_LF,       // Expect LF after boundary
+    BODY_PART_HEADERLF2,
+    BODY_PART_HEADERCR2,
     BODY_PART_HEADER_START, // Start of part headers
     BODY_PART_HEADER,       // Parsing part header
     BODY_PART_HEADER_CR,    // Expect CR after part header
     BODY_PART_HEADER_LF,    // Expect LF after part header
+    BODY_PART_HEADER_CR2,    // Expect CR after part header
+    BODY_PART_HEADER_LF2,    // Expect LF after part header
     BODY_PART_DATA,         // Reading part data (binary safe)
     BODY_PART_END,          // End of current part
     
@@ -94,11 +96,10 @@ private:
     std::string boundary;
     int chunkSize;  // init to 0;
     int chunkbytesread; // init to 0
-    static const std::map<State, StateHandler> stateHandlers;
-    static const std::map<State, int> errorState;
+    std::map<State, StateHandler> stateHandlers;
+    std::map<State, int> errorState;
     std::map<std::string, std::string> formFields;
     std::string fieldName;
-    std::string fieldValue;
     static const int  MAX_URI_LENGTH = 2048;
     static bool isValidPathChar(uint8_t byte);
     bool    uriBehindRoot();
@@ -120,7 +121,7 @@ public:
 
 protected:
 //Start line
-    void    handleInitialized(uint8_t byte);
+    // void    handleInitialized(uint8_t byte);
     void    handleMethodStart(uint8_t byte);
     void    handleMethodParsing(uint8_t byte);
     void    handleFirstSP(uint8_t byte);
@@ -128,7 +129,7 @@ protected:
     void    handleURIPathParsing(uint8_t byte);
     void    handleDecodeURI(uint8_t byte);
     void    handleSkipQF(uint8_t byte);
-    void    handleSecondSP(uint8_t byte);
+//    void    handleSecondSP(uint8_t byte);
     void    handleVersionHTTP(uint8_t byte);
     void    handleRequestLineCR(uint8_t byte);
     void    handleRequestLineLF(uint8_t byte);
@@ -136,12 +137,12 @@ protected:
     // Header handling methods
     void    handleHeaderStart(uint8_t byte);
     void    handleHeaderName(uint8_t byte);
-    void    handleHeaderColon(uint8_t byte);
+//    void    handleHeaderColon(uint8_t byte);
     void    handleHeaderValueStart(uint8_t byte);
     void    handleHeaderValue(uint8_t byte);
-    void    handleHeaderCR(uint8_t byte);
+//    void    handleHeaderCR(uint8_t byte);
     void    handleHeaderLF(uint8_t byte);
-    void    handleHeadersEndCR(uint8_t byte);
+//    void    handleHeadersEndCR(uint8_t byte);
     void    handleHeadersEndLF(uint8_t byte);
     
     // Body handling methods
@@ -154,21 +155,25 @@ protected:
     void    handleChunkSizeCR(uint8_t byte);
     void    handleChunkSizeLF(uint8_t byte);
     void    handleChunkData(uint8_t byte);
-    void    handleChunkDataCR(uint8_t byte);
+//    void    handleChunkDataCR(uint8_t byte);
     void    handleChunkDataLF(uint8_t byte);
-    void    handleChunkTrailerStart(uint8_t byte);
+//    void    handleChunkTrailerStart(uint8_t byte);
     void    handleChunkTrailerCR(uint8_t byte);
     void    handleChunkTrailerLF(uint8_t byte);
     
     // Multipart body handling methods
     void    handleBodyBoundaryStart(uint8_t byte);
     void    handleBodyBoundaryParsing(uint8_t byte);
-    void    handleBodyBoundaryCR(uint8_t byte);
+//    void    handleBodyBoundaryCR(uint8_t byte);
     void    handleBodyBoundaryLF(uint8_t byte);
-    void    handleBodyPartHeaderStart(uint8_t byte);
+    void    handleBodyBoundaryCR2(uint8_t byte);
+    void    handleBodyBoundaryLF2(uint8_t byte);
+//    void    handleBodyPartHeaderStart(uint8_t byte);
     void    handleBodyPartHeader(uint8_t byte);
-    void    handleBodyPartHeaderCR(uint8_t byte);
+//    void    handleBodyPartHeaderCR(uint8_t byte);
     void    handleBodyPartHeaderLF(uint8_t byte);
+    void    handleBodyPartHeaderCR2(uint8_t byte);
+    void    handleBodyPartHeaderLF2(uint8_t byte);
     void    handleBodyPartData(uint8_t byte);
     void    handleBodyPartEnd(uint8_t byte);
 
