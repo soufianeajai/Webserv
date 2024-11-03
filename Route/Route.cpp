@@ -1,1 +1,39 @@
 #include "Route.hpp"
+
+
+void Route::setPath(std::string _path) {
+    this->path = _path;
+}
+std::string Route::getPath() {
+    return this->path;
+}
+void Route::addAllowedMethod(std::string method) {
+    this->allowedMethods.insert(method);
+}
+std::set<std::string> Route::getAllowedMethods() {
+    return this->allowedMethods;
+}
+void Route::setRoot(std::string _root) {
+    this->root = _root;
+}
+std::string Route::getRoot() {
+    return this->root;
+}
+void Route::setDefaultFile(std::string _defaultFile) {
+    this->defaultFile = _defaultFile;
+}
+std::string Route::getDefaultFile() {
+    return this->defaultFile;
+}
+void Route::setAutoindex(bool _autoindex) {
+    this->autoindex = _autoindex;
+}
+bool Route::getAutoindex() {
+    return this->autoindex;
+}
+void Route::addCgiExtension(std::string cgiExtension) {
+    this->cgiExtensions.insert(cgiExtension);
+}
+std::set<std::string> Route::getCgiExtensions() {
+    return this->cgiExtensions;
+}

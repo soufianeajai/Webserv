@@ -1,0 +1,60 @@
+server
+    host: 0.0.0.0
+    port: 8080 6060
+    server_names: example.com example23.com
+    error_page 404 /errors/404.html
+    error_page 405 /errors/405.html
+    client_body_size: 10M
+    redirect: old-path 3xx new-path
+   
+
+    location /dir 
+        methods: POST GET
+        root: /tmp/www/dir
+        directory_listing: on
+        default_file: index.html #if that file exists in /tmp/www/dir/index.html
+        cgi_extension: php
+
+    location /script
+        methods: POST GET DELETE
+        cgi_extension: php py bash
+        
+    location /uploads
+        methods: POST GET
+
+
+
+
+
+
+
+
+``````````
+valid http redirection : 
+301 Moved Permanently: This status code indicates that the resource has been permanently moved to a new URL. Clients and search engines should update their records to use the new URL for future requests.
+302 Found: This status code indicates a temporary redirection. The resource is temporarily located at a different URL, and clients should continue to use the original URL for future requests.
+303 See Other: This is used to redirect after a POST request to indicate that the client should retrieve a different URL using a GET request.
+307 Temporary Redirect: Similar to a 302, but it indicates that the method and body of the original request should be reused when making the redirected request.
+308 Permanent Redirect: Similar to 301, but it indicates that the method and body of the original request should be reused.
+
+
+ Set a default file to answer if the request is a directory: 
+location / {
+}
+
+"/" convert to root -> will be "/tmp/www/" if is directory -> default_file: /tmp/www/index.html  access() 
+
+
+1 - 
+directory_listing: on
+default_file: index.html # exist
+ -> he server will serve that file instead of showing the directory contents.
+
+2 -
+directory_listing: off
+default_file: index.html # not exist
+ -> 404 not found if not have redirection in same path
+
+
+
+
