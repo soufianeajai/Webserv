@@ -1,18 +1,31 @@
 #pragma once
-#include "HttpRequest.hpp"
-#include "HttpResponse.hpp"
+#include "../HttpMessage/HttpMessage.hpp"
+
+
 
 class Route {
 private:
     std::string path;
     std::set<std::string> allowedMethods; // Set for allowed HTTP methods
-    bool autoindex = false;
+    bool autoindex;
     std::string defaultFile;
-    std::string redirect;
-    std::string uploadDir;
+    // std::string uploadDir;
     std::set<std::string> cgiExtensions;
+    std::string root;
 public:
-    Route(const std::string& path) : path(path) {}
-    bool matches(const std::string& uri) const;
-    bool isMethodAllowed(const std::string& method) const;
+    void setPath(std::string path);
+    std::string getPath();
+    void addAllowedMethod(std::string method);
+    std::set<std::string> getAllowedMethods();
+    void setRoot(std::string root);
+    std::string getRoot();
+    void setDefaultFile(std::string defaultFile);
+    std::string getDefaultFile();
+    void setAutoindex(bool autoindex);
+    bool getAutoindex();
+    void addCgiExtension(std::string cgiExtension);
+    std::set<std::string> getCgiExtensions();
+    // Route(const std::string& path) : path(path) {}
+    // bool matches(const std::string& uri) const;
+    // bool isMethodAllowed(const std::string& method) const;
 };
