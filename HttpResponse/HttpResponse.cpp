@@ -1,5 +1,70 @@
 #include "HttpResponse.hpp"
 
+size_t checkIfCGI(const std::string& url)
+{
+    size_t scriptEndPos = std::string::npos;
+    for (const std::string& ext : validExtensions)
+    {
+        // Find the last position of the extension
+         size_t pos = url.rfind(ext);
+         //extension is not at the end or followed by a '/' its invalid like : /cgi/somefile.php.invalid
+         if (pos != std::string::npos)
+         if (pos + ext.length() == url.length() || url[pos + ext.length()] == '/')
+            scriptEndPos = pos + ext.length()
+    }
+    return scriptEndPos;
+}
+
+/* Find the position of the '?' and pos of / to get script name
+        /cgi/script.php/test/more/path?param1=value1&param2=value2
+                                     pos + 1 = p
+            queryString =   param1=value1&param2=value2
+            scriptName =    /cgi/script.php
+            path_info = /test/more/path                
+    */
+std::vector<char*> createEnvChar(const Connection& connection, size_t scriptEndPos) const
+{
+    std::vector<char*> envVars;
+    std::string fullUrl = connection.getRequest().getUrl();
+
+    std::string scriptName;
+    std::string pathInfo;
+    std::string queryString;
+    std::string contentType;
+    size_t queryPos = fullUrl.find('?');
+    queryString = (queryPos != std::string::npos) ? fullUrl.substr(queryPos + 1) : "";
+    scriptName = fullUrl.substr(0, scriptEndPos);
+    pathInfo = (queryPos != std::string::npos) ? fullUrl.substr(scriptEndPos, queryPos - scriptEndPos) : fullUrl.substr(scriptEndPos);
+    contentType = (connection.getRequest().getMethod() == "POST") ? connection.getRequest().getHeader("CONTENT_TYPE") : "";
+
+    env.push_back(const_cast<char*>(("REQUEST_METHOD=" + connection.getRequest().getMethod()).c_str()));
+    env.push_back(const_cast<char*>(("QUERY_STRING=" + queryString).c_str()));
+    env.push_back(const_cast<char*>(("SCRIPT_NAME=" + scriptName).c_str()));
+    env.push_back(const_cast<char*>(("PATH_INFO=" + pathInfo).c_str()));
+    env.push_back(const_cast<char*>(("CONTENT_TYPE=" + contentType).c_str()));
+    env.push_back(const_cast<char*>("GATEWAY_INTERFACE=CGI/1.1"));
+    env.push_back(const_cast<char*>("SERVER_PROTOCOL=" + version).c_str());
+    
+    //REMOTE_ADDR,REMOTE_HOST,SERVER_NAME,SERVER_PORT,AUTH_TYPE
+    
+    return envVars;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //1xx (Informational): The request was received, continuing process
 
@@ -15,32 +80,8 @@
 //5xx (Server Error): The server failed to fulfill an apparently
 //valid request
 
-bool checkIfCGI(const std::string& url)
-{
-    size_t extPos = url.rfind('.');
-    if (extPos != std::string::npos)
-    {
-        std::string extension = url.substr(extPos);
-        return cgiExtensions.find(extension) != cgiExtensions.end();
-    }
-    return false;
-}
 
-std::vector<char*> HttpResponse::createEnvChar(const std::string& Url, ...) const 
-{
-    std::vector<char*> envVars;
-    bool cookies = false; // TODO detect if have cookies session manangement
-    
-    std::string authType = cookies ? "SessionCookie" : "";
-    envVars.push_back(strdup(("AUTH_TYPE=" + authType).c_str()));
 
-    std::string method = "GET"; // FROM PARAM FUNCTION
-    envVars.push_back(strdup(("CONTENT_LENGTH=" + intToString(request.GetBody.size())).c_str())); // Length of POST data
-    
-    
-
-    return envVars;
-}
 void HttpResponse::executeCGI(const std::string& scriptPath,std::vector<char*> &envp)
 {
     
@@ -165,22 +206,25 @@ std::string HttpResponse::getMimeType(const std::string& filePath) const
     return "application/octet-stream";  // Default type if extension not found
 }
 
-void HttpResponse::generateResponse(std::string Url, bool flagConnection,... )
+void HttpResponse::generateResponse(const Connection &connection)
 {
-    // detect CGI    
-    if (checkIfCGI(Url))
-        executeCGI(Url, createEnvMap(Url));  // createEnvMap builds necessary env variables
+    // detect CGI  
+    // url /cgi/script.php
+    bool flagConnection ; 
+    std::string url = connection.getRequest().getUrl();
+    size_t scriptEndPos = checkIfCGI(url);  
+    if (scriptEndPos !=  std::string::npos)
+        executeCGI(createEnvMap(connection, scriptEndPos));  // createEnvMap builds necessary env variables
     else
         LoadPage();
-    addHeader("Content-Type", getMimeType(Url));
+
+    addHeader("Content-Type", getMimeType(url); // content-type for cgi ?
     
     //Transfer-Encoding: chunked or content-length ?
     addHeader("Content-Length", intToString(body.size()));
-    
-    
     addHeader("Date", getCurrentTimeFormatted());
     addHeader("Server", "WebServ 1337");  
-    addHeader("Connection",flagConnection ? "keep-alive" : "close");
+    addHeader("Connection",connection.GetflagConnection() ? "keep-alive" : "close");
 
     //Location: https://example.com/new-path
     // from config file  : redirect: old-path 3xx new-path
