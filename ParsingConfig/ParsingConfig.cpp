@@ -105,7 +105,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         // }
                         // std::cout << std::endl;
                     }
-                    if (arr[0].find("root") != std::string::npos)
+                    else if (arr[0].find("root") != std::string::npos)
                     {
                         if (arr.size() != 2)
                         {
@@ -115,7 +115,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         route.setRoot(arr[1]);
                         // std::cout << "|" << route.getRoot() << "|" << std::endl;
                     }
-                    if (arr[0].find("default_file") != std::string::npos)
+                    else if (arr[0].find("default_file") != std::string::npos)
                     {
                         if (arr.size() != 2)
                         {
@@ -125,7 +125,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         route.setDefaultFile(arr[1]);
                         // std::cout << "|" << route.getDefaultFile() << "|" << std::endl;
                     }
-                    if (arr[0].find("autoindex") != std::string::npos)
+                    else if (arr[0].find("autoindex") != std::string::npos)
                     {
                         if (arr.size() != 2)
                         {
@@ -151,7 +151,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         // else
                             // std::cout << "|" << "false" << "|" << std::endl;
                     }
-                    if (arr[0].find("cgi_extension") != std::string::npos)
+                    else if (arr[0].find("cgi_extension") != std::string::npos)
                     {
                         if (arr.size() < 2)
                         {
@@ -169,6 +169,12 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         }
                         // std::cout << std::endl;
                     }
+                    else
+                    {
+                        std::cout << "Error: Invalid config file" << std::endl;
+                        exit(1);
+                    }
+
             }
         }
     }
@@ -315,6 +321,11 @@ ParsingConfig parsingConfig(char *configFile)
 
                         if (locationBlock(server, FILE, arr) && serverFlag == 1) // check dyal serverFlag ila kant chi location block flowel dyal server
                             break;
+                    }
+                    else
+                    {
+                        std::cout << "Error: Invalid config file" << std::endl;
+                        exit(1);
                     }
                 }
             }
