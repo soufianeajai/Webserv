@@ -5,13 +5,19 @@
 
 class Route {
 private:
-    std::string path;
+    std::string pathLocation; // if pathlocation  == /uploads 
+    std::string root;
     std::set<std::string> allowedMethods; // Set for allowed HTTP methods
     bool autoindex;
     std::string defaultFile;
-    // std::string uploadDir;
+    bool isDir;
     std::set<std::string> cgiExtensions;
-    std::string root;
+
+
+    // http redirection : 
+    bool IsRedirection;
+    std::string NewPathRedirection;
+    int statusCodeRedirection;
 public:
     void setPath(std::string path);
     std::string getPath();

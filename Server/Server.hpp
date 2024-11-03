@@ -5,17 +5,12 @@
 class Server {
 private:
     std::string host;
-    std::vector<int> ports;
+    std::map<int, bool> ports; // port integer , 
     std::vector<std::string> serverNames; 
-    std::string serverRoot;
-    // std::map<int, Connection*> connections;
+//    std::map<int, Connection*> connections;
     std::map<std::string, Route> routes;
     std::map<int, std::string> errorPages;
     size_t clientMaxBodySize;
-    // bool isDefault;
-    std::string redirectnewPath;
-    std::string redirectPathOldPath;
-    int redirectCode;
 
 public:
     void hostSetter(std::string host);
