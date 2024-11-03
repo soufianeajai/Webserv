@@ -25,6 +25,7 @@
 //     // we can just version "HTTP/1.1" , sinmon  :  400 Bad Request ...
 
 // public :
+ //void resetMessage();
 //     HttpMessage();
 // // this after validation of header , can store it in map container
 //     void addHeader(const std::string& key, const std::string& value);
