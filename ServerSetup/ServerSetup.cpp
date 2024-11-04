@@ -3,13 +3,17 @@
 #define MAX_CLIENTS 10
 void ServerSetup(ParsingConfig &Config)
 {
+
+	std::vector<std::vector<int> > serverPorts;
+	std::vector<std::string> serverHosts;
+
 	std::map<int, Server> Servers = Config.webServer.getServers();
-	std::vector<struct pollfd> fds;
 	int Socket; 
+	std::vector<std::vector<struct pollfd> > pollDescriptorsByServer;
 	for (std::map<int , Server>::iterator it = Servers.begin(); it != Servers.end(); it++)
 	{
-		std::vector<int> ServerSockets;
 		std::vector<int> ports = it->second.portGetter();
+		std::vector<struct pollfd> serverSockets;
 		for (size_t i = 0;i < ports.size();i++)
 		{
 			Socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -36,13 +40,64 @@ void ServerSetup(ParsingConfig &Config)
 				exit(EXIT_FAILURE);
 			}
 			fcntl(Socket, F_SETFL, O_NONBLOCK);
-			ServerSockets.push_back(Socket);
+
+			struct pollfd pfd;
+			pfd.fd = Socket;              
+			pfd.events = POLLIN;           
+			serverSockets.push_back(pfd);
 		}
-		struct pollfd pfd;
-        pfd.fd = Socket;              // The server socket
-        pfd.events = POLLIN;        // Monitor for incoming connections
-        fds.push_back(pfd);         // Add to fds array
+		serverPorts.push_back(ports);
+		serverHosts.push_back(it->second.hostGetter());
+		pollDescriptorsByServer.push_back(serverSockets);
+		// fdsServer[it->second.hostGetter()] = pollDescriptorsByServer;
 	}
-	// struct pollfd fds[MAX_CLIENTS + ServerSockets.size() + 1];
+	// for (size_t i = 0; i < pollDescriptorsByServer.size() && i < serverPorts.size(); i++)
+	// {
+	// 	std::vector<struct pollfd> itt = pollDescriptorsByServer[i];
+	// 	std::vector<int> ports = serverPorts[i];
+	// 	for (size_t j = 0; j < itt.size(); j++)
+	// 	{
+	// 		std::cout << ports[i] << ": " <<  itt[j].fd << " | ";
+	// 	}
+	// 	std::cout << std::endl;
+	// }
+	
+
 	while (1)
+	{
+		for (size_t index = 0; index < pollDescriptorsByServer.size(); index++)
+		{
+			std::vector<struct pollfd> itt = pollDescriptorsByServer[index];
+			int pollfds = poll(itt.data(), itt.size(), 1);
+			if (pollfds < 0)
+			{
+				std::cout << "no file found to read" << std::endl;
+				exit(1);
+			}
+			for (size_t i = 0; i < itt.size(); i++)
+			{
+				if (itt[i].revents & POLLIN)
+				{
+					int clientSocket = accept(itt[i].fd, NULL , NULL);
+					if (clientSocket < 0)
+					{
+						std::cout << "client failed" << std::endl;
+						continue;
+					}
+					struct pollfd ClientPollFd;
+					ClientPollFd.events = POLLIN;
+					ClientPollFd.fd = clientSocket;
+					itt.push_back(ClientPollFd);
+					std::cout << "client request:\nHost: " << serverHosts[index] << " Ports: " << serverPorts[index][i] << std::endl;
+					const char* httpResponse = 
+					"HTTP/1.1 200 OK\r\n"
+					"Content-Length: 13\r\n"
+					"\r\n"
+					"Connection OK!";
+					send(clientSocket, httpResponse, strlen(httpResponse), 0);
+				}
+			}
+		}
+	}
+	
 }
