@@ -5,7 +5,7 @@
 class WebServer {
 private:
     std::map<int, Server> servers; // List of servers parsed from configuration int is like an ID or somthing ti identify the Server
-    const static std::string globalRoot="/home/$(USER)/MAIN_webserv/docs/";
+    const static std::string globalRoot;
 
 public:
     void addServer(Server& newServer, int identifier);

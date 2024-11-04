@@ -1,5 +1,5 @@
 #include "Webservers.hpp"
-
+const  std::string globalRoot="/home/$(USER)/MAIN_webserv/docs/";
 void WebServer::addServer(Server& newServer, int identifier) {
     this->servers[identifier] = newServer;
 }
