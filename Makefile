@@ -2,7 +2,7 @@ NAME=webserv
 
 CPPFLAGS= -Wall -Wextra -Werror -std=c++98
 
-SRCS = main.cpp ServerSetup/Setup.cpp ParsingConfig/ParsingConfig.cpp Server/Server.cpp Route/Route.cpp WebServers/Webservers.cpp #Connection.cpp HttpRequest.cpp HttpResponse.cpp HttpMessage.cpp WebServers.cpp 
+SRCS = main.cpp ParsingConfig/ParsingConfig.cpp Server/Server.cpp Route/Route.cpp WebServers/Webservers.cpp ServerSetup/ServerSetup.cpp # Connection.cpp HttpRequest.cpp HttpResponse.cpp HttpMessage.cpp WebServers.cpp 
 
 CXX = c++
 
