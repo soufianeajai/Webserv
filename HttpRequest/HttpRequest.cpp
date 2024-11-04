@@ -10,7 +10,7 @@ boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::hand
     stateHandlers.insert(std::make_pair(URI_START, &HttpRequest::handleURIStart));
     stateHandlers.insert(std::make_pair(URI_PATH_PARSING, &HttpRequest::handleURIPathParsing));
     stateHandlers.insert(std::make_pair(DECODE_URI, &HttpRequest::handleDecodeURI));
-    stateHandlers.insert(std::make_pair(URI_SKIP_QUERY_OR_FRAGMENT, &HttpRequest::handleSkipQF));
+    stateHandlers.insert(std::make_pair(URI_HANDLE_QUERY, &HttpRequest::handleQuery));
     stateHandlers.insert(std::make_pair(VERSION_HTTP, &HttpRequest::handleVersionHTTP));
     stateHandlers.insert(std::make_pair(REQUEST_LINE_CR, &HttpRequest::handleRequestLineCR));
     stateHandlers.insert(std::make_pair(REQUEST_LINE_LF, &HttpRequest::handleRequestLineLF));
@@ -37,9 +37,9 @@ boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::hand
     stateHandlers.insert(std::make_pair(BODY_BOUNDARY_START, &HttpRequest::handleBodyBoundaryStart));
     stateHandlers.insert(std::make_pair(BODY_BOUNDARY_PARSING, &HttpRequest::handleBodyBoundaryParsing));
     stateHandlers.insert(std::make_pair(BODY_BOUNDARY_LF, &HttpRequest::handleBodyBoundaryLF));
-    stateHandlers.insert(std::make_pair(BODY_PART_HEADER, &HttpRequest::handleBodyPartHeader));
+    stateHandlers.insert(std::make_pair(BODY_PART_HEADER_NAME, &HttpRequest::handleBodyPartHeaderName));
+    stateHandlers.insert(std::make_pair(BODY_PART_HEADER_VALUE, &HttpRequest::handleBodyPartHeaderValue));
     stateHandlers.insert(std::make_pair(BODY_PART_HEADER_LF, &HttpRequest::handleBodyPartHeaderLF));
-    stateHandlers.insert(std::make_pair(BODY_PART_HEADER_CR2, &HttpRequest::handleBodyPartHeaderCR2));
     stateHandlers.insert(std::make_pair(BODY_PART_HEADER_LF2, &HttpRequest::handleBodyPartHeaderLF2));
     stateHandlers.insert(std::make_pair(BODY_PART_DATA, &HttpRequest::handleBodyPartData));
     stateHandlers.insert(std::make_pair(BODY_PART_END, &HttpRequest::handleBodyPartEnd));

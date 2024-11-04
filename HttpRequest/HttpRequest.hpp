@@ -10,7 +10,7 @@ enum State {
     URI_START,                  // Start parsing URI 
     URI_PATH_PARSING,           // Parsing raw URI path characters (no query handling)
     DECODE_URI,                 // decode chars in the URI like %20 is a ' '
-    URI_SKIP_QUERY_OR_FRAGMENT, // skip all chars after ? or #
+    URI_HANDLE_QUERY, // skip all chars after ? or #
     SECOND_SP,                  // End of URI, expect space
     VERSION_HTTP,               // Expect  HTTP/1.1
     REQUEST_LINE_CR,            // Expect CR
@@ -50,6 +50,8 @@ enum State {
     BODY_BOUNDARY_PARSING,      // Parsing boundary
     BODY_BOUNDARY_CR,           // Expect CR after boundary
     BODY_BOUNDARY_LF,           // Expect LF after boundary
+    BODY_PART_HEADER_NAME,
+    BODY_PART_HEADER_VALUE,
     BODY_PART_HEADERLF2,        // Expect a second CR after boundary
     BODY_PART_HEADERCR2,        // Expect a second LF after boundary
     BODY_PART_HEADER_START,     // Start of part headers
@@ -78,6 +80,14 @@ enum State {
     ERROR_BUFFER_OVERFLOW,      // Input exceeds buffer capacity
     ERROR_BINARY_DATA           // Error processing binary data
 };
+typedef struct s_boundaryPart{
+    std::string name;
+    std::string value;
+    std::string fileName;
+    bool    isFile;
+    std::vector<uint8_t> fileBody;
+    std::map<std::string, std::string> boundaryHeader;
+} boundaryPart;
 
 class HttpRequest :  public HttpMessage{
 private:
@@ -92,6 +102,7 @@ private:
     std::string     currentHeaderValue;
     std::string     boundary;
     std::string     fieldName;
+    std::string     query;
     int             statusCode;
     int             contentLength;
     int             chunkSize;
@@ -101,6 +112,8 @@ private:
     std::map<State, StateHandler> stateHandlers;
     std::map<State, int> errorState;
     std::map<std::string, std::string> formFields;
+    std::vector<boundaryPart> parts;
+
 public:
     HttpRequest();
     void    parse(uint8_t *buffer, int readSize);
@@ -120,7 +133,7 @@ private:
     void    handleURIStart(uint8_t byte);
     void    handleURIPathParsing(uint8_t byte);
     void    handleDecodeURI(uint8_t byte);
-    void    handleSkipQF(uint8_t byte);
+    void    handleQuery(uint8_t byte);
     void    handleVersionHTTP(uint8_t byte);
     void    handleRequestLineCR(uint8_t byte);
     void    handleRequestLineLF(uint8_t byte);
@@ -143,9 +156,9 @@ private:
     void    handleBodyBoundaryStart(uint8_t byte);
     void    handleBodyBoundaryParsing(uint8_t byte);
     void    handleBodyBoundaryLF(uint8_t byte);
-    void    handleBodyPartHeader(uint8_t byte);
+    void    handleBodyPartHeaderName(uint8_t byte);
+    void    handleBodyPartHeaderValue(uint8_t byte);
     void    handleBodyPartHeaderLF(uint8_t byte);
-    void    handleBodyPartHeaderCR2(uint8_t byte);
     void    handleBodyPartHeaderLF2(uint8_t byte);
     void    handleBodyPartData(uint8_t byte);
     void    handleBodyPartEnd(uint8_t byte);

@@ -6,7 +6,7 @@ void testSimpleGetRequest() {
     
     HttpRequest request;
     std::string rawRequest = 
-        "GET /index.html HTTP/1.1\r\n"
+        "GET /index.html HTTP/1.1\\r\n"
         "Host: example.com\r\n"
         "User-Agent: Mozilla/5.0\r\n"
         "\r\n";
@@ -86,7 +86,7 @@ void testMultipartFormData() {
 void testErrorCases() {
     std::cout << "Testing error cases..." << std::endl;
     
-    Test 1: Invalid method
+//    Test 1: Invalid method
     {
         HttpRequest request;
         std::string rawRequest = "PUT /index.html HTTP/1.1\r\n\r\n";
@@ -95,7 +95,7 @@ void testErrorCases() {
         assert(request.errorOccured());
     }
     
-    Test 2: Invalid URI (contains spaces)
+//    Test 2: Invalid URI (contains spaces)
     {
         HttpRequest request;
         std::string rawRequest = "GET /path with spaces HTTP/1.1\r\n\r\n";
