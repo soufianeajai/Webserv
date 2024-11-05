@@ -6,7 +6,6 @@ void ServerSetup(ParsingConfig &Config)
 
 	std::vector<std::vector<int> > serverPorts;
 	std::vector<std::string> serverHosts;
-
 	std::map<int, Server> Servers = Config.webServer.getServers();
 	int Socket; 
 	std::vector<std::vector<struct pollfd> > pollDescriptorsByServer;
@@ -34,7 +33,7 @@ void ServerSetup(ParsingConfig &Config)
 				std::cout << "fail to bind local port " << it->second.hostGetter() << " " << ports[i] << std::endl;
 				exit(EXIT_FAILURE);
 			}
-			if (listen(Socket, 5) < 0)
+			if (listen(Socket, 10) < 0)
 			{
 				std::cout << "fail to listen for connection\n";
 				exit(EXIT_FAILURE);
@@ -67,12 +66,24 @@ void ServerSetup(ParsingConfig &Config)
 	{
 		for (size_t index = 0; index < pollDescriptorsByServer.size(); index++)
 		{
-			std::vector<struct pollfd> itt = pollDescriptorsByServer[index];
+			std::vector<struct pollfd>& itt = pollDescriptorsByServer[index];
 			int pollfds = poll(itt.data(), itt.size(), 1);
 			if (pollfds < 0)
 			{
 				std::cout << "no file found to read" << std::endl;
 				exit(1);
+			}
+			
+			for (size_t i = 0; i < itt.size(); i++)
+			{
+				if (itt[i].revents & (POLLERR | POLLHUP))
+				{
+					std::cout << "client disconnected\n";
+					close(itt[i].fd);
+					itt.erase(itt.begin() + i);
+					i--;
+					exit(1);
+				}
 			}
 			for (size_t i = 0; i < itt.size(); i++)
 			{
@@ -80,15 +91,13 @@ void ServerSetup(ParsingConfig &Config)
 				{
 					int clientSocket = accept(itt[i].fd, NULL , NULL);
 					if (clientSocket < 0)
-					{
-						std::cout << "client failed" << std::endl;
-						continue;
-					}
+						break;
 					struct pollfd ClientPollFd;
 					ClientPollFd.events = POLLIN;
 					ClientPollFd.fd = clientSocket;
 					itt.push_back(ClientPollFd);
-					std::cout << "client request:\nHost: " << serverHosts[index] << " Ports: " << serverPorts[index][i] << std::endl;
+					std::cout << "client request:\nHost: " << serverHosts[index] << " Ports: " << serverPorts[index][i] <<
+						" Socket: " << clientSocket << std::endl;
 					const char* httpResponse = 
 					"HTTP/1.1 200 OK\r\n"
 					"Content-Length: 13\r\n"
@@ -97,6 +106,7 @@ void ServerSetup(ParsingConfig &Config)
 					send(clientSocket, httpResponse, strlen(httpResponse), 0);
 				}
 			}
+
 		}
 	}
 	
