@@ -59,8 +59,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
             }
             else if (str.find("host") != std::string::npos || str.find("port") != std::string::npos 
                 || str.find("server_names") != std::string::npos || str.find("server_root") != std::string::npos 
-                || str.find("error_page") != std::string::npos || str.find("client_body_size") != std::string::npos 
-                || str.find("redirect") != std::string::npos)
+                || str.find("error_page") != std::string::npos || str.find("client_body_size") != std::string::npos)
             {
 
                 FILE.seekg(-str.length() - 1, std::ios_base::cur); // Go back one line
@@ -168,6 +167,28 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                             // std::cout << "|" << *it << "|";
                         }
                         // std::cout << std::endl;
+                    }
+                    else if (arr[0].find("redirect") != std::string::npos)
+                    {
+                        if (arr.size() != 3)
+                        {
+                            std::cout << "Error: Invalid redirect" << std::endl;
+                            exit(1);
+                        }
+                        int i = 0;
+                        while (arr[2][i])
+                        {
+                            if (!isdigit(arr[2][i]))
+                            {
+                                std::cout << "Error: Invalid redirect status code" << std::endl;
+                                exit(1);
+                            }
+                            i++;
+                        }
+                        route.setIsRedirection(true);
+                        route.setRedirectnewPath(arr[1]);
+                        route.setRedirectCode(numberConversion(arr[2]));
+                        // std::cout << "|" << server.getRedirectnewPath() << "|" << server.getRedirectPathOldPath() << "|" << server.getRedirectCode() << "|" << std::endl;
                     }
                     else
                     {
@@ -296,28 +317,6 @@ ParsingConfig parsingConfig(char *configFile)
                         
                         server.clientMaxBodySizeSetter(numberConversion(arr[1]));
                         // std::cout << "|" << server.clientMaxBodySizeGetter() << "|" << std::endl;
-                    }
-                    else if (arr[0].find("redirect") != std::string::npos)
-                    {
-                        if (arr.size() != 4)
-                        {
-                            std::cout << "Error: Invalid redirect" << std::endl;
-                            exit(1);
-                        }
-                        int i = 0;
-                        while (arr[3][i])
-                        {
-                            if (!isdigit(arr[3][i]))
-                            {
-                                std::cout << "Error: Invalid redirect status code" << std::endl;
-                                exit(1);
-                            }
-                            i++;
-                        }
-                        server.setRedirectnewPath(arr[1]);
-                        server.setRedirectPathOldPath(arr[2]);
-                        server.setRedirectCode(numberConversion(arr[3]));
-                        // std::cout << "|" << server.getRedirectnewPath() << "|" << server.getRedirectPathOldPath() << "|" << server.getRedirectCode() << "|" << std::endl;
                     }
                     else if (arr[0].find("location") != std::string::npos)
                     {

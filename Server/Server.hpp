@@ -12,10 +12,7 @@ private:
     std::map<std::string, Route> routes;
     std::map<int, std::string> errorPages;
     size_t clientMaxBodySize;
-    // bool isDefault;
-    std::string redirectnewPath;
-    std::string redirectPathOldPath;
-    int redirectCode;
+
 
 public:
     void hostSetter(std::string host);
@@ -32,12 +29,7 @@ public:
     size_t clientMaxBodySizeGetter();
     void addRoute(Route newRoute);
     Route& getRoute(const std::string& path);
-    void setRedirectnewPath(std::string redirectnewPath);
-    std::string getRedirectnewPath();
-    void setRedirectPathOldPath(std::string redirectPathOldPath);
-    std::string getRedirectPathOldPath();
-    void setRedirectCode(int redirectCode);
-    int getRedirectCode();
+
     std::map<std::string, Route>& getRoutes();
     // Server();
     // Server(const std::string& host, const std::vector<int>& ports) 

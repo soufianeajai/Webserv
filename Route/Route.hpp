@@ -9,9 +9,15 @@ private:
     std::set<std::string> allowedMethods; // Set for allowed HTTP methods
     bool autoindex;
     std::string defaultFile;
+
+
+    // bool isDir;
     // std::string uploadDir;
     std::set<std::string> cgiExtensions;
     std::string root;
+    bool IsRedirection;
+    std::string NewPathRedirection;
+    int statusCodeRedirection;
 public:
     void setPath(std::string path);
     std::string getPath();
@@ -25,6 +31,12 @@ public:
     bool getAutoindex();
     void addCgiExtension(std::string cgiExtension);
     std::set<std::string> getCgiExtensions();
+    void setRedirectCode(int redirectCode);
+    int getRedirectCode();
+    void setRedirectnewPath(std::string redirectnewPath);
+    std::string getRedirectnewPath();
+    void setIsRedirection(bool IsRedirect);
+    bool getIsRedirection();
     // Route(const std::string& path) : path(path) {}
     // bool matches(const std::string& uri) const;
     // bool isMethodAllowed(const std::string& method) const;

@@ -43,24 +43,6 @@ void Server::addRoute(Route newRoute) {
 Route& Server::getRoute(const std::string& path) {
     return this->routes[path];
 }
-void Server::setRedirectnewPath(std::string _redirectnewPath) {
-    this->redirectnewPath = _redirectnewPath;
-}
-std::string Server::getRedirectnewPath() {
-    return this->redirectnewPath;
-}
-void Server::setRedirectPathOldPath(std::string _redirectPathOldPath) {
-    this->redirectPathOldPath = _redirectPathOldPath;
-}
-std::string Server::getRedirectPathOldPath() {
-    return this->redirectPathOldPath;
-}
-void Server::setRedirectCode(int _redirectCode) {
-    this->redirectCode = _redirectCode;
-}
-int Server::getRedirectCode() {
-    return this->redirectCode;
-}
 std::map<std::string, Route>& Server::getRoutes() {
     return this->routes;
 }

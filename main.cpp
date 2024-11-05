@@ -1,5 +1,5 @@
 #include "WebServers/Webservers.hpp"
-#include "ServerSetup/ServerSetup.hpp"
+#include "serverSetup/ServerSetup.hpp"
 #include "ParsingConfig/ParsingConfig.hpp"
 
 int main(int ac, char **av)
@@ -7,6 +7,7 @@ int main(int ac, char **av)
     ParsingConfig Config;
     if (ac != 2)
             return 1;
+        
     Config = parsingConfig(av[1]);
 
     // for (std::map<int, Server>::iterator it = Config.webServer.getServers().begin(); it != Config.webServer.getServers().end(); it++)
@@ -32,9 +33,6 @@ int main(int ac, char **av)
     //         std::cout << "Error Page: " << it->first << " " << it->second << std::endl;
     //     }
     //     std::cout << "Client Max Body Size: " << it->second.clientMaxBodySizeGetter() << std::endl;
-    //     std::cout << "Redirect New Path: " << it->second.getRedirectnewPath() << std::endl;
-    //     std::cout << "Redirect Old Path: " << it->second.getRedirectPathOldPath() << std::endl;
-    //     std::cout << "Redirect Code: " << it->second.getRedirectCode() << std::endl;
     //     std::cout << "------------------------------------------------" << std::endl;
     //     std::cout << "                          Routes: " << std::endl;
     //     std::cout << "------------------------------------------------" << std::endl;
@@ -62,6 +60,8 @@ int main(int ac, char **av)
     //         {
     //             std::cout << "Cgi Extension: " << *it << std::endl;
     //         }
+    //         std::cout << "Redirect new path: " << it->second.getRedirectnewPath() << std::endl;
+    //         std::cout << "Redirect status code: " << it->second.getRedirectCode() << std::endl;
     //         std::cout << "*************************************************" << std::endl;
     //     }
     // }
