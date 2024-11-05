@@ -191,6 +191,7 @@ ParsingConfig parsingConfig(char *configFile)
     int identifier = 0;
     while (str == "server" || getline(FILE, str))
     {
+
         if (str == "server") // Check if "server" was found in the recursive call
         {
             Server server;
@@ -208,6 +209,8 @@ ParsingConfig parsingConfig(char *configFile)
                         if (!to.empty())
                             arr.push_back(to);
                     }
+                    if (!arr.size())
+                        break;
                     if (arr[0].find("host") != std::string::npos)
                     {
                         if (arr.size() != 2 )
