@@ -76,17 +76,6 @@ void ServerSetup(ParsingConfig &Config)
 			
 			for (size_t i = 0; i < itt.size(); i++)
 			{
-				if (itt[i].revents & (POLLERR | POLLHUP))
-				{
-					std::cout << "client disconnected\n";
-					close(itt[i].fd);
-					itt.erase(itt.begin() + i);
-					i--;
-					exit(1);
-				}
-			}
-			for (size_t i = 0; i < itt.size(); i++)
-			{
 				if (itt[i].revents & POLLIN)
 				{
 					int clientSocket = accept(itt[i].fd, NULL , NULL);
@@ -106,7 +95,6 @@ void ServerSetup(ParsingConfig &Config)
 					send(clientSocket, httpResponse, strlen(httpResponse), 0);
 				}
 			}
-
 		}
 	}
 	
