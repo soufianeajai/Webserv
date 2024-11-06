@@ -63,7 +63,6 @@ void ServerSetup(ParsingConfig &Config)
 			{
 				// hna kantchekiw wach server tra fih chi event in case tra event khassna acceptiw new connection
 				// 
-				
 				if (pollDescriptorsByServer[index].revents & POLLIN)
 				{
 					int clientSocket = accept(pollDescriptorsByServer[index].fd, NULL , NULL);
@@ -140,7 +139,7 @@ void ServerSetup(ParsingConfig &Config)
 					"HTTP/1.1 200 OK\r\n"
 					"Content-Length: 13\r\n"
 					"\r\n"
-					"Connection OK second!";
+					"Connection OK!";
 					send(pollDescriptorsByServer[index].fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
 					pollDescriptorsByServer[index].revents = POLLIN;
 				}
