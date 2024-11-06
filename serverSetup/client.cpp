@@ -31,7 +31,7 @@ int main() {
     }
 
     const char* request =  "hello\r\n";
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 4; ++i) {
         if (send(sock, request, strlen(request), 0) < 0) {
             std::cerr << "Send failed\n";
             close(sock);
