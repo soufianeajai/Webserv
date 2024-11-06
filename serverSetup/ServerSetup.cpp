@@ -70,16 +70,18 @@ void ServerSetup(ParsingConfig &Config)
 		{
 			if (index < lastServerSocket)
 			{
+				// hna kantchekiw wach server tra fih chi event in case tra event khassna acceptiw new connection
+				// 
 				if (pollDescriptorsByServer[index].revents & POLLIN)
 				{
 					int clientSocket = accept(pollDescriptorsByServer[index].fd, NULL , NULL);
 					if (clientSocket < 0)
 						break;
+					std::cout << "new conection\n";
 					struct pollfd ClientPollFd;
 					ClientPollFd.events = POLLIN;
 					ClientPollFd.fd = clientSocket;
 					pollDescriptorsByServer.push_back(ClientPollFd);
-					std::cout << "new connection\n";
 					const char* httpResponse = 
 					"HTTP/1.1 200 OK\r\n"
 					"Content-Length: 13\r\n"
@@ -90,11 +92,14 @@ void ServerSetup(ParsingConfig &Config)
 			}
 			else
 			{
+				// had l condition katchki ala kola client wach fih chi 7aja mat reada in case makanch walo
+				// ghadi checkiha later 7itach socket non-blocking
 				char buffer[1024];
 				int bytesRead = recv(pollDescriptorsByServer[index].fd, buffer, sizeof(buffer), 0);
 				if (bytesRead > 0)
 				{
 					std::cout << "Request received: " << buffer << std::endl;
+					// hna fin ghadi tsendi response to the same client
 				}
 				else if (bytesRead == 0)
 				{
@@ -102,13 +107,7 @@ void ServerSetup(ParsingConfig &Config)
 					pollDescriptorsByServer.erase(pollDescriptorsByServer.begin() + index);
 					std::cout << "Client disconnected\n";
 				}
-				memset(buffer, 0, sizeof(buffer));
-				const char* httpResponse = 
-				"HTTP/1.1 200 OK\r\n"
-				"Content-Length: 13\r\n"
-				"\r\n"
-				"Connection OK!";
-				send(pollDescriptorsByServer.back().fd, httpResponse, strlen(httpResponse), 0);
+				memset(buffer, 0, sizeof(buffer)); // bach nfreei lbuffer
 			}
 		}
 	}
