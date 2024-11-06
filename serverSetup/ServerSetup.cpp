@@ -89,7 +89,7 @@ void ServerSetup(ParsingConfig &Config)
 					int bytesRead = recv(pollDescriptorsByServer.back().fd, buffer, sizeof(buffer), 0);
 					if (bytesRead > 0)
 					{
-						std::cout << "Request received from first connection: " << buffer << std::endl;
+						std::cout << "Request received from new connection: " << buffer << std::endl;
 					}
 					else if (bytesRead == 0)
 					{
@@ -123,7 +123,7 @@ void ServerSetup(ParsingConfig &Config)
 					int bytesRead = recv(pollDescriptorsByServer[index].fd, buffer, sizeof(buffer), 0);
 					if (bytesRead > 0)
 					{
-						std::cout << "Request received from second connection: " << buffer << std::endl;
+						std::cout << "Request received from existing connection: " << buffer << std::endl;
 					}
 					else if (bytesRead == 0)
 					{
