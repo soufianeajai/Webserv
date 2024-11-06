@@ -1,20 +1,8 @@
 #include "ServerSetup.hpp"
+       #include <signal.h>
 
 #define MAX_CLIENTS 10
 
-size_t checkOldConnections(struct sockaddr_in addr, std::vector<struct sockaddr_in> &arrayAddr)
-{
-	size_t i;
-	for (i = 0; i < arrayAddr.size(); i++)
-	{
-		if (addr.sin_port == arrayAddr[i].sin_port && addr.sin_addr.s_addr == arrayAddr[i].sin_addr.s_addr)
-		{
-			return i;
-		}
-	}
-	arrayAddr.push_back(addr);
-	return arrayAddr.size();
-}
 void ServerSetup(ParsingConfig &Config)
 {
 	int Socket;
@@ -71,10 +59,14 @@ void ServerSetup(ParsingConfig &Config)
 	// 	std::cout << std::endl;
 	// }
 	std::vector<struct sockaddr_in> addrArray;
+	size_t lastServerSocket = pollDescriptorsByServer.size();
 	while (1)
 	{
+		signal(SIGPIPE, SIG_IGN);
+		
 		for (size_t index = 0; index < pollDescriptorsByServer.size(); index++)
 		{
+			// std::cout << "break :" << index << std::endl;
 			struct sockaddr_in addr;
 			socklen_t addrlen = sizeof(addr);
 			// if (pollDescriptorsByServer.size() + 1 == MAX_CLIENTS)
@@ -86,7 +78,7 @@ void ServerSetup(ParsingConfig &Config)
 			if (pollfds < 0)
 			{
 				std::cout << "no file found to read" << std::endl;
-				exit(1);
+				// exit(1);
 			}
 			
 			for (size_t i = 0; i < pollDescriptorsByServer.size(); i++)
@@ -94,44 +86,62 @@ void ServerSetup(ParsingConfig &Config)
 
 				if (pollDescriptorsByServer[i].revents & POLLIN)
 				{
-					int clientSocket = accept(pollDescriptorsByServer[i].fd, (struct sockaddr *)&addr , &addrlen);
-					if (clientSocket < 0)
-						break;
-						
-					std::cout << "Client trying to connect: "
-                              << inet_ntoa(addr.sin_addr) << ":" << ntohl(addr.sin_port) << std::endl;
-
-					size_t IndexOfClientAddress = checkOldConnections(addr, addrArray);
-					if (IndexOfClientAddress == addrArray.size())
-                    {
-                        // This is a new connection
-                        struct pollfd ClientPollFd;
-                        ClientPollFd.events = POLLIN;
-                        ClientPollFd.fd = clientSocket;
-                        pollDescriptorsByServer.push_back(ClientPollFd);
-
-                        // std::cout << "New client connected: " 
-                        //           << inet_ntoa(addr.sin_addr) << ":" << ntohs(addr.sin_port) << std::endl;
-                    }
-                    else
-                    {
-
-                        // std::cout << "Existing client reconnected: "
-                        //           << inet_ntoa(addr.sin_addr) << ":" << ntohs(addr.sin_port) << std::endl;
-						close(clientSocket);
-                    }
-					for (size_t i = 0; i < addrArray.size(); i++)
+					if (i < lastServerSocket) 
 					{
-						std::cout << ntohl(addrArray[i].sin_port) << " " << std::endl;
+						int clientSocket = accept(pollDescriptorsByServer[i].fd, (struct sockaddr *)&addr , &addrlen);
+						if (clientSocket < 0)
+						{
+							// std::cout << "break";
+							break;
+						}
+						std::cout << "Client trying to connect: "
+								<< inet_ntoa(addr.sin_addr) << ":" << ntohl(addr.sin_port) << std::endl;
+						// This is a new connection
+						struct pollfd ClientPollFd;
+						ClientPollFd.events = POLLIN;
+						ClientPollFd.fd = clientSocket;
+						pollDescriptorsByServer.push_back(ClientPollFd);
+																	const char* httpResponse = 
+						"HTTP/1.1 200 OK\r\n"
+						"Content-Length: 14\r\n"
+						"\r\n"
+						"Connection OK!\n";
+						send(pollDescriptorsByServer.back().fd, httpResponse, strlen(httpResponse), 0);
+
 					}
-					
-					const char* httpResponse = 
+					else{
+					const char* httpResponse2 = 
 					"HTTP/1.1 200 OK\r\n"
-					"Content-Length: 14\r\n"
+					"Content-Length: 15\r\n"
 					"\r\n"
-					"Connection OK!\n";
-					send(clientSocket, httpResponse, strlen(httpResponse), 0);
+					"Connection OKK!\n";
+
+				
+					send(pollDescriptorsByServer[i].fd, httpResponse2, strlen(httpResponse2), 0);
+					}
 				}
+				// if (pollDescriptorsByServer[i].revents & POLLOUT)
+				// {
+				// 	if (i < lastServerSocket) 
+				// 	{
+				// 							const char* httpResponse = 
+				// 		"HTTP/1.1 200 OK\r\n"
+				// 		"Content-Length: 14\r\n"
+				// 		"\r\n"
+				// 		"Connection OK!\n";
+				// 		send(pollDescriptorsByServer.back().fd, httpResponse, strlen(httpResponse), 0);
+				// 	}
+				// 	else{
+				// 	const char* httpResponse2 = 
+				// 	"HTTP/1.1 200 OK\r\n"
+				// 	"Content-Length: 15\r\n"
+				// 	"\r\n"
+				// 	"Connection OKK!\n";
+
+				
+				// 	send(pollDescriptorsByServer[i].fd, httpResponse2, strlen(httpResponse2), 0);
+				// 	}
+				// }
 			}
 		}
 	}
