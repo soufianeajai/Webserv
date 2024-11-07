@@ -89,7 +89,7 @@ void ServerSetup(ParsingConfig &Config)
                 fcntl(newClient, F_SETFL, O_NONBLOCK);
 
                 struct epoll_event clientEpollFd;
-                clientEpollFd.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP;
+                clientEpollFd.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLHUP;
                 clientEpollFd.data.fd = newClient;
 
                 if (epoll_ctl(epollInstance, EPOLL_CTL_ADD, newClient, &clientEpollFd) == -1)
@@ -105,14 +105,6 @@ void ServerSetup(ParsingConfig &Config)
                 if (bytesRead > 0)
                 {
                     std::cout << "Request received from new connection: " << buffer << std::endl;
-                    
-                    const char* httpResponse = 
-                        "HTTP/1.1 200 OK\r\n"
-                        "Content-Length: 13\r\n"
-                        "\r\n"
-                        "Connection OK!";
-                    send(newClient, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
-                    
                 }
                 else if (bytesRead == 0)
                 {
@@ -124,6 +116,18 @@ void ServerSetup(ParsingConfig &Config)
                     close(newClient);
                 }
                 memset(buffer, 0, sizeof(buffer));
+
+
+                // send a response
+                if (clientEpollFd.events & EPOLLOUT)
+                {
+                    const char* httpResponse = 
+                        "HTTP/1.1 200 OK\r\n"
+                        "Content-Length: 13\r\n"
+                        "\r\n"
+                        "Connection OK!";
+                    send(newClient, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
+                }
             }
             else
             {
@@ -145,15 +149,7 @@ void ServerSetup(ParsingConfig &Config)
                     int bytesRead = recv(evenBuffer[index].data.fd, buffer, sizeof(buffer), 0);
                     if (bytesRead > 0)
                     {
-                        std::cout << "Request received from existing connection: " << buffer << std::endl;
-                        
-                        const char* httpResponse = 
-                            "HTTP/1.1 200 OK\r\n"
-                            "Content-Length: 13\r\n"
-                            "\r\n"
-                            "Connection OK!";
-                        send(evenBuffer[index].data.fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
-                        
+                        std::cout << "Request received from existing connection: " << buffer << std::endl;  
                     }
                     else if (bytesRead == 0)
                     {
@@ -165,6 +161,16 @@ void ServerSetup(ParsingConfig &Config)
                         std::cout << "Client disconnected\n";
                     }
                     memset(buffer, 0, sizeof(buffer));
+                    // send a response
+                    if (evenBuffer[index].events & EPOLLOUT)
+                    {
+                        const char* httpResponse = 
+                            "HTTP/1.1 200 OK\r\n"
+                            "Content-Length: 13\r\n"
+                            "\r\n"
+                            "Connection OK!";
+                        send(evenBuffer[index].data.fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
+                    }
                 }
             }
         }
