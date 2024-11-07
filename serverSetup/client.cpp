@@ -31,7 +31,7 @@ int main() {
     }
 
     const char* request =  "hello\r\n";
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 5; ++i) {
         if (send(sock, request, strlen(request), 0) < 0) {
             std::cerr << "Send failed\n";
             close(sock);
@@ -44,6 +44,7 @@ int main() {
 			std::cout << "Request received: " << buffer << std::endl;
 			// hna fin ghadi tsendi response to the same client
 		}
+        memset(buffer, 0, sizeof(buffer));
         std::cout << "Request sent " << i + 1 << " times\n";
         std::cout << std::endl;
         std::cout << std::endl;
