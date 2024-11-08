@@ -202,8 +202,47 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
     server.addRoute(route);
     return false;  // Continue if "server" was not found
 }
-
-ParsingConfig parsingConfig(char *configFile)
+void ft_error(std::string err, std::ifstream& fd)
+{
+    fd.close();
+    std::cerr << err << std::endl;
+    exit (EXIT_FAILURE);
+}
+bool ParsingConfig::hostCheck(std::string host)
+{
+    std::stringstream ss(host);
+    std::string to;
+    std::vector<std::string> arr;
+    while (getline(ss, to, '.'))
+    {
+        if (!to.empty())
+            arr.push_back(to);
+    }
+    if (arr.size() != 4)
+        return false;
+    for (size_t i = 0; i < arr.size(); i++)
+    {
+        if (arr[i].length() > 3 || numberConversion(arr[i]) > 255)
+            return false;
+        for (size_t j = 0; j < arr[i].length(); j++)
+            if (arr[i][j] < '0' || arr[i][j] > '9')
+                return false;
+    }
+    return true;
+}
+bool ParsingConfig::checkClientBodySize(std::string &str)
+{
+    for (size_t i = 0; i < str.length() - 1; i++)
+    {
+        if (str[i] < '0' || str[i] > '9')
+            return false;
+    }
+    if (str[str.length() - 1] != 'm' &&  str[str.length() - 1] != 'M'
+       && str[str.length() - 1] != 'G' &&  str[str.length() - 1] != 'g')
+        return false;
+    return true;
+}
+ParsingConfig parsingConfig(const char *configFile)
 {
     ParsingConfig parsingConfig;
 
@@ -234,82 +273,60 @@ ParsingConfig parsingConfig(char *configFile)
                         break;
                     if (arr[0].find("host") != std::string::npos)
                     {
-                        if (arr.size() != 2 )
-                        {
-                            std::cout << "Error: Invalid host" << std::endl;
-                            exit(1);
-                        }
+                        if (arr.size() != 2 || !parsingConfig.hostCheck(arr[1]))
+                            ft_error("invalid host", FILE);
                         server.hostSetter(arr[1]);
-                        // std::cout << "|" <<server.hostGetter() << "|" << std::endl;
                     }
                     else if (arr[0].find("port") != std::string::npos)
                     {
                         if (arr.size() < 2 || arr[1] == " ")
-                        {
-                            std::cout << "Error: Invalid port" << std::endl;
-                            exit(1);
-                        }
+                            ft_error("Error: invalid port", FILE);
+                        int port;
                         for (size_t i = 1; i < arr.size(); i++)
                         {
-                            server.portSetter(numberConversion(arr[i]));
+                            port = numberConversion(arr[i]);
+                            if (port < 0)
+                                ft_error("negative port", FILE);
+                            server.portSetter(port);
                         }
-                        std::vector<int> ports = server.portGetter();
-                        for (size_t i = 0; i < ports.size(); i++)
-                        {
-                            // std::cout << "|" << ports[i] << "|";
-                        }
-                        // std::cout << std::endl;
                     }
                     else if (arr[0].find("server_names") != std::string::npos)
                     {
                         if (arr.size() < 2)
-                        {
-                            std::cout << "Error: Invalid server_names" << std::endl;
-                            exit(1);
-                        }
+                            ft_error("Error: invalid server names", FILE);
                         for (size_t i = 1; i < arr.size(); i++)
                         {
                             server.serverNamesSetter(arr[i]);
                         }
                         std::vector<std::string> serverNames = server.serverNamesGetter();
-                        for (size_t i = 0; i < serverNames.size(); i++)
-                        {
-                            // std::cout << "|" << serverNames[i] << "|";
-                        }
-                        // std::cout << std::endl;
                     }
                     else if (arr[0].find("server_root") != std::string::npos)
                     {
                         if (arr.size() != 2)
-                        {
-                            std::cout << "Error: Invalid server_root" << std::endl;
-                            exit(1);
-                        }
+                            ft_error("Error: Invalid server_root", FILE);
                         server.serverRootSetter(arr[1]);
-                        // std::cout << "|" << server.serverRootGetter() << "|" << std::endl;
                     }
                     else if (arr[0].find("error_page") != std::string::npos)
                     {
                         if (arr.size() != 3)
-                        {
-                            std::cout << "Error: Invalid error_page" << std::endl;
-                            exit(1);
-                        }
+                            ft_error("Error: Invalid error_page", FILE);
                         int i = 0;
                         while (arr[1][i])
                         {
                             if (!isdigit(arr[1][i]))
-                            {
-                                std::cout << "Error: Invalid error_page" << std::endl;
-                                exit(1);
-                            }
+                                ft_error("Error: Invalid error_page", FILE);
                             i++;
                         }
+                        int ErrorCode = numberConversion(arr[1]);
+                        if (ErrorCode != 400 && ErrorCode != 403 && ErrorCode != 404
+                            && ErrorCode != 405 && ErrorCode != 500 && ErrorCode != 505)
+                            ft_error("Error: invalid error page code", FILE);
                         server.errorPagesSetter(numberConversion(arr[1]), arr[2]);
                     }
                     else if (arr[0].find("client_body_size") != std::string::npos)
                     {
-                        if (arr.size() != 2 || !isdigit(arr[1][0]))
+                        
+                        if (arr.size() != 2 || !parsingConfig.checkClientBodySize(arr[1]))
                         {
                             std::cout << "Error: Invalid client_body_size" << std::endl;
                             exit(1);
