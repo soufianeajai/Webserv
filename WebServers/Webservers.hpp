@@ -10,6 +10,11 @@ public:
     void addServer(Server& newServer);
     Server& getServer(int identifier);
     std::vector<Server>& getServers();
+    
+    Server& getServerSocketCLient(int client,std::vector<Server> servers)
+{
+
+}
     // WebServer(const std::string& configFile);
     // bool initialize(); // Initializes the servers from config file
     // void run(); // run the Main servers loop

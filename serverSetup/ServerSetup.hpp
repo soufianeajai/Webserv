@@ -1,6 +1,7 @@
 #pragma once
 #include "../WebServers/Webservers.hpp"
 #include "../ParsingConfig/ParsingConfig.hpp"
+#include "../Connection/Connection.hpp"
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
@@ -11,6 +12,10 @@
 #include <stdlib.h>
 #include <poll.h>
 #include <arpa/inet.h>
+#include <signal.h>
+#include <ctime>
+#include <errno.h>
+#include <sys/epoll.h>
 
 
 

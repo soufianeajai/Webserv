@@ -1,15 +1,17 @@
 #pragma once
 #include "../Route/Route.hpp"
-// #include "../Connection/Connection.hpp"
+#include "../Connection/Connection.hpp"
 
 class Server {
 private:
     std::string host;
+
     std::vector<int> ports;
-    std::map<int, int> ServersSocket;
+    std::vector<int> sockets;
+    std::map<int, Connection> connections;
     std::vector<std::string> serverNames; 
     std::string serverRoot;
-    // std::map<int, Connection*> connections;
+    
     std::map<std::string, Route> routes;
     std::map<int, std::string> errorPages;
     size_t clientMaxBodySize;
@@ -17,7 +19,7 @@ private:
 
 public:
     void serverSocketSetter(int Port, int Socket);
-    std::map<int ,int> &serverSocketGetter();
+    //std::map<int ,int> &serverSocketGetter();
     void hostSetter(std::string host);
     std::string hostGetter();
     void portSetter(int port);
@@ -34,7 +36,16 @@ public:
     Route& getRoute(const std::string& path);
     std::map<std::string, Route>& getRoutes();
     
-    // Server();
+    void addSocket(int socket);
+
+    int SearchSockets(int id);
+    void addConnection(int socket, const Connection& connection);
+    
+    Connection& GetConnection(int client);
+
+
+    bool hasClient(int client) const;
+        // Server();
     // Server(const std::string& host, const std::vector<int>& ports) 
     //     : host(host), ports(ports) {}
 

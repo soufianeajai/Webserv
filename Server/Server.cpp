@@ -1,5 +1,28 @@
 #include "Server.hpp"
+int Server::SearchSockets(int id)
+{
+    for (size_t i = 0; i < sockets.size(); ++i)
+    {
+        if (sockets[i] == id) 
+            return i;
+    }
+    return -1;
+}
 
+bool Server::hasClient(int client) const
+{
+        return connections.find(client) != connections.end();
+}
+
+Connection& Server::GetConnection(int client)
+{
+        connections[client];
+}
+
+void Server::addConnection(int socket, const Connection& connection)
+{
+        connections[socket] = connection;
+}
 
 void Server::hostSetter(std::string _host) {
     this->host = _host;
@@ -47,9 +70,13 @@ std::map<std::string, Route>& Server::getRoutes() {
     return this->routes;
 }
 
-void Server::serverSocketSetter(int Port, int Socket) {
-    this->ServersSocket[Port] = Socket;
+void Server::addSocket(int socket)
+{
+    sockets.push_back(socket);
 }
-std::map<int ,int> &Server::serverSocketGetter() {
-    return this->ServersSocket;
-}
+// void Server::serverSocketSetter(int Port, int Socket) {
+//     this->ServersSocket[Port] = Socket;
+// }
+// std::map<int ,int> &Server::serverSocketGetter() {
+//     return this->ServersSocket;
+// }
