@@ -1,6 +1,6 @@
 #pragma once
 #include "../Route/Route.hpp"
-// #include "Connection.hpp"
+// #include "../Connection/Connection.hpp"
 
 class Server {
 private:
@@ -29,8 +29,8 @@ public:
     size_t clientMaxBodySizeGetter();
     void addRoute(Route newRoute);
     Route& getRoute(const std::string& path);
-
     std::map<std::string, Route>& getRoutes();
+    
     // Server();
     // Server(const std::string& host, const std::vector<int>& ports) 
     //     : host(host), ports(ports) {}

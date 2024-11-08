@@ -209,7 +209,7 @@ ParsingConfig parsingConfig(char *configFile)
 
     std::ifstream FILE(configFile);
     std::string str;
-    int identifier = 0;
+
     while (str == "server" || getline(FILE, str))
     {
 
@@ -338,7 +338,7 @@ ParsingConfig parsingConfig(char *configFile)
                 // std::cout << "|" << it->first << "|" << it->second << "|" << std::endl;
             // }
             // std::cout << "-----------" << std::endl;
-            parsingConfig.webServer.addServer(server, identifier++);
+            parsingConfig.webServer.addServer(server);
         }    
     }
     FILE.close();

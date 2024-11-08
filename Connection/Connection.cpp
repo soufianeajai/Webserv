@@ -1,6 +1,8 @@
 #include "Connection.hpp"
 #include <sys/socket.h>
 
+
+
 void    Connection::readIncomingData(Connection& c)
 {
     uint8_t    buffer[Connection::CHUNK_SIZE];

@@ -7,8 +7,8 @@ int main(int ac, char **av)
     ParsingConfig Config;
     if (ac != 2)
             return 1;
-        
     Config = parsingConfig(av[1]);
+
 
     // for (std::map<int, Server>::iterator it = Config.webServer.getServers().begin(); it != Config.webServer.getServers().end(); it++)
     // {
