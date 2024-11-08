@@ -199,7 +199,6 @@ ParsingConfig parsingConfig(const char *configFile)
             Server server;
             while (getline(FILE, str) && str != "server")
             {
-                serverFlag = 0;
                 if (!str.empty())
                 {
                     std::stringstream ss(str);
