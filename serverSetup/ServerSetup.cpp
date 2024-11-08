@@ -5,82 +5,72 @@
 #include <sys/epoll.h>
 
 #define MAX_CLIENTS 
-
-void ft_error(std::string err, int fd)
+bool ServerSocketSearch(int epollFds, std::vector<int> ServerSockets)
 {
-    if  (fd != -1)
-        close(fd);
-    std::cerr << err << std::endl;
-    exit (EXIT_FAILURE);
+	for (size_t i = 0; i < ServerSockets.size(); i++)
+		if (epollFds == ServerSockets[i])
+			return true;
+	return false;	
 }
-
-bool ServerSocketSearch(int epollFd, const std::vector<Server>& Servers)
-{
-    for (size_t i = 0; i < Servers.size(); ++i)
-    {
-        if (Servers[i].getSocketsrv() == epollFd) 
-            return true;
-    }
-    return false;
-}
-
-void bindAndListen(int socket, int port, const char* host)
-{
-    sockaddr_in serverAddress;
-	serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(port);
-    serverAddress.sin_addr.s_addr = inet_addr(host);
-    if (bind(socket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0)
-			ft_error("fail to bind local port", socket);
-    if (listen(socket, 10) < 0)
-			ft_error("fail to listen for connection",-1);
-    fcntl(socket, F_SETFL, O_NONBLOCK);
-}
-
-void initializeSocketEpoll(int epollInstance, int SocketId)
-{
-    struct epoll_event epollfd;
-	epollfd.data.fd = SocketId;
-    epollfd.events = EPOLLIN;
-	if (epoll_ctl(epollInstance, EPOLL_CTL_ADD, SocketId, &epollfd) == -1)
-    {
-        close(epollInstance);
-        ft_error("epoll_ctl failed", SocketId);
-    }
-}
-
 void ServerSetup(ParsingConfig &Config)
 {
-    std::vector<Server> Servers = Config.webServer.getServers();
-	int SocketId;
 	int epollInstance = epoll_create1(EPOLL_CLOEXEC);
-    struct epoll_event evenBuffer[1024];
-
 	if (epollInstance < 0)
-        ft_error("epoll create1 failed",-1);
-
-
-	for (std::vector< Server>::iterator it = Servers.begin(); it != Servers.end(); it++)
 	{
-		std::vector<int> ports = it->portGetter();
+		std::cout << "epoll create1 failed\n";
+		exit(1);
+	}
+	std::map<int, Server> Servers = Config.webServer.getServers();
+	int Socket; 
+
+	// std::vector<struct pollfd> pollDescriptorsByServer;
+	std::vector<int> ServersSocket;
+	for (std::map<int , Server>::iterator it = Servers.begin(); it != Servers.end(); it++)
+	{
+		std::vector<int> ports = it->second.portGetter();
 		for (size_t i = 0;i < ports.size();i++)
 		{
-			SocketId = socket(AF_INET, SOCK_STREAM, 0);
-			if (SocketId < 0)
-			{
-                std::cerr << "The socket not opened for port: " << ports[i] << std::endl;
-                continue;
-            }
-            it->setSocketsrv(SocketId);
+			Socket = socket(AF_INET, SOCK_STREAM, 0);
+			if (Socket < 0)
+				std::cout << "The socket not opened\n";
 			int opt = 1;
-			if (setsockopt(SocketId, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
-                ft_error("Failed to set SO_REUSEADDR",SocketId);
-			bindAndListen(SocketId,ports[i], it->hostGetter().c_str());
-			initializeSocketEpoll(epollInstance, SocketId);
+			if (setsockopt(Socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
+				std::cerr << "Failed to set SO_REUSEADDR\n";
+				close(Socket);
+				exit(EXIT_FAILURE);
+			}
+			sockaddr_in serverAddress;
+			serverAddress.sin_family = AF_INET;
+    		serverAddress.sin_port = htons(ports[i]);
+    		serverAddress.sin_addr.s_addr = inet_addr(it->second.hostGetter().c_str());
+
+			if (bind(Socket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0)
+			{
+				std::cout << "fail to bind local port " << it->second.hostGetter() << " " << ports[i] << std::endl;
+				exit(EXIT_FAILURE);
+			}
+			if (listen(Socket, 10) < 0)
+			{
+				std::cout << "fail to listen for connection\n";
+				exit(EXIT_FAILURE);
+			}
+			fcntl(Socket, F_SETFL, O_NONBLOCK);
+
+
+			struct epoll_event epollfd;
+			epollfd.data.fd = Socket;
+			epollfd.events = EPOLLIN;
+			if (epoll_ctl(epollInstance, EPOLL_CTL_ADD, Socket, &epollfd) == -1)
+			{
+				perror("epoll_ctl failed");
+        		close(epollInstance);
+        		exit(EXIT_FAILURE);
+			}
+			ServersSocket.push_back(Socket);
 		}
 	}
 
-	
+	struct epoll_event evenBuffer[1024];
 	while (1)
     {
         int epollEventsNumber = epoll_wait(epollInstance, evenBuffer, 1024, 1);
@@ -91,12 +81,9 @@ void ServerSetup(ParsingConfig &Config)
         }
         for (int index = 0; index < epollEventsNumber; index++)
         {
-            if (ServerSocketSearch(evenBuffer[index].data.fd, Servers))
+            if (ServerSocketSearch(evenBuffer[index].data.fd, ServersSocket))
             {
-                Server sev = Servers[evenBuffer[index].data.fd];
-                Connection *cnx;
                 int newClient = accept(evenBuffer[index].data.fd, NULL, NULL);
-
                 if (newClient < 0)
                     break;
                 fcntl(newClient, F_SETFL, O_NONBLOCK);

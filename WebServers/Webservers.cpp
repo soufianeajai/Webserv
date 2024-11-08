@@ -1,9 +1,11 @@
 #include "Webservers.hpp"
 
-void WebServer::addServer(Server& newServer) {
-    servers.push_back(newServer);
+void WebServer::addServer(Server& newServer, int identifier) {
+    this->servers[identifier] = newServer;
 }
-
-std::vector<Server>& WebServer::getServers() {
+Server& WebServer::getServer(int identifier) {
+    return this->servers[identifier];
+}
+std::map<int, Server>& WebServer::getServers() {
     return this->servers;
 }

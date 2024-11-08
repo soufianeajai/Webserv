@@ -1,38 +1,34 @@
 #pragma once
 #include "../Route/Route.hpp"
-#include "../Connection/Connection.hpp"
+// #include "Connection.hpp"
 
 class Server {
-private:   
-    int Socketsrv;
+private:
     std::string host;
     std::vector<int> ports;
     std::vector<std::string> serverNames; 
     std::string serverRoot;
-    std::map<int, Connection*> connections;
+    // std::map<int, Connection*> connections;
     std::map<std::string, Route> routes;
     std::map<int, std::string> errorPages;
     size_t clientMaxBodySize;
 
 
 public:
-
-    int getSocketsrv() const ;
-    void setSocketsrv(int socket) ;
     void hostSetter(std::string host);
-    std::string hostGetter() const;
+    std::string hostGetter();
     void portSetter(int port);
-    std::vector<int> &portGetter() ;
+    std::vector<int> &portGetter();
     void serverNamesSetter(std::string serverName);
-    std::vector<std::string> serverNamesGetter() const;
+    std::vector<std::string> serverNamesGetter();
     void serverRootSetter(std::string serverRoot);
-    std::string serverRootGetter() const;
+    std::string serverRootGetter();
     void errorPagesSetter(int errorCode, std::string errorPage);
-    std::map<int, std::string> errorPagesGetter() const;
+    std::map<int, std::string> errorPagesGetter();
     void clientMaxBodySizeSetter(size_t clientMaxBodySize);
-    size_t clientMaxBodySizeGetter() const;
+    size_t clientMaxBodySizeGetter();
     void addRoute(Route newRoute);
-    Route& getRoute(const std::string& path) ;
+    Route& getRoute(const std::string& path);
 
     std::map<std::string, Route>& getRoutes();
     // Server();

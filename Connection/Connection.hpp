@@ -6,9 +6,6 @@
 class Connection {
 private:
     int clientSocketId;
-    int pipe_fd[2];     // Pipe file descriptors (pipe_fd[0] is for reading)
-    pid_t cgi_pid;      // PID of the CGI child process
-    bool is_cgi_running; // Flag to check if CGI is running
     HttpRequest request;
     HttpResponse response;
     size_t bodySize;
