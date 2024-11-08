@@ -46,3 +46,10 @@ Route& Server::getRoute(const std::string& path) {
 std::map<std::string, Route>& Server::getRoutes() {
     return this->routes;
 }
+
+void Server::serverSocketSetter(int Port, int Socket) {
+    this->ServersSocket[Port] = Socket;
+}
+std::map<int ,int> &Server::serverSocketGetter() {
+    return this->ServersSocket;
+}

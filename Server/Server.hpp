@@ -6,6 +6,7 @@ class Server {
 private:
     std::string host;
     std::vector<int> ports;
+    std::map<int, int> ServersSocket;
     std::vector<std::string> serverNames; 
     std::string serverRoot;
     // std::map<int, Connection*> connections;
@@ -15,6 +16,8 @@ private:
 
 
 public:
+    void serverSocketSetter(int Port, int Socket);
+    std::map<int ,int> &serverSocketGetter();
     void hostSetter(std::string host);
     std::string hostGetter();
     void portSetter(int port);

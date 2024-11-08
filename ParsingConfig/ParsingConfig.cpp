@@ -15,9 +15,9 @@ int numberConversion(std::string &string)
 }
 bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string> locationPath)
 {
-
     std::string str;
     Route route;
+
     if (locationPath.size() < 2)
         locationPath.push_back("/");
     else if (locationPath.size() > 2)
