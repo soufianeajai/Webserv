@@ -1,6 +1,8 @@
 #pragma once
 #include "../HttpMessage/HttpMessage.hpp"
 #include "../Route/Route.hpp"
+#include <sys/stat.h>  
+#include <dirent.h>
 
 enum State {
 // FIRST LINE STATES
@@ -10,7 +12,7 @@ enum State {
     URI_START,                  // Start parsing URI 
     URI_PATH_PARSING,           // Parsing raw URI path characters (no query handling)
     DECODE_URI,                 // decode chars in the URI like %20 is a ' '
-    URI_HANDLE_QUERY, // skip all chars after ? or #
+    URI_HANDLE_QUERY,           // skip all chars after ? or #
     SECOND_SP,                  // End of URI, expect space
     VERSION_HTTP,               // Expect  HTTP/1.1
     REQUEST_LINE_CR,            // Expect CR
@@ -78,13 +80,24 @@ enum State {
     ERROR_BOUNDARY,             // Invalid boundary in multipart
     ERROR_INCOMPLETE,           // Unexpected end of input
     ERROR_BUFFER_OVERFLOW,      // Input exceeds buffer capacity
-    ERROR_BINARY_DATA           // Error processing binary data
+    ERROR_BINARY_DATA,           // Error processing binary data
+// PROCESS REQUEST
+    PROCESS_URI,
+    PROCESS_GET,
+    PROCESS_DELETE,
+    PROCESS_POST,
+    PROCESS_BODY,
+    PROCESS_CHUNKED_BODY,
+    PROCESS_MULTIPART_FORM_DATA,
+    PROCESS_DONE
 };
+
+
 typedef struct s_boundaryPart{
     std::string name;
     std::string value;
     std::string fileName;
-    bool    isFile;
+    bool        isFile;
     std::vector<uint8_t> fileBody;
     std::map<std::string, std::string> boundaryHeader;
 } boundaryPart;
@@ -117,7 +130,7 @@ private:
 public:
     HttpRequest();
     void    parse(uint8_t *buffer, int readSize);
-    void    process(const std::map<std::string, Route>& routes, size_t clientMaxBodySize);
+     std::map<std::string, std::string>    process(std::map<std::string, Route>& routes, size_t clientMaxBodySize);
     void    setMethod(const std::string methodStr);
     void    setUri(const std::string uri);
     void    reset();
@@ -162,6 +175,13 @@ private:
     void    handleBodyPartHeaderLF2(uint8_t byte);
     void    handleBodyPartData(uint8_t byte);
     void    handleBodyPartEnd(uint8_t byte);
+// PROCESS HANDLERS
+    void    handleProcessUri_Method(std::map<std::string, Route>& routes, Route& myRoute);
+    void    handleProcessDelete(Route& myRoute);
+    void    handleProcessChunkedBody(std::string root);
+    void    handleProcessPost();
+    void    handleProcessFileUpload();
+    void    handleProcessMultipart(std::string root);
 // PARSER UTILS 
     bool    isValidPathChar(uint8_t byte);
     bool    uriBehindRoot();

@@ -58,20 +58,6 @@ boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::hand
     errorState.insert(std::make_pair(ERROR_BINARY_DATA, 415));
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void HttpRequest::parse(uint8_t *buffer, int readSize) {
     for(int i = 0; i < readSize && !errorOccured(); i++)
     {
