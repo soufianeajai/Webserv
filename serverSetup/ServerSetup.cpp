@@ -78,10 +78,10 @@ void ServerSetup(ParsingConfig &Config)
                 ft_error("Failed to set SO_REUSEADDR",SocketId);
 			bindAndListen(SocketId,ports[i], it->hostGetter().c_str());
 			initializeSocketEpoll(epollInstance, SocketId);
+            it->serverSocketSetter(ports[i], SocketId);
 		}
-	}
+    }
 
-	
 	while (1)
     {
         int epollEventsNumber = epoll_wait(epollInstance, evenBuffer, 1024, 1);
