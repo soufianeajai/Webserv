@@ -1,7 +1,5 @@
 #include "ParsingConfig.hpp"
 
-int serverFlag = 0;
-
 int numberConversion(std::string &string)
 {
     int number;
@@ -199,7 +197,7 @@ ParsingConfig parsingConfig(const char *configFile)
         if (str == "server") // Check if "server" was found in the recursive call
         {
             Server server;
-            while ((getline(FILE, str) && str != "server"))
+            while (getline(FILE, str) && str != "server")
             {
                 serverFlag = 0;
                 if (!str.empty())
@@ -274,7 +272,7 @@ ParsingConfig parsingConfig(const char *configFile)
                     }
                     else if (arr[0] == "location:")
                     {
-                        if (locationBlock(server, FILE, arr) && serverFlag == 1) // check dyal serverFlag ila kant chi location block flowel dyal server
+                        if (!locationBlock(server, FILE, arr))
                             break;
                     }
                     else
