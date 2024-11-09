@@ -5,6 +5,7 @@ from afanidi :
 
 -> httpmessage : reset message -> also request response
 
+-> commun function :  search in roots for get root and get  
 **********************************************
 clean connection 
 when connecion ended (EPOLL_CTL_DEL) remove from server also

@@ -8,20 +8,24 @@ int Server::SearchSockets(int id)
     }
     return -1;
 }
+void Server::serverSocketSetter(int Port, int Socket){
+    ports.push_back(Port);
+    sockets.push_back(Socket);
+}
 
 bool Server::hasClient(int client) const
 {
-        return connections.find(client) != connections.end();
+    return connections.find(client) != connections.end();
 }
 
 Connection& Server::GetConnection(int client)
 {
-        connections[client];
+    return connections[client];
 }
 
 void Server::addConnection(int socket, const Connection& connection)
 {
-        connections[socket] = connection;
+    connections[socket] = connection;
 }
 
 void Server::hostSetter(std::string _host) {
@@ -51,7 +55,7 @@ std::string Server::serverRootGetter() {
 void Server::errorPagesSetter(int _errorCode, std::string _errorPage) {
     this->errorPages[_errorCode] = _errorPage;
 }
-std::map<int, std::string> Server::errorPagesGetter() {
+std::map<int, std::string>& Server::errorPagesGetter() {
     return this->errorPages;
 }
 void Server::clientMaxBodySizeSetter(size_t _clientMaxBodySize) {

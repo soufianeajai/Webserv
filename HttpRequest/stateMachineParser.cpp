@@ -54,7 +54,7 @@ void HttpRequest::handleURIPathParsing(uint8_t byte) {
     else if (uri.length() >= HttpRequest::MAX_URI_LENGTH)
         currentState = REQUEST_URI_TOO_LONG;
 // check for consecutive // in the uri if so ... do nothing 
-    else if (byte == '/' && !uri.empty() && uri.back() == '/')
+    else if (byte == '/' && !uri.empty() && uri[uri.length() - 1] == '/')
         currentState = URI_PATH_PARSING;
     else if (byte == '%')
     {
@@ -79,7 +79,7 @@ void HttpRequest::handleDecodeURI(uint8_t byte) {
         holder += byte;
         if (holder.length() == 2)
         {
-            int value = std::stoi(holder, NULL, 16); 
+            int value = std::strtol(holder.c_str(), NULL, 16);
             uri += static_cast<char>(value);
             holder.clear();
             currentState = URI_PATH_PARSING;
@@ -217,7 +217,7 @@ void HttpRequest::handleChunkSizeCR(uint8_t byte) {
 void HttpRequest::handleChunkSizeLF(uint8_t byte) {
     if (byte == '\n')
     {
-        chunkSize = std::stoi(holder, NULL, 16);
+        chunkSize = std::strtol(holder.c_str(), NULL, 16);
         if (chunkSize == 0)
             currentState = CHUNK_TRAILER_CR;
         else
@@ -293,9 +293,10 @@ void HttpRequest::handleBodyBoundaryParsing(uint8_t byte) {
         }
         else if (holder == expectedBoundary + "--")
             currentState = MESSAGE_COMPLETE;
-        else
+        else {
             currentState = ERROR_BOUNDARY;
             holder.clear();
+        }
     }
     else {
         holder += byte;

@@ -10,6 +10,4 @@ public:
     bool checkClientBodySize(std::string &str);
 };
 
-
-
 ParsingConfig parsingConfig(const char *configFile);

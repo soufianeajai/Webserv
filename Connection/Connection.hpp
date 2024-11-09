@@ -15,13 +15,12 @@ private:
 public:
     static const size_t MAX_BODY_SIZE = 10 * 1024 * 1024;
     static const size_t CHUNK_SIZE = 8 * 1024;
-    Connection(int fd);
+    Connection();
+    Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize);
     void readIncomingData(); // read data from socket clientSocketId in the buffer requestBuffer until the reaching the limit size of the buffer or the reading is ended.
-    void parseRequest();
-    void generateResponse();
-    void writedata();
+    // void parseRequest();
+    // void writedata();
     void closeConnection();
     int getClientSocketId() const;
-    void setclientSocketId(int id);
-    void setClientAddr(const sockaddr_in &acceptedAddr);
+    void generateResponse(std::map<int, std::string> &errorPages, std::map<std::string, Route>& routes) const;
 };

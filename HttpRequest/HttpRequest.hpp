@@ -2,6 +2,7 @@
 #include "../HttpMessage/HttpMessage.hpp"
 #include "../Route/Route.hpp"
 
+
 enum State {
 // FIRST LINE STATES
     METHOD_START,               // Start parsing method
@@ -104,22 +105,22 @@ class HttpRequest :  public HttpMessage{
 private:
     static const int  MAX_URI_LENGTH = 2048;
     typedef void (HttpRequest::*StateHandler)(uint8_t);
-    StateHandler    currentHandler;
     State           currentState;
     std::string     method;
     std::string     uri;
+    int             statusCode;
     std::string     holder;
     std::string     currentHeaderName;
     std::string     currentHeaderValue;
-    std::string     boundary;
-    std::string     fieldName;
-    std::string     query;
-    int             statusCode;
-    int             contentLength;
-    int             chunkSize;
-    int             chunkbytesread;
     bool            isChunked;
     bool            isMultipart;
+    int             contentLength;
+    std::string     boundary;
+    int             chunkSize;
+    int             chunkbytesread;
+    StateHandler    currentHandler;
+    std::string     fieldName;
+    std::string     query;
     std::map<State, StateHandler> stateHandlers;
     std::map<State, int> errorState;
     std::map<std::string, std::string> formFields;
@@ -128,7 +129,7 @@ private:
 public:
     HttpRequest();
     void    parse(uint8_t *buffer, int readSize);
-     std::map<std::string, std::string>    process(std::map<std::string, Route>& routes, size_t clientMaxBodySize);
+     std::map<std::string, std::string>    process(std::map<std::string, Route>& routes);
     void    setMethod(const std::string methodStr);
     void    setUri(const std::string uri);
     void    reset();

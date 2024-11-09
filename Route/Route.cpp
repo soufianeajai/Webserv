@@ -2,10 +2,10 @@
 
 
 void Route::setPath(std::string _path) {
-    this->path = _path;
+    this->pathLocation = _path;
 }
 std::string Route::getPath() {
-    return this->path;
+    return this->pathLocation;
 }
 void Route::addAllowedMethod(std::string method) {
     this->allowedMethods.insert(method);

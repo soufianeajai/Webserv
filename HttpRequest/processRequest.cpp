@@ -54,10 +54,10 @@ bool ft_rmdir(const char *path)
         return false;
     if (S_ISDIR(buffer.st_mode)) {
         DIR *dir = opendir(path);
-        if (dir == nullptr)
+        if (dir == NULL)
             return false;
         struct dirent *entry;
-        while (entry = readdir(dir)) {
+        while ((entry = readdir(dir))) {
             if (std::strcmp(entry->d_name, ".") == 0 || std::strcmp(entry->d_name, "..") == 0)
                 continue;
             std::string full_path = std::string(path) + "/" + entry->d_name;
@@ -142,7 +142,7 @@ void HttpRequest::handleProcessChunkedBody(std::string root) {
 }
 
 
- std::map<std::string, std::string>    HttpRequest::process(std::map<std::string, Route>& routes, size_t clientMaxBodySize){
+ std::map<std::string, std::string>    HttpRequest::process(std::map<std::string, Route>& routes){
     Route myRoute;
     currentState = PROCESS_URI;
     while (!errorOccured() && currentState != PROCESS_DONE) {
@@ -159,7 +159,7 @@ void HttpRequest::handleProcessChunkedBody(std::string root) {
         }
     }
     
-        
+    return formFields;
 }
 
 

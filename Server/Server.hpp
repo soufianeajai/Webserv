@@ -2,6 +2,7 @@
 #include "../Route/Route.hpp"
 #include "../Connection/Connection.hpp"
 
+class Connection;
 class Server {
 private:
     std::string host;
@@ -28,7 +29,7 @@ public:
     void serverRootSetter(std::string serverRoot);
     std::string serverRootGetter();
     void errorPagesSetter(int errorCode, std::string errorPage);
-    std::map<int, std::string> errorPagesGetter();
+    std::map<int, std::string>& errorPagesGetter();
     void clientMaxBodySizeSetter(size_t clientMaxBodySize);
     size_t clientMaxBodySizeGetter();
     void addRoute(Route newRoute);
