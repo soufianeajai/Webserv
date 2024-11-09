@@ -5,7 +5,8 @@
 
 class Route {
 private:
-    std::string path;
+    std::string pathLocation; // if pathlocation  == /uploads 
+    std::string root;
     std::set<std::string> allowedMethods; // Set for allowed HTTP methods
     bool autoindex;
     std::string defaultFile;
