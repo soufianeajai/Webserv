@@ -3,7 +3,7 @@
 size_t checkIfCGI(const std::string& url)
 {
     size_t scriptEndPos = std::string::npos;
-    for (const std::string& ext : validExtensions)
+    for (int i = 0; )
     {
         // Find the last position of the extension
          size_t pos = url.rfind(ext);

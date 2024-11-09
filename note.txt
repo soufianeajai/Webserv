@@ -3,7 +3,7 @@ from afanidi :
 
 
 
-
+-> httpmessage : reset message -> also request response
 
 **********************************************
 clean connection 

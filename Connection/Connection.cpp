@@ -40,3 +40,8 @@ void    Connection::readIncomingData()
         // parsing completed and we can process the request and work on the response.
     }
 }
+
+void Connection::generateResponse()
+{
+    
+}

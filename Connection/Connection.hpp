@@ -1,8 +1,7 @@
 #pragma once
-#include "HttpRequest.hpp"
-#include "HttpResponse.hpp"
-#include <arpa/inet.h>
-#include <fcntl.h>
+#include "../HttpRequest/HttpRequest.hpp"
+#include "../HttpResponse/HttpResponse.hpp"
+
 
 class Connection {
 private:

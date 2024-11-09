@@ -103,42 +103,51 @@ void ServerSetup(ParsingConfig &Config)
         }
         for (int index = 0; index < epollEventsNumber; index++)
         {
-            if ((socketServer = ServerSocketSearch(evenBuffer[index].data.fd, Servers)) != -1)
+            Server CurrentServer;
+            Connection CurrentConnection;
+            if (evenBuffer[index].events & EPOLLIN)
             {
-                struct sockaddr_in clientAddr;
-                socklen_t clientAddrLen = sizeof(clientAddr);
-                int newClient = accept(evenBuffer[index].data.fd, (struct sockaddr*)&clientAddr, &clientAddrLen);
-                if (newClient < 0)
-                    break;
-
-                Connection connection(newClient);
-                connection.setClientAddr(clientAddr);
-                initializeSocketEpoll(epollInstance, newClient, EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLHUP);
-                Servers[socketServer].addConnection(newClient,connection);
-            }
-            else
-            {
-				// EPOLLRHUP The other end of a socket closed or shut down for writing.
-                if (evenBuffer[index].events & (EPOLLRDHUP | EPOLLHUP))
+                if (((socketServer = ServerSocketSearch(evenBuffer[index].data.fd, Servers)) != -1) & EPOLLIN)
                 {
-                    if (epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL) == -1)
-                    {
-                        perror("epoll_ctl failed to remove client");
-                    }
-                    // clean the connection of the fd and remove it from the server 
-                    close(evenBuffer[index].data.fd);
-                    std::cout << "Client disconnected\n";
-                    continue;
+                    struct sockaddr_in clientAddr;
+                    socklen_t clientAddrLen = sizeof(clientAddr);
+                    int newClient = accept(evenBuffer[index].data.fd, (struct sockaddr*)&clientAddr, &clientAddrLen);
+                    if (newClient < 0)
+                        break;
+
+                    Connection connection(newClient);
+                    connection.setClientAddr(clientAddr);
+                    initializeSocketEpoll(epollInstance, newClient, EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLHUP);
+                    Servers[socketServer].addConnection(newClient,connection);
                 }
-
-                if (evenBuffer[index].events & EPOLLIN)
+                else 
                 {
-                    Server& CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
-                    Connection& CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
+                    CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
+                    CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
                     CurrentConnection.readIncomingData();
+                    // if reading and parsing done, enable EPOLLOUT
                 }
-                 if (evenBuffer[index].events & (EPOLLOUT)  /* && CHECK IF RESPONSE IS READY*/) 
+            }    
+            if (evenBuffer[index].events & (EPOLLOUT)  /* && CHECK IF RESPONSE IS READY*/)
+            {   
+                CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
+                CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
+                CurrentConnection.generateResponse(CurrentServer.errorPagesGetter(), );
+                // if response ended -> close the EPOLLOUT.
+            }
+			// EPOLLRHUP The other end of a socket closed or shut down for writing.
+            if (evenBuffer[index].events & (EPOLLRDHUP | EPOLLHUP))
+            {
+                if (epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL) == -1)
+                {
+                    perror("epoll_ctl failed to remove client");
+                }
+                // clean the connection of the fd and remove it from the server 
+                close(evenBuffer[index].data.fd);
+                std::cout << "Client disconnected\n";
+                continue;
             }
         }
+        
     }
 }

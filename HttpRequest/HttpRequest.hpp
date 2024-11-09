@@ -1,8 +1,6 @@
 #pragma once
 #include "../HttpMessage/HttpMessage.hpp"
 #include "../Route/Route.hpp"
-#include <sys/stat.h>  
-#include <dirent.h>
 
 enum State {
 // FIRST LINE STATES

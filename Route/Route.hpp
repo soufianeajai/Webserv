@@ -10,12 +10,9 @@ private:
     std::set<std::string> allowedMethods; // Set for allowed HTTP methods
     bool autoindex;
     std::string defaultFile;
-
-
     bool isDir;
     std::string uploadDir;
     std::set<std::string> cgiExtensions;
-    std::string root;
     bool IsRedirection;
     std::string NewPathRedirection;
     int statusCodeRedirection;

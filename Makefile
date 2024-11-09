@@ -1,8 +1,8 @@
 NAME=webserv
 
-CPPFLAGS= -Wall -Wextra -Werror -std=c++98 -g
+CPPFLAGS= -Wall -Wextra -Werror -std=c++98
 
-SRCS = main.cpp ParsingConfig/ParsingConfig.cpp Server/Server.cpp Route/Route.cpp WebServers/Webservers.cpp serverSetup/ServerSetup.cpp # Connection.cpp HttpRequest.cpp HttpResponse.cpp HttpMessage.cpp WebServers.cpp 
+SRCS = $(wildcard *.cpp)
 
 CXX = c++
 

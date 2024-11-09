@@ -3,11 +3,11 @@
 #include <map>
 #include <map>
 #include <set>
+#include <sys/types.h>
 #include <vector>
 #include <fstream>
 #include <sstream>
 #include <iostream>
-// #include <cstdint>
 #include <sstream>
 #include <cstddef>
 #include <stdexcept>
@@ -16,7 +16,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <algorithm>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <sys/stat.h>  
+#include <dirent.h>
 
+
+typedef unsigned char uint8_t;
 
 class HttpMessage {
 protected:
@@ -30,15 +36,7 @@ public :
     HttpMessage();
 // this after validation of header , can store it in map container
     void addHeader(const std::string& key, const std::string& value);
-
     std::string getHeader(const std::string& key) const;
-
     std::string getVersion() const;
- 
-    virtual std::string toString() const;
-    void resetMessage(){
-        version.clear();
-        body.clear();
-        headers.clear();
-    }
+   
 };

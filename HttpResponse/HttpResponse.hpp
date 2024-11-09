@@ -1,5 +1,6 @@
 #pragma once
-#include "HttpMessage.hpp"
+#include "../HttpMessage/HttpMessage.hpp"
+#include "../Server/Server.hpp"
 
 class HttpResponse :  public HttpMessage{
 private:
@@ -9,10 +10,9 @@ private:
     //std::map<std::string, std::map<std::string, std::string>> sessions;
     std::map<std::string, std::string> mimeTypes;
     
-
+    
 
     // cgi
-    std::set<std::string> validExtensions = { ".php", ".py"};
     /* example full url possible
      /cgi/script.php/test/more/path?param1=value1&param2=value2
     scriptName = "/cgi/script.php";
