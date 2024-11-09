@@ -11,3 +11,28 @@ clean connection
 when connecion ended (EPOLL_CTL_DEL) remove from server also
 
 CHECK IF RESPONSE IS READY
+
+
+
+
+#########################  necessary ############################
+- host , port 
+- root ? 
+
+######################### not necessary ############################
+- Setup default error pages.
+- server_names 
+- Limit client body size.
+-  HTTP methods
+-  HTTP redirection
+-  extension
+
+
+
+
+
+
+
+
+
+
