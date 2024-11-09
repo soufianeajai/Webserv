@@ -1,0 +1,12 @@
+from afanidi : 
+-> remove  inet_addr()
+
+
+
+
+
+**********************************************
+clean connection 
+when connecion ended (EPOLL_CTL_DEL) remove from server also
+
+CHECK IF RESPONSE IS READY

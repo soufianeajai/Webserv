@@ -1,5 +1,28 @@
 #include "Server.hpp"
+int Server::SearchSockets(int id)
+{
+    for (size_t i = 0; i < sockets.size(); ++i)
+    {
+        if (sockets[i] == id) 
+            return i;
+    }
+    return -1;
+}
 
+bool Server::hasClient(int client) const
+{
+        return connections.find(client) != connections.end();
+}
+
+Connection& Server::GetConnection(int client)
+{
+        connections[client];
+}
+
+void Server::addConnection(int socket, const Connection& connection)
+{
+        connections[socket] = connection;
+}
 
 void Server::hostSetter(std::string _host) {
     this->host = _host;
@@ -43,24 +66,20 @@ void Server::addRoute(Route newRoute) {
 Route& Server::getRoute(const std::string& path) {
     return this->routes[path];
 }
-void Server::setRedirectnewPath(std::string _redirectnewPath) {
-    this->redirectnewPath = _redirectnewPath;
-}
-std::string Server::getRedirectnewPath() {
-    return this->redirectnewPath;
-}
-void Server::setRedirectPathOldPath(std::string _redirectPathOldPath) {
-    this->redirectPathOldPath = _redirectPathOldPath;
-}
-std::string Server::getRedirectPathOldPath() {
-    return this->redirectPathOldPath;
-}
-void Server::setRedirectCode(int _redirectCode) {
-    this->redirectCode = _redirectCode;
-}
-int Server::getRedirectCode() {
-    return this->redirectCode;
-}
 std::map<std::string, Route>& Server::getRoutes() {
     return this->routes;
+}
+
+void Server::addSocket(int socket)
+{
+    sockets.push_back(socket);
+}
+// void Server::serverSocketSetter(int Port, int Socket) {
+//     this->ServersSocket[Port] = Socket;
+// }
+// std::map<int ,int> &Server::serverSocketGetter() {
+//     return this->ServersSocket;
+// }
+void Server::portEraser(int pos) {
+    this->ports.erase(this->ports.begin() + pos);
 }

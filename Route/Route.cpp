@@ -37,3 +37,34 @@ void Route::addCgiExtension(std::string cgiExtension) {
 std::set<std::string> Route::getCgiExtensions() {
     return this->cgiExtensions;
 }
+void Route::setRedirectnewPath(std::string _redirectnewPath) {
+    this->NewPathRedirection = _redirectnewPath;
+}
+std::string Route::getRedirectnewPath() {
+    return this->NewPathRedirection;
+}
+
+void Route::setRedirectCode(int _redirectCode) {
+    this->statusCodeRedirection = _redirectCode;
+}
+int Route::getRedirectCode() {
+    return this->statusCodeRedirection;
+}
+void Route::setIsRedirection(bool IsRedirect) {
+    this->IsRedirection = IsRedirect;
+}
+bool Route::getIsRedirection() {
+    return this->IsRedirection;
+}
+void Route::setUploadDir(std::string _uploadDir) {
+    this->uploadDir = _uploadDir;
+}
+std::string Route::getUploadDir() {
+    return this->uploadDir;
+}
+void Route::isDirSetter(bool _isDir) {
+    this->isDir = _isDir;
+}
+bool Route::isDirGetter() {
+    return this->isDir;
+}

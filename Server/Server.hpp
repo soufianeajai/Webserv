@@ -1,18 +1,24 @@
 #pragma once
 #include "../Route/Route.hpp"
-// #include "Connection.hpp"
+#include "../Connection/Connection.hpp"
 
 class Server {
 private:
     std::string host;
-    std::map<int, bool> ports; // port integer , 
+
+    std::vector<int> ports;
+    std::vector<int> sockets;
+    std::map<int, Connection> connections;
     std::vector<std::string> serverNames; 
-//    std::map<int, Connection*> connections;
+    std::string serverRoot;
     std::map<std::string, Route> routes;
     std::map<int, std::string> errorPages;
     size_t clientMaxBodySize;
 
+
 public:
+    void serverSocketSetter(int Port, int Socket);
+    //std::map<int ,int> &serverSocketGetter();
     void hostSetter(std::string host);
     std::string hostGetter();
     void portSetter(int port);
@@ -27,14 +33,18 @@ public:
     size_t clientMaxBodySizeGetter();
     void addRoute(Route newRoute);
     Route& getRoute(const std::string& path);
-    void setRedirectnewPath(std::string redirectnewPath);
-    std::string getRedirectnewPath();
-    void setRedirectPathOldPath(std::string redirectPathOldPath);
-    std::string getRedirectPathOldPath();
-    void setRedirectCode(int redirectCode);
-    int getRedirectCode();
     std::map<std::string, Route>& getRoutes();
-    // Server();
+    
+    void addSocket(int socket);
+
+    int SearchSockets(int id);
+    void addConnection(int socket, const Connection& connection);
+    
+    Connection& GetConnection(int client);
+    void portEraser(int pos);
+
+    bool hasClient(int client) const;
+        // Server();
     // Server(const std::string& host, const std::vector<int>& ports) 
     //     : host(host), ports(ports) {}
 
