@@ -27,6 +27,8 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
     else if (locationPath.size() > 2)
         ft_error("Error: Invalid location", FILE);
     route.setPath(locationPath[1]);
+    if (locationPath[1][locationPath[1].length() - 1] == '/')
+        route.isDirSetter(true);
 
     while (getline(FILE, str))
     {
@@ -139,7 +141,17 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         }
                         route.setIsRedirection(true);
                         route.setRedirectnewPath(arr[1]);
-                        route.setRedirectCode(numberConversion(arr[2]));
+                        int code = numberConversion(arr[2]);
+                        if (code != 301 && code != 302 && code != 303 
+                            && code != 307 && code != 308)
+                            ft_error("Error: invalid redirect status code", FILE);
+                        route.setRedirectCode(code);
+                    }
+                    else if (arr[0] == "upload_dir:")
+                    {
+                        if (arr.size() != 2)
+                            ft_error("Error: invalid upload_dir", FILE);
+                        route.setUploadDir(arr[1]);
                     }
                     else
                         ft_error("Error: " + arr[0], FILE);
@@ -184,6 +196,30 @@ bool ParsingConfig::checkClientBodySize(std::string &str)
         return false;
     return true;
 }
+
+void checkDefaultServer(WebServer &webServer)
+{
+    std::vector<Server> servers = webServer.getServers();
+    for (size_t i = 1; i < servers.size(); i++) {
+        if (servers[0].hostGetter() == servers[i].hostGetter())
+        {
+            std::vector<int> portsDefault = servers[0].portGetter();
+            std::vector<int> ports = servers[i].portGetter();
+            for (size_t j = 0; j < portsDefault.size(); j++)
+            {
+                for (size_t k = 0; k < ports.size(); k++) {
+                    if (portsDefault[j] == ports[k]) {
+                        webServer.getServer(i).portEraser(k);
+                        ports = webServer.getServers()[i].portGetter();
+                        break;
+                    }
+                }
+            }
+                        
+        }
+    }    
+}
+
 ParsingConfig parsingConfig(const char *configFile)
 {
     ParsingConfig parsingConfig;
@@ -193,7 +229,6 @@ ParsingConfig parsingConfig(const char *configFile)
 
     while (str == "server" || getline(FILE, str))
     {
-
         if (str == "server") // Check if "server" was found in the recursive call
         {
             Server server;
@@ -282,5 +317,6 @@ ParsingConfig parsingConfig(const char *configFile)
         }    
     }
     FILE.close();
+    checkDefaultServer(parsingConfig.webServer);
     return parsingConfig;
 }

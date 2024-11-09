@@ -80,3 +80,6 @@ void Server::addSocket(int socket)
 // std::map<int ,int> &Server::serverSocketGetter() {
 //     return this->ServersSocket;
 // }
+void Server::portEraser(int pos) {
+    this->ports.erase(this->ports.begin() + pos);
+}

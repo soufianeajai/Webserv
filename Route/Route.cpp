@@ -56,4 +56,15 @@ void Route::setIsRedirection(bool IsRedirect) {
 bool Route::getIsRedirection() {
     return this->IsRedirection;
 }
-
+void Route::setUploadDir(std::string _uploadDir) {
+    this->uploadDir = _uploadDir;
+}
+std::string Route::getUploadDir() {
+    return this->uploadDir;
+}
+void Route::isDirSetter(bool _isDir) {
+    this->isDir = _isDir;
+}
+bool Route::isDirGetter() {
+    return this->isDir;
+}

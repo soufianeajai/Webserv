@@ -11,8 +11,8 @@ private:
     std::string defaultFile;
 
 
-    // bool isDir;
-    // std::string uploadDir;
+    bool isDir;
+    std::string uploadDir;
     std::set<std::string> cgiExtensions;
     std::string root;
     bool IsRedirection;
@@ -40,4 +40,8 @@ public:
     // Route(const std::string& path) : path(path) {}
     // bool matches(const std::string& uri) const;
     // bool isMethodAllowed(const std::string& method) const;
+    void setUploadDir(std::string uploadDir);
+    std::string getUploadDir();
+    void isDirSetter(bool isDir);
+    bool isDirGetter();
 };

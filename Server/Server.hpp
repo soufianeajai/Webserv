@@ -11,7 +11,6 @@ private:
     std::map<int, Connection> connections;
     std::vector<std::string> serverNames; 
     std::string serverRoot;
-    
     std::map<std::string, Route> routes;
     std::map<int, std::string> errorPages;
     size_t clientMaxBodySize;
@@ -42,7 +41,7 @@ public:
     void addConnection(int socket, const Connection& connection);
     
     Connection& GetConnection(int client);
-
+    void portEraser(int pos);
 
     bool hasClient(int client) const;
         // Server();
