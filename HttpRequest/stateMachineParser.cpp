@@ -61,16 +61,18 @@ void HttpRequest::handleURIPathParsing(uint8_t byte) {
         holder.clear();
         currentState = DECODE_URI;
     }
-    else if (byte == '?' || byte == '#') {
-        currentState = URI_SKIP_QUERY_OR_FRAGMENT;
+    else if (byte == '?') {
+        currentState = URI_HANDLE_QUERY;
     }
     else
         uri += byte;
 }
 
-void HttpRequest::handleSkipQF(uint8_t byte) {
+void HttpRequest::handleQuery(uint8_t byte) {
     if (byte == ' ')
         currentState = VERSION_HTTP; 
+    else
+        query += byte;
 }
 void HttpRequest::handleDecodeURI(uint8_t byte) {
     if (holder.length() < 2 && std::isxdigit(byte)) {
@@ -286,12 +288,14 @@ void HttpRequest::handleBodyBoundaryParsing(uint8_t byte) {
     if (byte == '\r') {
         std::string expectedBoundary = "--" + boundary;
         if (holder == expectedBoundary) {
+            parts.push_back(boundaryPart());
             currentState = BODY_BOUNDARY_LF;
         }
         else if (holder == expectedBoundary + "--")
             currentState = MESSAGE_COMPLETE;
         else
             currentState = ERROR_BOUNDARY;
+            holder.clear();
     }
     else {
         holder += byte;
@@ -302,16 +306,53 @@ void HttpRequest::handleBodyBoundaryParsing(uint8_t byte) {
 
 void HttpRequest::handleBodyBoundaryLF(uint8_t byte) {
     if (byte == '\n') {
-        currentState = BODY_PART_HEADER;
+        currentState = BODY_PART_HEADER_NAME;
         holder.clear();
     }
     else
         currentState = ERROR_BOUNDARY;
 }
 
+void HttpRequest::handleBodyPartHeaderName(uint8_t byte) {
+    if (byte == ':') {
+        currentHeaderName = holder;
+        holder.clear();
+        currentState = BODY_PART_HEADER_VALUE;
+    }
+    else if (byte == '\r') {
+        if (holder.empty())
+            currentState = BODY_PART_HEADER_LF2;
+        else
+            currentState = ERROR_BOUNDARY;
+    }
+    else
+        holder += byte;
+}
 
-void HttpRequest::handleBodyPartHeader(uint8_t byte) {
+void HttpRequest::handleBodyPartHeaderValue(uint8_t byte) {
     if (byte == '\r') {
+        parts.back().boundaryHeader[currentHeaderName] = holder;        
+        // Parse Content-Disposition header
+        if (currentHeaderName == "Content-Disposition") {
+            std::size_t namePos = holder.find("name=");
+            std::size_t filenamePos = holder.find("filename=");
+            if (namePos != std::string::npos) {
+                namePos += 6;
+                std::size_t endPos = holder.find("\"", namePos);
+                if (endPos != std::string::npos)
+                    parts.back().name = holder.substr(namePos, endPos - namePos);
+            }
+            if (filenamePos != std::string::npos) {
+                filenamePos += 10;
+                std::size_t endPos = holder.find("\"", filenamePos);
+                if (endPos != std::string::npos) {
+                    parts.back().fileName = holder.substr(filenamePos, endPos - filenamePos);
+                    parts.back().isFile = true;
+                }
+                parts.back().isFile = false;
+            }
+        }  
+        holder.clear();
         currentState = BODY_PART_HEADER_LF;
     }
     else
@@ -319,28 +360,8 @@ void HttpRequest::handleBodyPartHeader(uint8_t byte) {
 }
 
 void HttpRequest::handleBodyPartHeaderLF(uint8_t byte) {
-    std::size_t namePos = holder.find("name=");
-    if (namePos != std::string::npos) {
-        namePos += 6;
-        std::size_t endPos = holder.find("\"", namePos);
-        if (endPos != std::string::npos){
-            fieldName = holder.substr(namePos, endPos - namePos);
-            std::cout << "field " << fieldName << std::endl;
-            formFields.insert(std::make_pair(fieldName, ""));
-        }
-        else {
-            currentState = ERROR_BOUNDARY;
-            return;
-        }
-    }
     if (byte == '\n')
-        currentState = BODY_PART_HEADER_CR2;
-    else
-        currentState = ERROR_BOUNDARY;
-}
-void HttpRequest::handleBodyPartHeaderCR2(uint8_t byte) {
-    if (byte == '\r')
-        currentState = BODY_PART_HEADER_LF2;
+        currentState = BODY_PART_HEADER_NAME;
     else
         currentState = ERROR_BOUNDARY;
 }
@@ -351,25 +372,97 @@ void HttpRequest::handleBodyPartHeaderLF2(uint8_t byte) {
     else
         currentState = ERROR_BOUNDARY;
 }
+
 void HttpRequest::handleBodyPartData(uint8_t byte) {
     if (byte == '\r')
         currentState = BODY_PART_END;
-    else if (!holder.empty())
-    {
-        formFields[fieldName] += byte;
+    else {
+        if (parts.back().isFile)
+            parts.back().fileBody.push_back(byte);
+        else
+            parts.back().value += byte;
     }
-    else
-        currentState = ERROR_BOUNDARY;
 }
 
 void HttpRequest::handleBodyPartEnd(uint8_t byte) {
     if (byte == '\n') {
         holder.clear();
-        fieldName.clear();
+        currentHeaderName.clear();
         currentState = BODY_BOUNDARY_START;
     }
     else
         currentState = ERROR_BOUNDARY;
 }
+
+
+
+
+
+
+
+// void HttpRequest::handleBodyPartHeader(uint8_t byte) {
+//     if (byte == '\r')
+//         currentState = BODY_PART_HEADER_LF;
+//     else if (!isValidHeaderNameChar(byte))
+//         currentState = ERROR_INVALID_HEADER;
+//     else {
+
+//         holder += byte;
+//     }
+// }
+
+// void HttpRequest::handleBodyPartHeaderLF(uint8_t byte) {
+//     std::size_t namePos = holder.find("name=");
+//     if (namePos != std::string::npos) {
+//         namePos += 6;
+//         std::size_t endPos = holder.find("\"", namePos);
+//         if (endPos != std::string::npos){
+//             fieldName = holder.substr(namePos, endPos - namePos);
+//             std::cout << "field " << fieldName << std::endl;
+//             formFields.insert(std::make_pair(fieldName, ""));
+//         }
+//         else {
+//             currentState = ERROR_BOUNDARY;
+//             return;
+//         }
+//     }
+//     if (byte == '\n')
+//         currentState = BODY_PART_HEADER_CR2;
+//     else
+//         currentState = ERROR_BOUNDARY;
+// }
+// void HttpRequest::handleBodyPartHeaderCR2(uint8_t byte) {
+//     if (byte == '\r')
+//         currentState = BODY_PART_HEADER_LF2;
+//     else
+//         currentState = ERROR_BOUNDARY;
+// }
+
+// void HttpRequest::handleBodyPartHeaderLF2(uint8_t byte) {
+//     if (byte == '\n')
+//         currentState = BODY_PART_DATA;
+//     else
+//         currentState = ERROR_BOUNDARY;
+// }
+// void HttpRequest::handleBodyPartData(uint8_t byte) {
+//     if (byte == '\r')
+//         currentState = BODY_PART_END;
+//     else if (!holder.empty())
+//     {
+//         formFields[fieldName] += byte;
+//     }
+//     else
+//         currentState = ERROR_BOUNDARY;
+// }
+
+// void HttpRequest::handleBodyPartEnd(uint8_t byte) {
+//     if (byte == '\n') {
+//         holder.clear();
+//         fieldName.clear();
+//         currentState = BODY_BOUNDARY_START;
+//     }
+//     else
+//         currentState = ERROR_BOUNDARY;
+// }
 
 
