@@ -1,11 +1,11 @@
 #include "Webservers.hpp"
-const  std::string globalRoot="/home/$(USER)/MAIN_webserv/docs/";
-void WebServer::addServer(Server& newServer, int identifier) {
-    this->servers[identifier] = newServer;
+
+void WebServer::addServer(Server& newServer) {
+    this->servers.push_back(newServer);
 }
 Server& WebServer::getServer(int identifier) {
     return this->servers[identifier];
 }
-std::map<int, Server>& WebServer::getServers() {
+std::vector<Server>& WebServer::getServers() {
     return this->servers;
 }
