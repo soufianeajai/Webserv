@@ -25,17 +25,16 @@ size_t checkIfCGI(const std::string& url)
 std::vector<char*> createEnvChar(const Connection& connection, size_t scriptEndPos) const
 {
     std::vector<char*> envVars;
-    std::string fullUrl = connection.getRequest().getUrl();
+    std::string url = connection.getRequest().getUrl();
 
     std::string scriptName;
     std::string pathInfo;
     std::string queryString;
     std::string contentType;
-    size_t queryPos = fullUrl.find('?');
-    queryString = (queryPos != std::string::npos) ? fullUrl.substr(queryPos + 1) : "";
-    scriptName = fullUrl.substr(0, scriptEndPos);
-    pathInfo = (queryPos != std::string::npos) ? fullUrl.substr(scriptEndPos, queryPos - scriptEndPos) : fullUrl.substr(scriptEndPos);
-    contentType = (connection.getRequest().getMethod() == "POST") ? connection.getRequest().getHeader("CONTENT_TYPE") : "";
+    queryString = connection.getRequest().GetQuery();
+    scriptName = url.substr(0, scriptEndPos);
+    pathInfo =  url.substr(scriptEndPos);
+            = (connection.getRequest().getMethod() == "POST") ? connection.getRequest().getHeader("CONTENT_TYPE") : "";
 
     env.push_back(const_cast<char*>(("REQUEST_METHOD=" + connection.getRequest().getMethod()).c_str()));
     env.push_back(const_cast<char*>(("QUERY_STRING=" + queryString).c_str()));
@@ -44,9 +43,7 @@ std::vector<char*> createEnvChar(const Connection& connection, size_t scriptEndP
     env.push_back(const_cast<char*>(("CONTENT_TYPE=" + contentType).c_str()));
     env.push_back(const_cast<char*>("GATEWAY_INTERFACE=CGI/1.1"));
     env.push_back(const_cast<char*>("SERVER_PROTOCOL=" + version).c_str());
-    
     //REMOTE_ADDR,REMOTE_HOST,SERVER_NAME,SERVER_PORT,AUTH_TYPE
-    
     return envVars;
 }
 
