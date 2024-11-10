@@ -137,6 +137,8 @@ public:
     bool    errorOccured() const;
     std::string getMethod() const;
     std::string getUri() const ;
+    int GetStatusCode() const;
+    std::string getQuery() const;
 private:
 // STATE HANDLERS
     void    handleMethodStart(uint8_t byte);
@@ -188,4 +190,5 @@ private:
     void    addCurrentHeader();
     void    handleTransfer();
     bool    isValidMultipart(std::string content);
+
 };

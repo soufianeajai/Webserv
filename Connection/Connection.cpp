@@ -1,4 +1,5 @@
 #include "Connection.hpp"
+#define DEFAULTERROR "<html><body><h1>Default Error Page</h1></body></html>"
 
 Connection::Connection(){}
 
@@ -47,8 +48,25 @@ void    Connection::readIncomingData()
 //     }
 }
 
-void Connection::generateResponse(std::map<int, std::string> &errorPages, std::map<std::string, Route>& routes) const
+void Connection::generateResponse(std::map<int, std::string> &errorPages, std::map<std::string, Route>& routes)
 {
-    (void)errorPages;
-    (void)routes;
+    Route route;
+    std::string errorpage;
+    int code =  request.GetStatusCode();
+    if (code > 199 &&  code < 400)
+    {
+        std::map<std::string, Route>::iterator routeIt = routes.find(request.getUri()); // detect url which route is ...
+        if (routeIt != routes.end())
+            route = routeIt->second;
+        // if url is file from a path how can i know that -> we need to cut url
+    }
+    else
+    {
+        std::map<int, std::string>::iterator it = errorPages.find(code);// trust path from configfile
+        if (it != errorPages.end())
+            errorpage = it->second;
+        else
+            errorpage = DEFAULTERROR;
+    }
+    response.initResponse(route, errorpage, code, request.getQuery(), request.getUri(), request.getMethod());
 }

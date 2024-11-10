@@ -138,7 +138,7 @@ void ServerSetup(ParsingConfig &Config)
                         "HTTP/1.1 200 OK\r\n"
                         "Content-Length: 13\r\n"
                         "\r\n"
-                        "Connection OK!";
+                        "Connection batiii2a jidan!";
                 send(evenBuffer[index].data.fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
                 // if response ended -> close the EPOLLOUT.
             }
