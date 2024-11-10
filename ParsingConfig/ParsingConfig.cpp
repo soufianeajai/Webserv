@@ -84,8 +84,6 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
             {
                     if (arr[0] == "methods:")
                     {
-                        if (arr.size() < 2 || arr.size() > 4)
-                            ft_error("Error: Invalid methods", FILE);
                         for (size_t i = 1; i < arr.size(); i++)
                         {
                             if (arr[i] != "GET" && arr[i] != "POST" && arr[i] != "DELETE")
@@ -104,8 +102,6 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     }
                     else if (arr[0] == "default_file:")
                     {
-                        if (arr.size() != 2)
-                            ft_error("Error: Invalid default_file", FILE);
                         route.setDefaultFile(arr[1]);
                     }
                     else if (arr[0] == "autoindex:")
@@ -121,8 +117,6 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     }
                     else if (arr[0] == "cgi_extension:")
                     {
-                        if (arr.size() < 2)
-                            ft_error("Error: invalid cgi extension", FILE);
                         for (size_t i = 1; i < arr.size(); i++)
                         {
                             route.addCgiExtension(arr[i]);
@@ -130,8 +124,6 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     }
                     else if (arr[0] == "redirect:")
                     {
-                        if (arr.size() != 3)
-                            ft_error("Error: invalid redirect", FILE);
                         int i = 0;
                         while (arr[2][i])
                         {
@@ -149,8 +141,6 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     }
                     else if (arr[0] == "upload_dir:")
                     {
-                        if (arr.size() != 2)
-                            ft_error("Error: invalid upload_dir", FILE);
                         route.setUploadDir(arr[1]);
                     }
                     else
@@ -254,7 +244,7 @@ ParsingConfig parsingConfig(const char *configFile)
                     }
                     else if (arr[0] == "port:")
                     {
-                        if (arr.size() < 2 || arr[1] == " ")
+                        if (arr.size() < 2)
                             ft_error("Error: invalid port", FILE);
                         int port;
                         for (size_t i = 1; i < arr.size(); i++)
@@ -267,24 +257,16 @@ ParsingConfig parsingConfig(const char *configFile)
                     }
                     else if (arr[0] == "server_names:")
                     {
-                        if (arr.size() < 2)
-                            ft_error("Error: invalid server names", FILE);
                         for (size_t i = 1; i < arr.size(); i++)
-                        {
                             server.serverNamesSetter(arr[i]);
-                        }
                         std::vector<std::string> serverNames = server.serverNamesGetter();
                     }
                     else if (arr[0] == "server_root:")
                     {
-                        if (arr.size() != 2)
-                            ft_error("Error: Invalid server_root", FILE);
                         server.serverRootSetter(arr[1]);
                     }
                     else if (arr[0] == "error_page:")
                     {
-                        if (arr.size() != 3)
-                            ft_error("Error: Invalid error_page", FILE);
                         int i = 0;
                         while (arr[1][i])
                         {
@@ -300,7 +282,7 @@ ParsingConfig parsingConfig(const char *configFile)
                     }
                     else if (arr[0] == "client_body_size:")
                     {
-                        if (arr.size() != 2 || !parsingConfig.checkClientBodySize(arr[1]))
+                        if (!parsingConfig.checkClientBodySize(arr[1]))
                             ft_error("Error: invalid client body size", FILE);
                         server.clientMaxBodySizeSetter(numberConversion(arr[1]));
                     }
