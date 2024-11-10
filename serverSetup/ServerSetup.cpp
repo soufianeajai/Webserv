@@ -45,7 +45,6 @@ void initializeSocketEpoll(int epollInstance, int SocketId, uint32_t event)
         if (event == EPOLLIN)
             ft_error("epoll_ctl failed", SocketId);
     }
-    std::cout << SocketId;
 }
 
 Server getServerSocketCLient(int client,std::vector<Server> &servers)
@@ -124,7 +123,7 @@ void ServerSetup(ParsingConfig &Config)
                 {
                     CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                     CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                    CurrentConnection.readIncomingData();
+                    CurrentConnection.readIncomingData(CurrentServer.getRoutes());
                     // if reading and parsing done, enable EPOLLOUT
 
                 }
@@ -133,10 +132,10 @@ void ServerSetup(ParsingConfig &Config)
             {   
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                CurrentConnection.generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.getRoutes());
+                //CurrentConnection.generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.getRoutes());
                 const char* httpResponse = 
                         "HTTP/1.1 200 OK\r\n"
-                        "Content-Length: 13\r\n"
+                        "Content-Length: 15\r\n"
                         "\r\n"
                         "Connection batiii2a jidan!";
                 send(evenBuffer[index].data.fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);

@@ -2,7 +2,7 @@
 #define DEFAULTERROR "<html><body><h1>Default Error Page</h1></body></html>"
 Connection::Connection(){}
 
-Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize):clientSocketId(fd), bodySize(maxSize), status(INITIAL)
+Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize):clientSocketId(fd), bodySize(maxSize), status(READING_PARSING)
  {
     CLientAddress.sin_family = acceptedAddr.sin_family;
     CLientAddress.sin_port = acceptedAddr.sin_port;
@@ -25,38 +25,32 @@ void Connection::parseRequest(){
     readSize = recv(clientSocket, buffer, Connection::CHUNK_SIZE, MSG_DONTWAIT);
     if (readSize == 0)
     {
-        std::cout << "no data to read from socket or connection is closed " << clientSocket << std::endl;
+        std::cout << " Client closed the connection" << std::endl;
         this->closeConnection();
-        return ;
+        return;
     }
     else if (readSize < 0)
     {
-        std::cerr << "Error receiving data: " << clientSocket << " " << strerror(errno) << std::endl;
-        this->closeConnection();
+        std::cerr << " no data to read but connection still opened " << std::endl;
         return ;
     }
-    else{
+    else
+    {
         this->request.parse(buffer, readSize);
         if (this->request.parsingCompleted())
             status = PROCESSING;
+        if (this->request.errorOccured())
+            status = ERROR;
     }
 }
 void    Connection::readIncomingData(std::map<std::string, Route>& routes)
 {
     std::map<std::string, std::string> formFields;
-    while (status != GENARATE_RESPONSE && status != ERROR) {
-        switch (status)
-        {
-            case READING_PARSING: parseRequest(); break;
-            case PROCESSING: 
-                formFields = this->request.process(routes); 
-                status = GENARATE_RESPONSE;
-                break;
-            case ERROR: 
-            default:
-                break;
-        }
-    }
+    
+    if (status == READING_PARSING)
+        parseRequest();
+    if (status == PROCESSING)
+        formFields = this->request.process(routes);            
 }
 
 void Connection::generateResponse(std::map<int, std::string> &errorPages, std::map<std::string, Route>& routes)

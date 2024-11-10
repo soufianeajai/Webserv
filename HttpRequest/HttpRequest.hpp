@@ -139,6 +139,7 @@ public:
     std::string getUri() const ;
     int GetStatusCode() const;
     std::string getQuery() const;
+    State getcurrentState() const;
 private:
 // STATE HANDLERS
     void    handleMethodStart(uint8_t byte);
