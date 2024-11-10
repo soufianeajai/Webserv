@@ -36,3 +36,13 @@ CHECK IF RESPONSE IS READY
 
 
 
+################################ nginx timeout in cgi ##############################
+
+- fastcgi_read_timeout defines how long NGINX will wait to read a response from the CGI process.
+    When this timeout expires without a response,
+    NGINX terminates the connection, and the request fails.
+- In C++98, the time() and clock() functions are part of the C Standard Library,
+    and there are no other standard ways to measure time available in C++98.
+    The C++98 standard doesn't provide a built-in mechanism for detecting timeouts using just the C++98 
+    Standard Library, because timing-related functions (like time() or clock())
+    are defined in the C Standard Library.

@@ -14,17 +14,17 @@ private:
     std::string uploadDir;
     std::set<std::string> cgiExtensions;
     bool IsRedirection;
-    std::string NewPathRedirection;
+    std::string NewPathRedirection; // must be file not folder
     int statusCodeRedirection;
 public:
     void setPath(std::string path);
-    std::string getPath();
+    std::string getPath() const;
     void addAllowedMethod(std::string method);
     std::set<std::string> getAllowedMethods();
     void setRoot(std::string root);
-    std::string getRoot();
+    std::string getRoot() const;
     void setDefaultFile(std::string defaultFile);
-    std::string getDefaultFile();
+    std::string getDefaultFile() const;
     void setAutoindex(bool autoindex);
     bool getAutoindex();
     void addCgiExtension(std::string cgiExtension);
@@ -34,12 +34,13 @@ public:
     void setRedirectnewPath(std::string redirectnewPath);
     std::string getRedirectnewPath();
     void setIsRedirection(bool IsRedirect);
-    bool getIsRedirection();
+    bool getIsRedirection() const;
+    std::string getNewPathRedirection() const;
     // Route(const std::string& path) : path(path) {}
     // bool matches(const std::string& uri) const;
     // bool isMethodAllowed(const std::string& method) const;
     void setUploadDir(std::string uploadDir);
     std::string getUploadDir();
     void isDirSetter(bool isDir);
-    bool isDirGetter();
+    bool isDirGetter() const;
 };

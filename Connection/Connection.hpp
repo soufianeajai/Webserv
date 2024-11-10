@@ -22,5 +22,5 @@ public:
     // void writedata();
     void closeConnection();
     int getClientSocketId() const;
-    void generateResponse(std::map<int, std::string> &errorPages, std::map<std::string, Route>& routes) const;
+    void generateResponse(std::map<int, std::string> &errorPages, std::map<std::string, Route>& routes);
 };

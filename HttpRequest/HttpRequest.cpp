@@ -58,7 +58,8 @@ boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::hand
     errorState.insert(std::make_pair(ERROR_BINARY_DATA, 415));
 };
 
-void HttpRequest::parse(uint8_t *buffer, int readSize) {
+void HttpRequest::parse(uint8_t *buffer, int readSize)
+{
     for(int i = 0; i < readSize && !errorOccured(); i++)
     {
         std::cout << currentState << std::endl;
@@ -119,4 +120,14 @@ void HttpRequest::reset(){
 };
 bool HttpRequest::parsingCompleted() const {
     return currentState == MESSAGE_COMPLETE;
+}
+
+int HttpRequest::GetStatusCode() const
+{
+    return statusCode;
+}
+
+std::string HttpRequest::getQuery() const
+{
+    return query;
 }
