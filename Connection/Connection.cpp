@@ -1,9 +1,8 @@
 #include "Connection.hpp"
 #define DEFAULTERROR "<html><body><h1>Default Error Page</h1></body></html>"
-
 Connection::Connection(){}
 
-Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize):clientSocketId(fd), bodySize(maxSize), connectionStatus(INITIAL)
+Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize):clientSocketId(fd), bodySize(maxSize), status(INITIAL)
  {
     CLientAddress.sin_family = acceptedAddr.sin_family;
     CLientAddress.sin_port = acceptedAddr.sin_port;
@@ -17,14 +16,11 @@ int Connection::getClientSocketId() const{
 void Connection::closeConnection(){
 
 }
-void    Connection::readIncomingData()
-{
-    connectionStatus = READING;
-    (void)bodySize;
+void Connection::parseRequest(){
     uint8_t    buffer[Connection::CHUNK_SIZE];
     int     readSize = 0;
     int clientSocket = this->getClientSocketId();
-
+    (void)bodySize;
     memset(buffer, 0, Connection::CHUNK_SIZE);
     readSize = recv(clientSocket, buffer, Connection::CHUNK_SIZE, MSG_DONTWAIT);
     if (readSize == 0)
@@ -39,13 +35,28 @@ void    Connection::readIncomingData()
         this->closeConnection();
         return ;
     }
-    else
+    else{
         this->request.parse(buffer, readSize);
-
-//     if (this->request.parsingCompleted() || this->request.errorOccured()) 
-//     {
-//         // parsing completed and we can process the request and work on the response.
-//     }
+        if (this->request.parsingCompleted())
+            status = PROCESSING;
+    }
+}
+void    Connection::readIncomingData(std::map<std::string, Route>& routes)
+{
+    std::map<std::string, std::string> formFields;
+    while (status != GENARATE_RESPONSE && status != ERROR) {
+        switch (status)
+        {
+            case READING_PARSING: parseRequest(); break;
+            case PROCESSING: 
+                formFields = this->request.process(routes); 
+                status = GENARATE_RESPONSE;
+                break;
+            case ERROR: 
+            default:
+                break;
+        }
+    }
 }
 
 void Connection::generateResponse(std::map<int, std::string> &errorPages, std::map<std::string, Route>& routes)

@@ -75,28 +75,30 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
         std::map<State, int>::const_iterator it = errorState.find(currentState);
         statusCode = it->second;
     }
-     std::cout <<" method is : " << method << std::endl;
-     std::cout <<" uri is : " << uri << std::endl;
-     std::cout << "version is " << version << std::endl;
-     std::cout <<" status code is : " << statusCode << std::endl;
-    std::cout <<" isChunked are : " << isChunked << std::endl;
-    std::cout <<" isMultipart are : " << isMultipart << std::endl;
-    std::cout <<" contentLength are : " << contentLength << std::endl;
-    std::cout <<" boundary are :                             " << boundary << std::endl;
-
-    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-        std::cout << it->first << ": " << it->second << std::endl;
-    }
-    std::cout <<" body is : " << std::endl;
-    for (std::vector<uint8_t>::const_iterator it = body.begin(); it != body.end(); ++it) {
-        std::cout << static_cast<char>(*it);
-    }
-    std::cout <<" form fields are : " << std::endl;
-    for(std::map<std::string, std::string>::const_iterator it = formFields.begin(); it != formFields.end(); it++){
-        std::cout << it->first << ": " << it->second << std::endl;
-    }
-    std::cout << std::endl;
+        
 }
+//      std::cout <<" method is : " << method << std::endl;
+//      std::cout <<" uri is : " << uri << std::endl;
+//      std::cout << "version is " << version << std::endl;
+//      std::cout <<" status code is : " << statusCode << std::endl;
+//     std::cout <<" isChunked are : " << isChunked << std::endl;
+//     std::cout <<" isMultipart are : " << isMultipart << std::endl;
+//     std::cout <<" contentLength are : " << contentLength << std::endl;
+//     std::cout <<" boundary are :                             " << boundary << std::endl;
+
+//     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+//         std::cout << it->first << ": " << it->second << std::endl;
+//     }
+//     std::cout <<" body is : " << std::endl;
+//     for (std::vector<uint8_t>::const_iterator it = body.begin(); it != body.end(); ++it) {
+//         std::cout << static_cast<char>(*it);
+//     }
+//     std::cout <<" form fields are : " << std::endl;
+//     for(std::map<std::string, std::string>::const_iterator it = formFields.begin(); it != formFields.end(); it++){
+//         std::cout << it->first << ": " << it->second << std::endl;
+//     }
+//     std::cout << std::endl;
+// }
 
 
 void HttpRequest::setMethod(const std::string methodStr){
