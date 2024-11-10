@@ -22,12 +22,12 @@ int ServerSocketSearch(int epollFd, std::vector<Server>& servers)
     return -1;
 }
 
-void bindAndListen(int socket, int port, const char* host)
+void bindAndListen(int socket, int port, in_addr_t host)
 {
     sockaddr_in serverAddress;
 	serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(port);
-    serverAddress.sin_addr.s_addr = inet_addr(host);
+    serverAddress.sin_addr.s_addr = host;
     if (bind(socket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0)
 			ft_error("fail to bind local port", socket);
     if (listen(socket, 10) < 0)
@@ -78,7 +78,7 @@ void ServerSetup(ParsingConfig &Config)
 		{
 			SocketId = socket(AF_INET, SOCK_STREAM, 0);
 			if (SocketId < 0)
-			{
+			{   
                 std::cerr << "The socket not opened for port: " << ports[i] << std::endl;
                 continue;
             }
@@ -87,7 +87,8 @@ void ServerSetup(ParsingConfig &Config)
 			int opt = 1;
 			if (setsockopt(SocketId, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
                 ft_error("Failed to set SO_REUSEADDR",SocketId);
-			bindAndListen(SocketId,ports[i], it->hostGetter().c_str());
+            it->setIpaddress(it->hostGetter());
+			bindAndListen(SocketId, ports[i], it->getIpaddress());
 			initializeSocketEpoll(epollInstance, SocketId, POLLIN);
             it->serverSocketSetter(ports[i], SocketId);
 		}

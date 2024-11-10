@@ -11,3 +11,4 @@ public:
 };
 
 ParsingConfig parsingConfig(const char *configFile);
+int numberConversion(std::string &string);

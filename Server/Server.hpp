@@ -6,7 +6,7 @@ class Connection;
 class Server {
 private:
     std::string host;
-
+    in_addr_t ip_addr;
     std::vector<int> ports;
     std::vector<int> sockets;
     std::map<int, Connection> connections;
@@ -45,6 +45,9 @@ public:
     void portEraser(int pos);
 
     bool hasClient(int client) const;
+
+    void setIpaddress(std::string addr);
+    in_addr_t getIpaddress();
         // Server();
     // Server(const std::string& host, const std::vector<int>& ports) 
     //     : host(host), ports(ports) {}
