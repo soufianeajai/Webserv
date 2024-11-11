@@ -9,8 +9,8 @@ class Connection {
 private:
     sockaddr_in CLientAddress;
     int clientSocketId;
-    HttpRequest  request;
-    HttpResponse response;
+    HttpRequest  *request;
+    HttpResponse *response;
     size_t bodySize;
     Status status;
 
