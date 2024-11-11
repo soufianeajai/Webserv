@@ -14,10 +14,14 @@ void HttpRequest::handleMethodParsing(uint8_t byte) {
     std::string expectedMethod;
     if (method[0] == 'G')
         expectedMethod = "GET";
-    else if (method[0] == 'P')
+    else if (method[0] == 'P'){
         expectedMethod = "POST";
-    else
+        statusCode = 201;
+    }
+    else{
         expectedMethod = "DELETE";
+        statusCode = 204;
+    }
     size_t methodNextByte = method.length();
     if (methodNextByte < expectedMethod.length()) {
         if (byte == expectedMethod[methodNextByte]) {
@@ -166,22 +170,25 @@ void HttpRequest::handleHeaderLF(uint8_t byte) {
     }    
 }
 void HttpRequest::handleHeadersEndLF(uint8_t byte) {
-    if (byte == '\n')
-        currentState = BODY_START;
+    handleTransfer();
+    if (byte == '\n'){
+        if (contentLength == 0)
+            currentState = MESSAGE_COMPLETE;
+        else
+            currentState = BODY_START;
+    }
     else
         currentState = ERROR_BAD_REQUEST;
 }
 // CHECK TYPE OF BODY TRANSFER
 void HttpRequest::handleBodyStart(uint8_t byte) {
-    handleTransfer();
     if (isChunked)
         handleChunkSizeStart(byte);
     else if (isMultipart)
         handleBodyBoundaryStart(byte);
-    else if (contentLength > 0)
-        handleBodyContentLength(byte);
     else
-        currentState = MESSAGE_COMPLETE;
+        handleBodyContentLength(byte);
+
 }
 
 // BODY CHUNKED TRANSFER HANDLERS
@@ -262,14 +269,15 @@ void HttpRequest::handleChunkDataLF(uint8_t byte) {
 
 // NORMAL BODY STATE HANDLERS
 void    HttpRequest::handleBodyContentLength(uint8_t byte) {
-    if (contentLength == -1 || currentState == MESSAGE_COMPLETE)
+//    std::cout << "byteread " << bytesread << "   content" << contentLength << std::endl; 
+    if (contentLength < 0  || currentState == MESSAGE_COMPLETE)
         currentState = ERROR_CONTENT_LENGTH;
-    else if (contentLength == 0)
+    else if (contentLength == 0 || bytesread == contentLength)
         currentState = MESSAGE_COMPLETE;
     else
     {
         body.push_back(byte);
-        contentLength--;
+        bytesread++;
     }
 
 }
@@ -293,15 +301,16 @@ void HttpRequest::handleBodyBoundaryParsing(uint8_t byte) {
         }
         else if (holder == expectedBoundary + "--")
             currentState = MESSAGE_COMPLETE;
-        else {
+        else
             currentState = ERROR_BOUNDARY;
-            holder.clear();
-        }
+        holder.clear();
     }
     else {
         holder += byte;
-        if (holder.length() > boundary.length() + 4)
+        if (holder.length() > boundary.length() + 4){
             currentState = ERROR_BOUNDARY;
+            holder.clear();
+        }
     }   
 }
 
@@ -352,7 +361,7 @@ void HttpRequest::handleBodyPartHeaderValue(uint8_t byte) {
                 }
                 parts.back().isFile = false;
             }
-        }  
+        }
         holder.clear();
         currentState = BODY_PART_HEADER_LF;
     }
@@ -394,76 +403,4 @@ void HttpRequest::handleBodyPartEnd(uint8_t byte) {
     else
         currentState = ERROR_BOUNDARY;
 }
-
-
-
-
-
-
-
-// void HttpRequest::handleBodyPartHeader(uint8_t byte) {
-//     if (byte == '\r')
-//         currentState = BODY_PART_HEADER_LF;
-//     else if (!isValidHeaderNameChar(byte))
-//         currentState = ERROR_INVALID_HEADER;
-//     else {
-
-//         holder += byte;
-//     }
-// }
-
-// void HttpRequest::handleBodyPartHeaderLF(uint8_t byte) {
-//     std::size_t namePos = holder.find("name=");
-//     if (namePos != std::string::npos) {
-//         namePos += 6;
-//         std::size_t endPos = holder.find("\"", namePos);
-//         if (endPos != std::string::npos){
-//             fieldName = holder.substr(namePos, endPos - namePos);
-//             std::cout << "field " << fieldName << std::endl;
-//             formFields.insert(std::make_pair(fieldName, ""));
-//         }
-//         else {
-//             currentState = ERROR_BOUNDARY;
-//             return;
-//         }
-//     }
-//     if (byte == '\n')
-//         currentState = BODY_PART_HEADER_CR2;
-//     else
-//         currentState = ERROR_BOUNDARY;
-// }
-// void HttpRequest::handleBodyPartHeaderCR2(uint8_t byte) {
-//     if (byte == '\r')
-//         currentState = BODY_PART_HEADER_LF2;
-//     else
-//         currentState = ERROR_BOUNDARY;
-// }
-
-// void HttpRequest::handleBodyPartHeaderLF2(uint8_t byte) {
-//     if (byte == '\n')
-//         currentState = BODY_PART_DATA;
-//     else
-//         currentState = ERROR_BOUNDARY;
-// }
-// void HttpRequest::handleBodyPartData(uint8_t byte) {
-//     if (byte == '\r')
-//         currentState = BODY_PART_END;
-//     else if (!holder.empty())
-//     {
-//         formFields[fieldName] += byte;
-//     }
-//     else
-//         currentState = ERROR_BOUNDARY;
-// }
-
-// void HttpRequest::handleBodyPartEnd(uint8_t byte) {
-//     if (byte == '\n') {
-//         holder.clear();
-//         fieldName.clear();
-//         currentState = BODY_BOUNDARY_START;
-//     }
-//     else
-//         currentState = ERROR_BOUNDARY;
-// }
-
 

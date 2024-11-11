@@ -85,7 +85,7 @@ enum State {
     PROCESS_GET,
     PROCESS_DELETE,
     PROCESS_POST,
-    PROCESS_BODY,
+    PROCESS_POST_DATA,
     PROCESS_CHUNKED_BODY,
     PROCESS_MULTIPART_FORM_DATA,
     PROCESS_DONE
@@ -115,6 +115,7 @@ private:
     bool            isChunked;
     bool            isMultipart;
     int             contentLength;
+    int             bytesread;
     std::string     boundary;
     int             chunkSize;
     int             chunkbytesread;
@@ -125,11 +126,12 @@ private:
     std::map<State, int> errorState;
     std::map<std::string, std::string> formFields;
     std::vector<boundaryPart> parts;
+        std::string test;
 
 public:
     HttpRequest();
     void    parse(uint8_t *buffer, int readSize);
-     std::map<std::string, std::string>    process(std::map<std::string, Route>& routes);
+    void    process(std::map<std::string, Route>& routes);
     void    setMethod(const std::string methodStr);
     void    setUri(const std::string uri);
     void    reset();
@@ -139,6 +141,13 @@ public:
     std::string getUri() const ;
     int GetStatusCode() const;
     std::string getQuery() const;
+    State getcurrentState() const;
+        void setTest(std::string ff){
+        test = ff;
+    }
+    std::string getTest(){
+        return test;
+    }
 private:
 // STATE HANDLERS
     void    handleMethodStart(uint8_t byte);
@@ -181,8 +190,9 @@ private:
     void    handleProcessDelete(Route& myRoute);
     void    handleProcessChunkedBody(std::string root);
     void    handleProcessPost();
-    void    handleProcessFileUpload();
+    void    handleProcessPostData();
     void    handleProcessMultipart(std::string root);
+    void    saveDataToFile(std::string name, std::vector<uint8_t>& body);
 // PARSER UTILS 
     bool    isValidPathChar(uint8_t byte);
     bool    uriBehindRoot();
@@ -190,5 +200,9 @@ private:
     void    addCurrentHeader();
     void    handleTransfer();
     bool    isValidMultipart(std::string content);
+
+
+
+
 
 };

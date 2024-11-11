@@ -56,6 +56,8 @@ std::string getCurrentTimeFormatted()
 
 void HttpResponse::initResponse(const Route &route,std::string errorPage, int code,const std::string &query, const std::string UrlRequest, const std::string method)
 {
+
+    (void)method;
     statusCode = code;
     this->query = query;
     switch (statusCode)

@@ -1,16 +1,16 @@
 #include "HttpRequest.hpp"
 
 void HttpRequest::handleTransfer(){
-    if (headers.find("Transfer-Encoding") != headers.end() && headers["Transfer-Encoding"] == "chunked")
+    if (headers.find("transfer-encoding") != headers.end() && headers["transfer-encoding"] == "chunked")
         isChunked = true;
-    if (headers.find("Content-Length") != headers.end()){
+    if (headers.find("content-length") != headers.end()){
         char c = 0;
-        std::istringstream nbr(headers["Content-Length"]);
+        std::istringstream nbr(headers["content-length"]);
         nbr >> contentLength >> c;
         if (contentLength <= 0 || c)
-            contentLength = -1;            
+            contentLength = 0;            
     }
-    if (headers.find("Content-Type") != headers.end() && isValidMultipart(headers["Content-Type"])){
+    if (headers.find("content-type") != headers.end() && isValidMultipart(headers["content-type"])){
         isMultipart = true;
     }
     
