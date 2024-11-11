@@ -21,6 +21,17 @@ State processMethod(std::string& myMethod, Route& route){
 //     return ((uri.compare(0, prefixLength, prefix) == 0) /*&& (uri[prefixLength] == '/')*/);
 // }
 
+bool isDirectory(const std::string& path)
+{
+    struct stat pathStat;
+    if (stat(path.c_str(), &pathStat) != 0)
+    {
+        perror("stat");  // Print an error if stat fails
+        return false;    // Treat as non-directory if there's an error
+    }
+    return S_ISDIR(pathStat.st_mode);  // Check if it's a directory
+}
+
 void    HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes, Route& myRoute)
 {
     // for (std::map<std::string, Route>::const_iterator it = routes.begin(); it != routes.end(); ++it) {
@@ -29,21 +40,31 @@ void    HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& route
     std::map<std::string, Route>::iterator it = routes.find(uri);
     bool found = false;
 // exact matching
+/*
+    In NGINX, when using exact matching (=), 
+    you generally avoid adding a trailing / in the location path if you want it to match a specific URL without subpaths.
+*/
     if (it != routes.end()) {
         myRoute = it->second;
         found = true;
+        CurrentRoute = it->second;
+        std::cout << "\n\n\n\n1found : "<<found<<"\n\n\n\n";
     }
     else{
         // check for prefix matching
-        for (std::map<std::string, Route>::const_iterator it = routes.begin(); it != routes.end() && !found; ++it) {
+        for (std::map<std::string, Route>::const_iterator it = routes.begin(); it != routes.end() && !found; ++it)
+        {
             const std::string path = it->first;
             if ((uri.compare(0, path.length(), path) == 0))
             {
                 myRoute = it->second;
+                CurrentRoute = it->second;
                 found = true;
+                std::cout << "\n\n\n\n2found : "<<found<<"\n\n\n\n";
             }
+        }
     }
-    }
+    std::cout << "\n\n\n\n not found \n\n\n\n";
     if (found)
         currentState = processMethod(this->getMethod(), myRoute);
     else
