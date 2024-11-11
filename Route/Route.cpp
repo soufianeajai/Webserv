@@ -4,7 +4,7 @@
 void Route::setPath(std::string _path) {
     this->pathLocation = _path;
 }
-std::string Route::getPath() {
+std::string Route::getPath() const{
     return this->pathLocation;
 }
 void Route::addAllowedMethod(std::string method) {
@@ -16,14 +16,15 @@ std::set<std::string> Route::getAllowedMethods() {
 void Route::setRoot(std::string _root) {
     this->root = _root;
 }
-std::string Route::getRoot() {
-    return this->root;
+std::string Route::getRoot() const
+{
+    return root;
 }
 void Route::setDefaultFile(std::string _defaultFile) {
     this->defaultFile = _defaultFile;
 }
-std::string Route::getDefaultFile() {
-    return this->defaultFile;
+std::string Route::getDefaultFile() const{
+    return defaultFile;
 }
 void Route::setAutoindex(bool _autoindex) {
     this->autoindex = _autoindex;
@@ -53,7 +54,7 @@ int Route::getRedirectCode() {
 void Route::setIsRedirection(bool IsRedirect) {
     this->IsRedirection = IsRedirect;
 }
-bool Route::getIsRedirection() {
+bool Route::getIsRedirection() const{
     return this->IsRedirection;
 }
 void Route::setUploadDir(std::string _uploadDir) {
@@ -65,6 +66,11 @@ std::string Route::getUploadDir() {
 void Route::isDirSetter(bool _isDir) {
     this->isDir = _isDir;
 }
-bool Route::isDirGetter() {
-    return this->isDir;
+bool Route::isDirGetter() const{
+    return isDir;
+}
+
+std::string Route::getNewPathRedirection() const
+{
+    return NewPathRedirection;
 }

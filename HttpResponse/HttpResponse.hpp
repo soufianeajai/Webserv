@@ -1,14 +1,19 @@
 #pragma once
 #include "../HttpMessage/HttpMessage.hpp"
+#include "../HttpRequest/HttpRequest.hpp"
+#include "../Route/Route.hpp"
 
 class HttpResponse :  public HttpMessage{
 private:
     int statusCode;
     std::string reasonPhrase;
-    std::map<int, std::string> Pages;
+    std::string Page;
+    std::set<std::string> ValidcgiExtensions;
     //std::map<std::string, std::map<std::string, std::string>> sessions;
     std::map<std::string, std::string> mimeTypes;
     
+
+    std::string query;
     
 
     // cgi
@@ -27,9 +32,13 @@ private:
     */
     
 public:
-//    HttpResponse::HttpResponse(const HttpRequest &request, const Server &server);
-    void LoadPage();
+    HttpResponse();
+    void initResponse(const Route &route,std::string errorPage, int code,const std::string &query, const std::string UrlRequest, const std::string method);    
+    std::string getMimeType(const std::string& filePath) const;
+   void LoadPage();
 
+
+    size_t checkIfCGI(const std::string& url);
     // void buildingHeaders();
     std::vector<uint8_t> buildResponseBuffer(); // this for building and set it in send syscall
 };

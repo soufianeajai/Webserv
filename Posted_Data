@@ -1,0 +1,63 @@
+// MULTIPART/FORM-DATA BODY STATE HANDLERS
+
+void HttpRequest::handleBodyBoundaryStart(uint8_t byte) {
+    if (byte == '-') {
+        holder += byte;
+        currentState = BODY_BOUNDARY_PARSING;
+    }
+    else
+        currentState = ERROR_BOUNDARY;
+}
+
+void HttpRequest::handleBodyBoundaryParsing(uint8_t byte) {
+    if (byte == '\r') {
+        std::string expectedBoundary = "--" + boundary;
+        if (holder == expectedBoundary) {
+            parts.push_back(boundaryPart());
+            currentState = BODY_BOUNDARY_LF;
+        }
+        else if (holder == expectedBoundary + "--")
+            currentState = MESSAGE_COMPLETE;
+        else
+            currentState = ERROR_BOUNDARY;
+        holder.clear();
+    }
+    else {
+        holder += byte;
+        if (holder.length() > boundary.length() + 4){
+            currentState = ERROR_BOUNDARY;
+            holder.clear();
+        }
+    }   
+}// MULTIPART/FORM-DATA BODY STATE HANDLERS
+
+void HttpRequest::handleBodyBoundaryStart(uint8_t byte) {
+    if (byte == '-') {
+        holder += byte;
+        currentState = BODY_BOUNDARY_PARSING;
+    }
+    else
+        currentState = ERROR_BOUNDARY;
+}
+
+void HttpRequest::handleBodyBoundaryParsing(uint8_t byte) {
+    if (byte == '\r') {
+        std::string expectedBoundary = "--" + boundary;
+        if (holder == expectedBoundary) {
+            parts.push_back(boundaryPart());
+            currentState = BODY_BOUNDARY_LF;
+        }
+        else if (holder == expectedBoundary + "--")
+            currentState = MESSAGE_COMPLETE;
+        else
+            currentState = ERROR_BOUNDARY;
+        holder.clear();
+    }
+    else {
+        holder += byte;
+        if (holder.length() > boundary.length() + 4){
+            currentState = ERROR_BOUNDARY;
+            holder.clear();
+        }
+    }   
+}
