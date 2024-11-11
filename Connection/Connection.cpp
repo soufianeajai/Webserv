@@ -43,14 +43,18 @@ void Connection::parseRequest(){
             status = ERROR;
     }
 }
+
 void    Connection::readIncomingData(std::map<std::string, Route>& routes)
 {
     std::map<std::string, std::string> formFields;
-    
     if (status == READING_PARSING)
         parseRequest();
     if (status == PROCESSING)
-        formFields = this->request.process(routes);            
+        this->request.process(routes);
+    if (this->request.getcurrentState() == PROCESS_DONE)
+    {
+        status = GENARATE_RESPONSE;
+    }
 }
 
 void Connection::generateResponse(std::map<int, std::string> &errorPages, std::map<std::string, Route>& routes)
@@ -74,4 +78,14 @@ void Connection::generateResponse(std::map<int, std::string> &errorPages, std::m
             errorpage = DEFAULTERROR;
     }
     response.initResponse(route, errorpage, code, request.getQuery(), request.getUri(), request.getMethod());
+}
+HttpRequest Connection::getRequest() const{
+    return request;
+}
+Status Connection::getStatus() const{
+    return status;
+}
+
+void    Connection::setStatus(Status stat){
+    status = stat;
 }

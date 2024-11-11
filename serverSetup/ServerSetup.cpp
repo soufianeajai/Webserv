@@ -95,12 +95,9 @@ void ServerSetup(ParsingConfig &Config)
 	while (1)
     {
         int socketServer;
-        int epollEventsNumber = epoll_wait(epollInstance, evenBuffer, 1024, 1);
-        if (epollEventsNumber <= 0)
-        {
-            //std::cout << "an error occured\n";
-            continue;
-        }
+        int epollEventsNumber = epoll_wait(epollInstance, evenBuffer, 1024, -1);
+        // if (epollEventsNumber <= 0)
+        //     continue;
         for (int index = 0; index < epollEventsNumber; index++)
         {
             Server CurrentServer;
@@ -116,7 +113,7 @@ void ServerSetup(ParsingConfig &Config)
                         break;
 
                     Connection connection(newClient, clientAddr, Servers[socketServer].clientMaxBodySizeGetter());
-                    initializeSocketEpoll(epollInstance, newClient, EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLHUP);
+                    initializeSocketEpoll(epollInstance, newClient, EPOLLIN | EPOLLRDHUP | EPOLLHUP);
                     Servers[socketServer].addConnection(newClient,connection);
                 }
                 else 
@@ -124,14 +121,17 @@ void ServerSetup(ParsingConfig &Config)
                     CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                     CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
                     CurrentConnection.readIncomingData(CurrentServer.getRoutes());
-                    // if reading and parsing done, enable EPOLLOUT
-
+                    // CurrentConnection.setStatus(DONE);
+                    std::cout << CurrentConnection.getStatus() << std::endl;
+                    if (CurrentConnection.getStatus() == SENDING_RESPONSE)
+                        evenBuffer[index].events |= EPOLLOUT;
                 }
             }    
-            if (evenBuffer[index].events & (EPOLLOUT)  /* && CHECK IF RESPONSE IS READY*/)
+            if (evenBuffer[index].events & (EPOLLOUT))
             {   
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
+                 std::cout << "hellooooooo" << std::endl;
                 //CurrentConnection.generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.getRoutes());
                 const char* httpResponse = 
                         "HTTP/1.1 200 OK\r\n"
@@ -139,7 +139,8 @@ void ServerSetup(ParsingConfig &Config)
                         "\r\n"
                         "Connection batiii2a jidan!";
                 send(evenBuffer[index].data.fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
-                // if response ended -> close the EPOLLOUT.
+                if (CurrentConnection.getStatus() == DONE)
+                   evenBuffer[index].events &= ~EPOLLOUT;
             }
 			// EPOLLRHUP The other end of a socket closed or shut down for writing.
             if (evenBuffer[index].events & (EPOLLRDHUP | EPOLLHUP))

@@ -129,7 +129,7 @@ private:
 public:
     HttpRequest();
     void    parse(uint8_t *buffer, int readSize);
-     std::map<std::string, std::string>    process(std::map<std::string, Route>& routes);
+    void    process(std::map<std::string, Route>& routes);
     void    setMethod(const std::string methodStr);
     void    setUri(const std::string uri);
     void    reset();
@@ -182,7 +182,6 @@ private:
     void    handleProcessDelete(Route& myRoute);
     void    handleProcessChunkedBody(std::string root);
     void    handleProcessPost();
-    void    handleProcessFileUpload();
     void    handleProcessMultipart(std::string root);
 // PARSER UTILS 
     bool    isValidPathChar(uint8_t byte);

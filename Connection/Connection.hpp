@@ -4,7 +4,7 @@
 #include "../Server/Server.hpp"
 
 
-enum Status {INITIAL, READING_PARSING, PROCESSING, GENARATE_RESPONSE, WRITING, DONE, ERROR};
+enum Status {INITIAL, READING_PARSING, PROCESSING, GENARATE_RESPONSE, SENDING_RESPONSE, DONE, ERROR};
 class Connection {
 private:
     sockaddr_in CLientAddress;
@@ -24,4 +24,7 @@ public:
     void closeConnection();
     int getClientSocketId() const;
     void generateResponse(std::map<int, std::string> &errorPages, std::map<std::string, Route>& routes);
+    HttpRequest getRequest() const;
+    Status getStatus() const;
+    void    setStatus(Status stat);
 };

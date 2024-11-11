@@ -30,7 +30,7 @@ void    HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& route
         myRoute = it->second;
         found = true;
     }
-    else if (uri != "/"){
+    else{
         // check for prefix matching
         for (std::map<std::string, Route>::const_iterator it = routes.begin(); it != routes.end() && !found; ++it) {
             const std::string path = it->first;
@@ -142,7 +142,7 @@ void HttpRequest::handleProcessChunkedBody(std::string root) {
 }
 
 
- std::map<std::string, std::string>    HttpRequest::process(std::map<std::string, Route>& routes){
+void HttpRequest::process(std::map<std::string, Route>& routes){
     Route myRoute;
     currentState = PROCESS_URI;
     while (!errorOccured() && currentState != PROCESS_DONE) {
@@ -153,13 +153,12 @@ void HttpRequest::handleProcessChunkedBody(std::string root) {
             case PROCESS_POST: handleProcessPost(); break;
             case PROCESS_CHUNKED_BODY: handleProcessChunkedBody(myRoute.getRoot()); break;
             case PROCESS_MULTIPART_FORM_DATA: handleProcessMultipart(myRoute.getRoot()); break;
-            case PROCESS_DONE: return(formFields) ; break;
+            case PROCESS_DONE: 
+                break;
             default:
                 break;
         }
     }
-    
-    return formFields;
 }
 
 
