@@ -121,16 +121,15 @@ void ServerSetup(ParsingConfig &Config)
                     CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                     CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
                     CurrentConnection.readIncomingData(CurrentServer.getRoutes());
-                    if (CurrentConnection.getStatus() == GENARATE_RESPONSE){
+                    //if (CurrentConnection.getStatus() == GENARATE_RESPONSE) // dosnt work for simple request get for post data txt
                         evenBuffer[index].events |= EPOLLOUT;
-                    }
                 }
             }    
             if (evenBuffer[index].events & (EPOLLOUT))
             {   
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-    //            CurrentConnection.generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.getRoutes());
+                CurrentConnection.generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.getRoutes());
                 const char* httpResponse = 
                         "HTTP/1.1 200 OK\r\n"
                         "Content-Length: 15\r\n"

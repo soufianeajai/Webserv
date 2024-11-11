@@ -72,9 +72,20 @@ void Connection::generateResponse(std::map<int, std::string> &errorPages, std::m
     int code =  request->GetStatusCode();
     if (code > 199 &&  code < 400)
     {
-        std::map<std::string, Route>::iterator routeIt = routes.find(request->getUri()); // detect url which route is ...
-        if (routeIt != routes.end())
-            route = routeIt->second;
+
+        std::map<std::string, Route>::iterator it = routes.begin();
+    while (it != routes.end()) {
+        std::cout << "Key: " << it->first << ", Route destination: " << it->second.getPath() << std::endl;
+        ++it;
+    }
+        // std::cout <<"hhhhhhhhhhhhhhhhhh->  request->getUri() : "<<request->getUri()<<"\n\n";
+        // std::map<std::string, Route>::iterator routeIt = routes.find(request->getUri()); // detect url which route is ...
+        // if (routeIt != routes.end())
+        // {
+        //     route = routeIt->second;
+        //     route.setPath(routeIt->first);
+        //     std::cout << "hhhhhhhhhhhhhhhhhhhhhhhhhh";
+        // }
         // if url is file from a path how can i know that -> we need to cut url
     }
     else
@@ -85,7 +96,8 @@ void Connection::generateResponse(std::map<int, std::string> &errorPages, std::m
         else
             errorpage = DEFAULTERROR;
     }
-    response->initResponse(route, errorpage, code, request->getQuery(), request->getUri(), request->getMethod());
+    //std::cout << "generate response : "<< status<<"\nurl route : -"<<request->getUri()<<":"<<route.getPath()<<"\nmethod request: "<<  request->getMethod()<<std::endl; 
+    //response->initResponse(route, errorpage, code, request->getQuery(), request->getUri(), request->getMethod());
 }
 
 Status Connection::getStatus() const{

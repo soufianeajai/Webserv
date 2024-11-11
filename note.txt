@@ -46,3 +46,19 @@ CHECK IF RESPONSE IS READY
     The C++98 standard doesn't provide a built-in mechanism for detecting timeouts using just the C++98 
     Standard Library, because timing-related functions (like time() or clock())
     are defined in the C Standard Library.
+
+
+
+#############################################
+please when i have GET dont pase body
+~~~
+method request: GET
+----- 47
+readSize 555
+sdff fsdf
+dfsdfs fsds
+fsdsdfs fsdfsdf
+sdfsd fs
+fdsfsdf fsdfd
+fsdfsdf fsdfsd
+~~~
