@@ -85,7 +85,7 @@ enum State {
     PROCESS_GET,
     PROCESS_DELETE,
     PROCESS_POST,
-    PROCESS_BODY,
+    PROCESS_POST_DATA,
     PROCESS_CHUNKED_BODY,
     PROCESS_MULTIPART_FORM_DATA,
     PROCESS_DONE
@@ -115,6 +115,7 @@ private:
     bool            isChunked;
     bool            isMultipart;
     int             contentLength;
+    int             bytesread;
     std::string     boundary;
     int             chunkSize;
     int             chunkbytesread;
@@ -182,7 +183,9 @@ private:
     void    handleProcessDelete(Route& myRoute);
     void    handleProcessChunkedBody(std::string root);
     void    handleProcessPost();
+    void    handleProcessPostData();
     void    handleProcessMultipart(std::string root);
+    void    saveDataToFile(std::string name, std::vector<uint8_t>& body);
 // PARSER UTILS 
     bool    isValidPathChar(uint8_t byte);
     bool    uriBehindRoot();

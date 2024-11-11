@@ -23,6 +23,7 @@ void Connection::parseRequest(){
     (void)bodySize;
     memset(buffer, 0, Connection::CHUNK_SIZE);
     readSize = recv(clientSocket, buffer, Connection::CHUNK_SIZE, MSG_DONTWAIT);
+    std::cout << "readsize " << readSize << std::endl;
     if (readSize == 0)
     {
         std::cout << " Client closed the connection" << std::endl;
@@ -37,7 +38,7 @@ void Connection::parseRequest(){
     else
     {
         this->request.parse(buffer, readSize);
-        if (this->request.parsingCompleted())
+        if (this->request.parsingCompleted()){}
             status = PROCESSING;
         if (this->request.errorOccured())
             status = ERROR;
@@ -46,6 +47,7 @@ void Connection::parseRequest(){
 
 void    Connection::readIncomingData(std::map<std::string, Route>& routes)
 {
+
     std::map<std::string, std::string> formFields;
     if (status == READING_PARSING)
         parseRequest();

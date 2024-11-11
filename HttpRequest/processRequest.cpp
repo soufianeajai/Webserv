@@ -15,14 +15,17 @@ State processMethod(const std::string& myMethod, Route& route){
     };
 }
 
-bool isPrefix(std::string prefix, std::string uri)
-{
-    size_t prefixLength = prefix.length();
-    return ((uri.compare(0, prefixLength, prefix) == 0) && (uri[prefixLength] == '/'));
-}
+// bool isPrefix(std::string prefix, std::string uri)
+// {
+//     size_t prefixLength = prefix.length();
+//     return ((uri.compare(0, prefixLength, prefix) == 0) /*&& (uri[prefixLength] == '/')*/);
+// }
 
 void    HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes, Route& myRoute)
 {
+    // for (std::map<std::string, Route>::const_iterator it = routes.begin(); it != routes.end(); ++it) {
+    //      std::cout << it->first << std::endl;
+    // }
     std::map<std::string, Route>::iterator it = routes.find(uri);
     bool found = false;
 // exact matching
@@ -34,7 +37,7 @@ void    HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& route
         // check for prefix matching
         for (std::map<std::string, Route>::const_iterator it = routes.begin(); it != routes.end() && !found; ++it) {
             const std::string path = it->first;
-            if (isPrefix(path, uri))
+            if ((uri.compare(0, path.length(), path) == 0))
             {
                 myRoute = it->second;
                 found = true;
@@ -85,29 +88,62 @@ void    HttpRequest::handleProcessDelete(Route& myRoute){
         currentState = ERROR_INVALID_METHOD;
 }
 
+
+void HttpRequest::saveDataToFile(std::string name, std::vector<uint8_t>& body)
+{
+    std::ofstream file(name.c_str(), std::ios::binary);
+    if (file.is_open())
+        file.write(reinterpret_cast<const char*>(body.data()), body.size());
+
+    else {
+        currentState = ERROR_BOUNDARY;
+        return;
+    }
+    file.close();
+}
+
+void    HttpRequest::handleProcessPostData(){
+    saveDataToFile("Posted_Data", body);
+    currentState = PROCESS_DONE;
+}
+
 void    HttpRequest::handleProcessMultipart(std::string root){
     //upload the file in the current dir and the formfields in the server.
+    std::string name = "boundary-filee";
+    std::ofstream file(name.c_str());
     for(std::vector<boundaryPart>::iterator it = parts.begin(); it != parts.end(); it++){
+        // for(std::map<std::string, std::string>::iterator itt = it->boundaryHeader.begin(); itt != it->boundaryHeader.end(); itt++)
+        //     std::cout << itt->first << " " << itt->second << std::endl;
         if (it->isFile)
         {
             std::string name = root + uri + "/" + it->fileName;
-            std::ifstream file(name.c_str());
-            if (file.is_open())
-                it->fileBody.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+            saveDataToFile(name, it->fileBody);
+        }
+        else
+        {
+            if (file.is_open()){
+        //        std::cout << it->name << " " << it->value << std::endl;
+                std::string toWrite = it->name + " " + it->value + "\n"; 
+                file.write(toWrite.c_str(), toWrite.size());
+            }
+
             else {
                 currentState = ERROR_BOUNDARY;
                 return;
             }
-            file.close();
         }
     }
+    file.close();
     currentState = PROCESS_DONE;
 }
+
 void    HttpRequest::handleProcessPost(){
     if (isChunked)
         currentState = PROCESS_CHUNKED_BODY;
     else if (isMultipart)
         currentState = PROCESS_MULTIPART_FORM_DATA;
+    else if (contentLength)
+        currentState = PROCESS_POST_DATA;
 }
 
 void HttpRequest::handleProcessChunkedBody(std::string root) {
@@ -122,14 +158,7 @@ void HttpRequest::handleProcessChunkedBody(std::string root) {
             std::size_t filenameEndPos = contentDisposition.find("\"", filenamePos);
             std::string filename = contentDisposition.substr(filenamePos, filenameEndPos - filenamePos);
             std::string filePath = root + uri + "/" + filename;
-            std::ifstream file(filePath.c_str(), std::ios::binary);
-            if (file.is_open())
-                body.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-            else{
-                currentState = ERROR_BOUNDARY;
-                return;
-            }
-            file.close();
+            saveDataToFile(filePath, body);
         } else {
             currentState = ERROR_BOUNDARY;
             return;
@@ -151,6 +180,7 @@ void HttpRequest::process(std::map<std::string, Route>& routes){
             case PROCESS_URI: handleProcessUri_Method(routes, myRoute); break;
             case PROCESS_DELETE: handleProcessDelete(myRoute); break;
             case PROCESS_POST: handleProcessPost(); break;
+            case PROCESS_POST_DATA: handleProcessPostData(); break;
             case PROCESS_CHUNKED_BODY: handleProcessChunkedBody(myRoute.getRoot()); break;
             case PROCESS_MULTIPART_FORM_DATA: handleProcessMultipart(myRoute.getRoot()); break;
             case PROCESS_DONE: 
@@ -159,13 +189,6 @@ void HttpRequest::process(std::map<std::string, Route>& routes){
                 break;
         }
     }
+    
 }
 
-
-/*
-- check for valid uri(locations) and method inside that location
-- open files for upload, Post method
-- configure a container to hold the posted data
-- handle DELETE method.
-
-*/

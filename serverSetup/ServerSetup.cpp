@@ -121,9 +121,7 @@ void ServerSetup(ParsingConfig &Config)
                     CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                     CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
                     CurrentConnection.readIncomingData(CurrentServer.getRoutes());
-                    // CurrentConnection.setStatus(DONE);
-                    std::cout << CurrentConnection.getStatus() << std::endl;
-                    if (CurrentConnection.getStatus() == SENDING_RESPONSE)
+                    if (CurrentConnection.getStatus() == GENARATE_RESPONSE)
                         evenBuffer[index].events |= EPOLLOUT;
                 }
             }    
@@ -131,14 +129,15 @@ void ServerSetup(ParsingConfig &Config)
             {   
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                 std::cout << "hellooooooo" << std::endl;
-                //CurrentConnection.generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.getRoutes());
+    //            CurrentConnection.generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.getRoutes());
                 const char* httpResponse = 
                         "HTTP/1.1 200 OK\r\n"
                         "Content-Length: 15\r\n"
                         "\r\n"
                         "Connection batiii2a jidan!";
                 send(evenBuffer[index].data.fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
+            //    epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL);
+            //    std::cout << "connection closed after sending response" << std::endl;
                 if (CurrentConnection.getStatus() == DONE)
                    evenBuffer[index].events &= ~EPOLLOUT;
             }

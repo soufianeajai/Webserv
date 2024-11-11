@@ -2,7 +2,7 @@
 
 HttpRequest::HttpRequest():HttpMessage(), currentState(METHOD_START), method(""), uri(""),  statusCode(200),
 holder(""), currentHeaderName(""), currentHeaderValue(""), isChunked(false), isMultipart(false), contentLength(0),
-boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), fieldName(""), query(""){
+bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), fieldName(""), query(""){
 // FIRST LINE STATE HANDLERS
     stateHandlers.insert(std::make_pair(METHOD_START, &HttpRequest::handleMethodStart));
     stateHandlers.insert(std::make_pair(METHOD_PARSING, &HttpRequest::handleMethodParsing));
@@ -74,13 +74,17 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
         std::map<State, int>::const_iterator it = errorState.find(currentState);
         statusCode = it->second;
     }
+
+    for(std::vector<boundaryPart>::iterator it = parts.begin(); it != parts.end(); it++){
+        std::cout << it->name << " " << it->value << std::endl;
+    }
     //  std::cout <<" method is : " << method << std::endl;
     //  std::cout <<" uri is : " << uri << std::endl;
     //  std::cout << "version is " << version << std::endl;
     //  std::cout <<" status code is : " << statusCode << std::endl;
     // std::cout <<" isChunked are : " << isChunked << std::endl;
     // std::cout <<" isMultipart are : " << isMultipart << std::endl;
-    // std::cout <<" contentLength are : " << contentLength << std::endl;
+    //  std::cout <<" contentLength are : " << contentLength << std::endl;
     // std::cout <<" boundary are :                             " << boundary << std::endl;
 
     // for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
