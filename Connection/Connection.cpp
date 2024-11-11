@@ -18,12 +18,14 @@ void Connection::closeConnection(){
 }
 void Connection::parseRequest(){
     uint8_t    buffer[Connection::CHUNK_SIZE];
+//    uint8_t    globalBuffer[Connection::MAX_BODY_SIZE];
     int     readSize = 0;
     int clientSocket = this->getClientSocketId();
     (void)bodySize;
     memset(buffer, 0, Connection::CHUNK_SIZE);
     readSize = recv(clientSocket, buffer, Connection::CHUNK_SIZE, MSG_DONTWAIT);
     std::cout << "readsize " << readSize << std::endl;
+    std::cout << "clientSocket " << clientSocket << std::endl;
     if (readSize == 0)
     {
         std::cout << " Client closed the connection" << std::endl;
@@ -37,6 +39,7 @@ void Connection::parseRequest(){
     }
     else
     {
+        
         this->request.parse(buffer, readSize);
         if (this->request.parsingCompleted()){}
             status = PROCESSING;

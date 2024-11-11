@@ -62,6 +62,8 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
 {
     for(int i = 0; i < readSize && !errorOccured(); i++)
     {
+        if (i == 0)
+            std::cout << "----- " << buffer[i] << std::endl;
         (this->*currentHandler)(buffer[i]);
         std::map<State, StateHandler>::const_iterator it = stateHandlers.find(currentState);
         if (it != stateHandlers.end())
@@ -74,7 +76,6 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
         std::map<State, int>::const_iterator it = errorState.find(currentState);
         statusCode = it->second;
     }
-
     for(std::vector<boundaryPart>::iterator it = parts.begin(); it != parts.end(); it++){
         std::cout << it->name << " " << it->value << std::endl;
     }
