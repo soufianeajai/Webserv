@@ -8,6 +8,7 @@ public:
     ParsingConfig() {}
     bool hostCheck(std::string host);
     bool checkClientBodySize(std::string &str);
+    bool containsOnlySpaces(std::string &str);
 };
 
 ParsingConfig parsingConfig(const char *configFile);

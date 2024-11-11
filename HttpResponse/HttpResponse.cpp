@@ -1,18 +1,19 @@
 #include "HttpResponse.hpp"
 #include <sys/stat.h>
-
+// #include "../HttpRequest/processRequest.cpp"
 HttpResponse::HttpResponse(){}
 
-bool isDirectory(const std::string& path)
-{
-    struct stat pathStat;
-    if (stat(path.c_str(), &pathStat) != 0)
-    {
-        perror("stat");  // Print an error if stat fails
-        return false;    // Treat as non-directory if there's an error
-    }
-    return S_ISDIR(pathStat.st_mode);  // Check if it's a directory
-}
+// this function is in  processRequest
+// bool isDirectory(const std::string& path)
+// {
+//     struct stat pathStat;
+//     if (stat(path.c_str(), &pathStat) != 0)
+//     {
+//         perror("stat");  // Print an error if stat fails
+//         return false;    // Treat as non-directory if there's an error
+//     }
+//     return S_ISDIR(pathStat.st_mode);  // Check if it's a directory
+// }
 
 std::string createSetCookieHeader(const std::string& sessionId)
 {
@@ -86,15 +87,15 @@ void HttpResponse::initResponse(const Route &route,std::string errorPage, int co
         Page = route.getRoot() +  UrlRequest;
 
 
-    if (isDirectory(Page))
-    {
-        // default file or auto index 
-    }
-    else
-    {
-        // is good is file so fitch content of file 
+    // if (isDirectory(Page)) // this will be get from request after processing !!
+    // {
+    //     // default file or auto index 
+    // }
+    // else
+    // {
+    //     // is good is file so fitch content of file 
 
-    }
+    // }
 
     // MIME !!
 

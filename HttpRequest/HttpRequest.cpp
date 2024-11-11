@@ -78,7 +78,7 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
         std::cout << it->name << " " << it->value << std::endl;
     }
     //  std::cout <<" method is : " << method << std::endl;
-    //  std::cout <<" uri is : " << uri << std::endl;
+    //   std::cout <<" uri is : " << uri << std::endl;
     //  std::cout << "version is " << version << std::endl;
     //  std::cout <<" status code is : " << statusCode << std::endl;
     // std::cout <<" isChunked are : " << isChunked << std::endl;
@@ -99,6 +99,7 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
     // }
     // std::cout << std::endl;
 }
+
 
 
 void HttpRequest::setMethod(const std::string methodStr){

@@ -17,7 +17,9 @@ CHECK IF RESPONSE IS READY
 
 #########################  necessary ############################
 - host , port 
-- root ? 
+- root ?
+
+- problem pass empty routes !!!
 
 ######################### not necessary ############################
 - Setup default error pages.
@@ -62,3 +64,4 @@ sdfsd fs
 fdsfsdf fsdfd
 fsdfsdf fsdfsd
 ~~~
+detect default root from request , because i write code again for detection (if 200 in statuscode)

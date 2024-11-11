@@ -103,6 +103,7 @@ typedef struct s_boundaryPart{
 
 class HttpRequest :  public HttpMessage{
 private:
+    Route CurrentRoute;
     static const int  MAX_URI_LENGTH = 2048;
     typedef void (HttpRequest::*StateHandler)(uint8_t);
     State           currentState;
@@ -200,9 +201,4 @@ private:
     void    addCurrentHeader();
     void    handleTransfer();
     bool    isValidMultipart(std::string content);
-
-
-
-
-
 };

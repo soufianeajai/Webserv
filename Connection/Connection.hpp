@@ -25,7 +25,7 @@ public:
     void closeConnection();
     int getClientSocketId() const;
     void generateResponse(std::map<int, std::string> &errorPages, std::map<std::string, Route>& routes);
-    HttpRequest getRequest() const;
+    HttpRequest* getRequest();
     Status getStatus() const;
     void    setStatus(Status stat);
         State getcurrentState() const;

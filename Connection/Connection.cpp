@@ -72,12 +72,15 @@ void Connection::generateResponse(std::map<int, std::string> &errorPages, std::m
     int code =  request->GetStatusCode();
     if (code > 199 &&  code < 400)
     {
-
+        
+         size_t lastSlashPos = request->getUri().find("/");
+         std::cout << "lastslash[pos] : "<<lastSlashPos << ", url: "<< request->getUri();
         std::map<std::string, Route>::iterator it = routes.begin();
-    while (it != routes.end()) {
-        std::cout << "Key: " << it->first << ", Route destination: " << it->second.getPath() << std::endl;
-        ++it;
-    }
+        while (it != routes.end()) {
+            std::cout << "\nKey: " << it->first << ", Route destination: " << it->second.getPath() << std::endl;
+
+            ++it;
+        }
         // std::cout <<"hhhhhhhhhhhhhhhhhh->  request->getUri() : "<<request->getUri()<<"\n\n";
         // std::map<std::string, Route>::iterator routeIt = routes.find(request->getUri()); // detect url which route is ...
         // if (routeIt != routes.end())
@@ -106,4 +109,10 @@ Status Connection::getStatus() const{
 
 void    Connection::setStatus(Status stat){
     status = stat;
+}
+
+
+HttpRequest* Connection::getRequest()
+{
+    return request;
 }

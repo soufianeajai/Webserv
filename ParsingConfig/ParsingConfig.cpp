@@ -17,6 +17,17 @@ void ft_error(std::string err, std::ifstream& fd)
     std::cerr << err << std::endl;
     exit (EXIT_FAILURE);
 }
+
+bool ParsingConfig::containsOnlySpaces(std::string &str)
+{
+    for (size_t i = 0; i < str.length(); i++)
+    {
+        if (str[i] != ' ')
+            return false;
+    }
+    return true;
+}
+
 bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string> locationPath)
 {
     std::string str;
@@ -251,7 +262,7 @@ ParsingConfig parsingConfig(const char *configFile)
             Server server;
             while (getline(FILE, str) && str != "server")
             {
-                if (!str.empty())
+                if (!str.empty() && !parsingConfig.containsOnlySpaces(str))
                 {
                     std::stringstream ss(str);
                     std::string to;
