@@ -137,8 +137,8 @@ public:
     void    reset();
     bool    parsingCompleted() const;
     bool    errorOccured() const;
-    std::string getMethod() const;
-    std::string getUri() const ;
+    std::string& getMethod() ;
+    std::string& getUri()  ;
     int GetStatusCode() const;
     std::string getQuery() const;
     State getcurrentState() const;

@@ -104,13 +104,13 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
 void HttpRequest::setMethod(const std::string methodStr){
     method = methodStr;
 };
-std::string HttpRequest::getMethod() const{
+std::string& HttpRequest::getMethod() {
     return method;
 };
 void HttpRequest::setUri(const std::string inputUrl){
     uri = inputUrl;
 };
-std::string HttpRequest::getUri() const{
+std::string& HttpRequest::getUri() {
     return uri;
 };
 void HttpRequest::reset(){
@@ -120,6 +120,7 @@ void HttpRequest::reset(){
     currentState = METHOD_START;
     statusCode = 200;
 };
+
 bool HttpRequest::parsingCompleted() const {
     return currentState == MESSAGE_COMPLETE;
 }

@@ -1,6 +1,6 @@
 #include "HttpRequest.hpp"
 
-State processMethod(const std::string& myMethod, Route& route){
+State processMethod(std::string& myMethod, Route& route){
     std::set<std::string> allowedmethods;
     allowedmethods = route.getAllowedMethods();
     std::set<std::string>::iterator Methodit = allowedmethods.find(myMethod);
