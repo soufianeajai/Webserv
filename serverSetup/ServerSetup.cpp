@@ -104,7 +104,7 @@ void ServerSetup(ParsingConfig &Config)
             Connection CurrentConnection;
             if (evenBuffer[index].events & EPOLLIN)
             {
-                if (((socketServer = ServerSocketSearch(evenBuffer[index].data.fd, Servers)) != -1) & EPOLLIN)
+                if (((socketServer = ServerSocketSearch(evenBuffer[index].data.fd, Servers)) != -1))
                 {
                     struct sockaddr_in clientAddr;
                     socklen_t clientAddrLen = sizeof(clientAddr);
@@ -121,8 +121,9 @@ void ServerSetup(ParsingConfig &Config)
                     CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                     CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
                     CurrentConnection.readIncomingData(CurrentServer.getRoutes());
-                    if (CurrentConnection.getStatus() == GENARATE_RESPONSE)
+                    if (CurrentConnection.getStatus() == GENARATE_RESPONSE){
                         evenBuffer[index].events |= EPOLLOUT;
+                    }
                 }
             }    
             if (evenBuffer[index].events & (EPOLLOUT))

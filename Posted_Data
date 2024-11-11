@@ -1,104 +1,63 @@
-POST /upload HTTP/1.1
-Host: localhost
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Length: 315
+// MULTIPART/FORM-DATA BODY STATE HANDLERS
 
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="username"
+void HttpRequest::handleBodyBoundaryStart(uint8_t byte) {
+    if (byte == '-') {
+        holder += byte;
+        currentState = BODY_BOUNDARY_PARSING;
+    }
+    else
+        currentState = ERROR_BOUNDARY;
+}
 
-john_doe
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="email"
+void HttpRequest::handleBodyBoundaryParsing(uint8_t byte) {
+    if (byte == '\r') {
+        std::string expectedBoundary = "--" + boundary;
+        if (holder == expectedBoundary) {
+            parts.push_back(boundaryPart());
+            currentState = BODY_BOUNDARY_LF;
+        }
+        else if (holder == expectedBoundary + "--")
+            currentState = MESSAGE_COMPLETE;
+        else
+            currentState = ERROR_BOUNDARY;
+        holder.clear();
+    }
+    else {
+        holder += byte;
+        if (holder.length() > boundary.length() + 4){
+            currentState = ERROR_BOUNDARY;
+            holder.clear();
+        }
+    }   
+}// MULTIPART/FORM-DATA BODY STATE HANDLERS
 
-john@example.com
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="age"
+void HttpRequest::handleBodyBoundaryStart(uint8_t byte) {
+    if (byte == '-') {
+        holder += byte;
+        currentState = BODY_BOUNDARY_PARSING;
+    }
+    else
+        currentState = ERROR_BOUNDARY;
+}
 
-30
-------WebKitFormBoundary7MA4YWxkTrZu0gW--
-POST /upload HTTP/1.1
-Host: localhost
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Length: 315
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="username"
-
-john_doe
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="email"
-
-john@example.com
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="age"
-
-30
-------WebKitFormBoundary7MA4YWxkTrZu0gW--POST /upload HTTP/1.1
-Host: localhost
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Length: 315
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="username"
-
-john_doe
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="email"
-
-john@example.com
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="age"
-
-30
-------WebKitFormBoundary7MA4YWxkTrZu0gW--POST /upload HTTP/1.1
-Host: localhost
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Length: 315
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="username"
-
-john_doe
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="email"
-
-john@example.com
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="age"
-
-30
-------WebKitFormBoundary7MA4YWxkTrZu0gW--POST /upload HTTP/1.1
-Host: localhost
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Length: 315
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="username"
-
-john_doe
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="email"
-
-john@example.com
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="age"
-
-30
-------WebKitFormBoundary7MA4YWxkTrZu0gW--POST /upload HTTP/1.1
-Host: localhost
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Length: 315
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="username"
-
-john_doe
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="email"
-
-john@example.com
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="age"
-
-30
-------WebKitFormBoundary7MA4YWxkTrZu0gW--
+void HttpRequest::handleBodyBoundaryParsing(uint8_t byte) {
+    if (byte == '\r') {
+        std::string expectedBoundary = "--" + boundary;
+        if (holder == expectedBoundary) {
+            parts.push_back(boundaryPart());
+            currentState = BODY_BOUNDARY_LF;
+        }
+        else if (holder == expectedBoundary + "--")
+            currentState = MESSAGE_COMPLETE;
+        else
+            currentState = ERROR_BOUNDARY;
+        holder.clear();
+    }
+    else {
+        holder += byte;
+        if (holder.length() > boundary.length() + 4){
+            currentState = ERROR_BOUNDARY;
+            holder.clear();
+        }
+    }   
+}

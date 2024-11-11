@@ -9,10 +9,11 @@ class Connection {
 private:
     sockaddr_in CLientAddress;
     int clientSocketId;
-    HttpRequest request;
+    HttpRequest  request;
     HttpResponse response;
     size_t bodySize;
     Status status;
+
 public:
     static const size_t MAX_BODY_SIZE = 10 * 1024 * 1024;
     static const size_t CHUNK_SIZE = 8 * 1024;
@@ -27,4 +28,6 @@ public:
     HttpRequest getRequest() const;
     Status getStatus() const;
     void    setStatus(Status stat);
+        State getcurrentState() const;
+
 };
