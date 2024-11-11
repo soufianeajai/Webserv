@@ -131,6 +131,7 @@ private:
 
 public:
     HttpRequest();
+    Route& getCurrentRoute();
     void    parse(uint8_t *buffer, int readSize);
     void    process(std::map<std::string, Route>& routes);
     void    setMethod(const std::string methodStr);
