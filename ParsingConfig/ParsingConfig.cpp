@@ -42,7 +42,8 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                 if (!to.empty())
                     arr.push_back(to);
             }
-
+            if (!arr.size())
+                break;
             if (arr[0] == "location:")
             {
                 std::stringstream ss(str);
@@ -84,8 +85,6 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
             {
                     if (arr[0] == "methods:")
                     {
-                        if (arr.size() < 2 || arr.size() > 4)
-                            ft_error("Error: Invalid methods", FILE);
                         for (size_t i = 1; i < arr.size(); i++)
                         {
                             if (arr[i] != "GET" && arr[i] != "POST" && arr[i] != "DELETE")
@@ -100,13 +99,13 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     {
                         if (arr.size() != 2)
                             ft_error("Error: invalid root", FILE);
-                        route.setRoot(arr[1]);
+                        if (route.getRoot().empty())
+                            route.setRoot(arr[1]);
                     }
                     else if (arr[0] == "default_file:")
                     {
-                        if (arr.size() != 2)
-                            ft_error("Error: Invalid default_file", FILE);
-                        route.setDefaultFile(arr[1]);
+                        if (route.getDefaultFile().empty())
+                            route.setDefaultFile(arr[1]);
                     }
                     else if (arr[0] == "autoindex:")
                     {
@@ -121,8 +120,6 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     }
                     else if (arr[0] == "cgi_extension:")
                     {
-                        if (arr.size() < 2)
-                            ft_error("Error: invalid cgi extension", FILE);
                         for (size_t i = 1; i < arr.size(); i++)
                         {
                             route.addCgiExtension(arr[i]);
@@ -130,8 +127,6 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     }
                     else if (arr[0] == "redirect:")
                     {
-                        if (arr.size() != 3)
-                            ft_error("Error: invalid redirect", FILE);
                         int i = 0;
                         while (arr[2][i])
                         {
@@ -140,7 +135,8 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                             i++;
                         }
                         route.setIsRedirection(true);
-                        route.setRedirectnewPath(arr[1]);
+                        if (route.getRedirectnewPath().empty())
+                            route.setRedirectnewPath(arr[1]);
                         int code = numberConversion(arr[2]);
                         if (code != 301 && code != 302 && code != 303 
                             && code != 307 && code != 308)
@@ -149,9 +145,8 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                     }
                     else if (arr[0] == "upload_dir:")
                     {
-                        if (arr.size() != 2)
-                            ft_error("Error: invalid upload_dir", FILE);
-                        route.setUploadDir(arr[1]);
+                        if (route.getUploadDir().empty())
+                            route.setUploadDir(arr[1]);
                     }
                     else
                         ft_error("Error: " + arr[0], FILE);
@@ -167,6 +162,12 @@ bool ParsingConfig::hostCheck(std::string host)
     std::stringstream ss(host);
     std::string to;
     std::vector<std::string> arr;
+    int dotsCount = 0;
+    for (size_t i = 0; i < host.length(); i++)
+        if (host[i] == '.')
+            dotsCount++;
+    if (dotsCount != 3)
+        return false;
     while (getline(ss, to, '.'))
     {
         if (!to.empty())
@@ -191,8 +192,7 @@ bool ParsingConfig::checkClientBodySize(std::string &str)
         if (str[i] < '0' || str[i] > '9')
             return false;
     }
-    if (str[str.length() - 1] != 'm' &&  str[str.length() - 1] != 'M'
-       && str[str.length() - 1] != 'G' &&  str[str.length() - 1] != 'g')
+    if (str[str.length() - 1] != 'm' &&  str[str.length() - 1] != 'M')
         return false;
     return true;
 }
@@ -219,12 +219,29 @@ void checkDefaultServer(WebServer &webServer)
         }
     }    
 }
-
+void checkNecessary(WebServer &webserver, std::ifstream& FILE)
+{
+    std::vector<Server> servers = webserver.getServers();
+    for (size_t i = 0; i < servers.size(); i++)
+    {
+        if (servers[i].hostGetter().empty())
+            ft_error("Error: host not found", FILE);
+        else if (servers[i].portGetter().empty())
+            ft_error("Error: port not found", FILE);
+        
+    }
+    
+}
 ParsingConfig parsingConfig(const char *configFile)
 {
     ParsingConfig parsingConfig;
 
     std::ifstream FILE(configFile);
+    if (FILE.fail())
+    {
+        std::cout << "Error: failed to open file" << std::endl;
+        exit(1);
+    }
     std::string str;
 
     while (str == "server" || getline(FILE, str))
@@ -250,11 +267,12 @@ ParsingConfig parsingConfig(const char *configFile)
                     {
                         if (arr.size() != 2 || !parsingConfig.hostCheck(arr[1]))
                             ft_error("invalid host", FILE);
-                        server.hostSetter(arr[1]);
+                        if (server.hostGetter().empty())
+                            server.hostSetter(arr[1]);
                     }
                     else if (arr[0] == "port:")
                     {
-                        if (arr.size() < 2 || arr[1] == " ")
+                        if (arr.size() < 2)
                             ft_error("Error: invalid port", FILE);
                         int port;
                         for (size_t i = 1; i < arr.size(); i++)
@@ -267,24 +285,19 @@ ParsingConfig parsingConfig(const char *configFile)
                     }
                     else if (arr[0] == "server_names:")
                     {
-                        if (arr.size() < 2)
-                            ft_error("Error: invalid server names", FILE);
                         for (size_t i = 1; i < arr.size(); i++)
-                        {
                             server.serverNamesSetter(arr[i]);
-                        }
                         std::vector<std::string> serverNames = server.serverNamesGetter();
                     }
                     else if (arr[0] == "server_root:")
                     {
-                        if (arr.size() != 2)
-                            ft_error("Error: Invalid server_root", FILE);
-                        server.serverRootSetter(arr[1]);
+                        if (server.serverRootGetter().empty())
+                            server.serverRootSetter(arr[1]);
                     }
                     else if (arr[0] == "error_page:")
                     {
                         if (arr.size() != 3)
-                            ft_error("Error: Invalid error_page", FILE);
+                            ft_error("Error: invalid error page", FILE);
                         int i = 0;
                         while (arr[1][i])
                         {
@@ -316,6 +329,7 @@ ParsingConfig parsingConfig(const char *configFile)
             parsingConfig.webServer.addServer(server);
         }    
     }
+    checkNecessary(parsingConfig.webServer, FILE);
     FILE.close();
     checkDefaultServer(parsingConfig.webServer);
     return parsingConfig;

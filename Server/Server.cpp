@@ -1,4 +1,6 @@
 #include "Server.hpp"
+#include "../ParsingConfig/ParsingConfig.hpp"
+
 int Server::SearchSockets(int id)
 {
     for (size_t i = 0; i < sockets.size(); ++i)
@@ -86,4 +88,20 @@ void Server::addSocket(int socket)
 // }
 void Server::portEraser(int pos) {
     this->ports.erase(this->ports.begin() + pos);
+}
+void Server::setIpaddress(std::string host) {
+    std::stringstream ss(host);
+    std::string to;
+    std::vector<std::string> arr;
+    while (getline(ss, to, '.'))
+    {
+        if (!to.empty())
+            arr.push_back(to);
+    }
+    this->ip_addr = ((numberConversion(arr[0]) << 24) | (numberConversion(arr[1]) << 16)
+                    | (numberConversion(arr[2]) << 8) | (numberConversion(arr[3])));
+    this->ip_addr = htonl(ip_addr);
+}
+in_addr_t Server::getIpaddress() {
+    return this->ip_addr;
 }
