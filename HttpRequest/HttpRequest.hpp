@@ -188,8 +188,8 @@ private:
     void    handleBodyPartData(uint8_t byte);
     void    handleBodyPartEnd(uint8_t byte);
 // PROCESS HANDLERS
-    void    handleProcessUri_Method(std::map<std::string, Route>& routes, Route& myRoute);
-    void    handleProcessDelete(Route& myRoute);
+    void    handleProcessUri_Method(std::map<std::string, Route>& routes);
+    void    handleProcessDelete();
     void    handleProcessChunkedBody(std::string root);
     void    handleProcessPost();
     void    handleProcessPostData();

@@ -1,8 +1,6 @@
 #pragma once
 #include "../HttpMessage/HttpMessage.hpp"
 
-
-
 class Route {
 private:
     std::string pathLocation; // if pathlocation  == /uploads 
