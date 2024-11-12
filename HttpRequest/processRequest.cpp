@@ -106,6 +106,7 @@ bool ft_rmdir(const char *path)
 
 void    HttpRequest::handleProcessDelete(Route& myRoute){
     std::string file_path = myRoute.getRoot() + uri;
+    std::cout << "root " << myRoute.getRoot() <<  std::endl << "uri" << uri << std::endl;
     if (ft_rmdir(file_path.c_str()) == true)
         currentState = PROCESS_DONE;
     else
@@ -168,6 +169,8 @@ void    HttpRequest::handleProcessPost(){
         currentState = PROCESS_MULTIPART_FORM_DATA;
     else if (contentLength)
         currentState = PROCESS_POST_DATA;
+    else
+        currentState = PROCESS_DONE;
 }
 
 void HttpRequest::handleProcessChunkedBody(std::string root) {
@@ -196,6 +199,11 @@ void HttpRequest::handleProcessChunkedBody(std::string root) {
 
 
 void HttpRequest::process(std::map<std::string, Route>& routes){
+    // for(std::map<std::string, Route>::iterator it = routes.begin(); it != routes.end(); it++){
+    //     std::cout << "route  : " << it->first << std::endl;
+    //     std::cout << "pathLocation  : " << it->second.getPath() << std::endl;
+    //     std::cout << "root  : " << it->second.getRoot() << std::endl << std::endl << std::endl;
+    // }
     Route myRoute;
     currentState = PROCESS_URI;
     while (!errorOccured() && currentState != PROCESS_DONE) {

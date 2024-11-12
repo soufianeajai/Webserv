@@ -43,7 +43,7 @@ public:
     void LoadPage();
     void UpdateStatueCode(int code);
     void handleRedirection(const Route &route);
-    void HttpResponse::handleError(std::map<int, std::string>& errorPages);
+    void handleError(std::map<int, std::string>& errorPages);
     size_t checkIfCGI(const std::string& url);
     // void buildingHeaders();
     std::vector<uint8_t> buildResponseBuffer(); // this for building and set it in send syscall

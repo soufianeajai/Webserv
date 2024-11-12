@@ -171,6 +171,9 @@ void HttpRequest::handleHeaderLF(uint8_t byte) {
 }
 void HttpRequest::handleHeadersEndLF(uint8_t byte) {
     handleTransfer();
+    
+
+
     if (byte == '\n'){
         if (contentLength == 0)
             currentState = MESSAGE_COMPLETE;
@@ -269,7 +272,7 @@ void HttpRequest::handleChunkDataLF(uint8_t byte) {
 
 // NORMAL BODY STATE HANDLERS
 void    HttpRequest::handleBodyContentLength(uint8_t byte) {
-//    std::cout << "byteread " << bytesread << "   content" << contentLength << std::endl; 
+    std::cout << "byteread " << bytesread << "   content" << contentLength << std::endl; 
     if (contentLength < 0  || currentState == MESSAGE_COMPLETE)
         currentState = ERROR_CONTENT_LENGTH;
     else if (contentLength == 0 || bytesread == contentLength)
