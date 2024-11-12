@@ -100,7 +100,10 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
     // std::cout << std::endl;
 }
 
-
+Route& HttpRequest::getCurrentRoute()
+{
+    return CurrentRoute;
+}
 
 void HttpRequest::setMethod(const std::string methodStr){
     method = methodStr;

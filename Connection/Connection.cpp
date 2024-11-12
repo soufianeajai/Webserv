@@ -1,5 +1,5 @@
 #include "Connection.hpp"
-#define DEFAULTERROR "<html><body><h1>Default Error Page</h1></body></html>"
+
 Connection::Connection(){}
 
 Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize):clientSocketId(fd), bodySize(maxSize), status(READING_PARSING)
@@ -65,42 +65,24 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
     }
 }
 
-void Connection::generateResponse(std::map<int, std::string> &errorPages, std::map<std::string, Route>& routes)
+void Connection::generateResponse(std::map<int, std::string> &errorPages)
 {
-    Route route;
-    std::string errorpage;
-    int code =  request->GetStatusCode();
-    if (code > 199 &&  code < 400)
-    {
-        
-         size_t lastSlashPos = request->getUri().find("/");
-         std::cout << "lastslash[pos] : "<<lastSlashPos << ", url: "<< request->getUri();
-        std::map<std::string, Route>::iterator it = routes.begin();
-        while (it != routes.end()) {
-            std::cout << "\nKey: " << it->first << ", Route destination: " << it->second.getPath() << std::endl;
-
-            ++it;
-        }
-        // std::cout <<"hhhhhhhhhhhhhhhhhh->  request->getUri() : "<<request->getUri()<<"\n\n";
-        // std::map<std::string, Route>::iterator routeIt = routes.find(request->getUri()); // detect url which route is ...
-        // if (routeIt != routes.end())
-        // {
-        //     route = routeIt->second;
-        //     route.setPath(routeIt->first);
-        //     std::cout << "hhhhhhhhhhhhhhhhhhhhhhhhhh";
-        // }
-        // if url is file from a path how can i know that -> we need to cut url
-    }
-    else
-    {
-        std::map<int, std::string>::iterator it = errorPages.find(code);// trust path from configfile
-        if (it != errorPages.end())
-            errorpage = it->second;
-        else
-            errorpage = DEFAULTERROR;
-    }
-    //std::cout << "generate response : "<< status<<"\nurl route : -"<<request->getUri()<<":"<<route.getPath()<<"\nmethod request: "<<  request->getMethod()<<std::endl; 
-    //response->initResponse(route, errorpage, code, request->getQuery(), request->getUri(), request->getMethod());
+    // std::string errorpage;
+    // int code =  request->GetStatusCode();
+    // if (code > 199 &&  code < 400)
+    // {
+    //     std::cout << "db nxof axndir"<< std::endl;
+    // }
+    // else
+    // {
+    //     std::map<int, std::string>::iterator it = errorPages.find(code);// trust path from configfile
+    //     if (it != errorPages.end())
+    //         errorpage = it->second;
+    //     else
+    //         errorpage = DEFAULTERROR;
+    // }
+    std::cout << "generate response : "<< status<<"\nurl route : -"<<request->getUri()<<"__"<<request->getQuery()<<"__"<<request->getCurrentRoute().getPath()<<"\nmethod request: "<<  request->getMethod()<<std::endl; 
+    response->ResponseGenerating(request->getCurrentRoute(), errorPages, request->GetStatusCode(), request->getQuery(), request->getUri(), request->getMethod());
 }
 
 Status Connection::getStatus() const{

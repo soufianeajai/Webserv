@@ -34,10 +34,10 @@ bool isDirectory(const std::string& path)
 
 void    HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes, Route& myRoute)
 {
-    // for (std::map<std::string, Route>::const_iterator it = routes.begin(); it != routes.end(); ++it) {
-    //      std::cout << it->first << std::endl;
-    // }
-    std::map<std::string, Route>::iterator it = routes.find(uri);
+    std::string normalize_url = uri;
+    if (uri[uri.size()-1] != '/')
+        normalize_url = uri + "/";
+    std::map<std::string, Route>::iterator it = routes.find(normalize_url);
     bool found = false;
 // exact matching
 /*
@@ -48,7 +48,7 @@ void    HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& route
         myRoute = it->second;
         found = true;
         CurrentRoute = it->second;
-        std::cout << "\n\n\n\n1found : "<<found<<"\n\n\n\n";
+        //std::cout << "\n\n\n\n1found : "<<found<<"\n\n\n\n";
     }
     else{
         // check for prefix matching
@@ -60,15 +60,18 @@ void    HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& route
                 myRoute = it->second;
                 CurrentRoute = it->second;
                 found = true;
-                std::cout << "\n\n\n\n2found : "<<found<<"\n\n\n\n";
+               // std::cout << "\n\n\n\n2found : "<<found << " - "<<path<<"\n\n\n\n";// in case localhost:7070/uplodads/ is found !!
             }
         }
     }
-    std::cout << "\n\n\n\n not found \n\n\n\n";
+    
     if (found)
         currentState = processMethod(this->getMethod(), myRoute);
     else
+    {
         currentState = ERROR_INVALID_URI;
+        //std::cout << "\n\n\n\n not found \n\n\n\n";
+    }
 }
 
 bool ft_rmdir(const char *path)
