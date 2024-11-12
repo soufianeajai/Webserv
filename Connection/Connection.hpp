@@ -4,7 +4,7 @@
 #include "../Server/Server.hpp"
 
 
-enum Status {INITIAL, READING_PARSING, PROCESSING, GENARATE_RESPONSE, SENDING_RESPONSE, DONE};
+enum Status {INITIAL, READING_PARSING, PROCESSING, GENARATE_RESPONSE, SENDING_RESPONSE, DONE, ERROR};
 class Connection {
 private:
     sockaddr_in CLientAddress;

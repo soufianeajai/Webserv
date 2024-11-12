@@ -43,7 +43,7 @@ void Connection::parseRequest(){
         if (request.parsingCompleted())
             status = PROCESSING;
         if (request.errorOccured())
-            status = ERROR;
+            status = ERROR; // what !! 
     }
 }
 
@@ -56,7 +56,7 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
     if (status == PROCESSING){
         request.process(routes);
     }
-    if (request->getcurrentState() == PROCESS_DONE || request->errorOccured())
+    if (request.getcurrentState() == PROCESS_DONE || request.errorOccured())
     {
         status = GENARATE_RESPONSE;
     }
