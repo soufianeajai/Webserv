@@ -36,7 +36,7 @@ private:
     
 public:
     HttpResponse();
-    void ResponseGenerating(const Route &route, std::map<int, std::string> &errorPages, int code, 
+    std::vector<uint8_t> ResponseGenerating(const Route &route, std::map<int, std::string> &errorPages, int code, 
                   const std::string &query, const std::string &UrlRequest, const std::string &method);
     //void initResponse(const Route &route,std::map<int, std::string> &errorPage, int code,const std::string &query, const std::string UrlRequest, const std::string method);    
     std::string getMimeType(const std::string& filePath) const;
@@ -45,6 +45,7 @@ public:
     void handleRedirection(const Route &route);
     void handleError(std::map<int, std::string>& errorPages);
     size_t checkIfCGI(const std::string& url);
+
     // void buildingHeaders();
     std::vector<uint8_t> buildResponseBuffer(); // this for building and set it in send syscall
 };

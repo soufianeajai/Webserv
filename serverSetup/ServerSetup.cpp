@@ -114,7 +114,7 @@ void ServerSetup(ParsingConfig &Config)
                         break;
 
                     Connection connection(newClient, clientAddr, Servers[socketServer].clientMaxBodySizeGetter());
-                    initializeSocketEpoll(epollInstance, newClient, EPOLLIN | EPOLLRDHUP | EPOLLHUP);
+                    initializeSocketEpoll(epollInstance, newClient, EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLHUP);
                     Servers[socketServer].addConnection(newClient,connection);
                 }
                 else 
@@ -127,10 +127,11 @@ void ServerSetup(ParsingConfig &Config)
                 }
             }    
             if (evenBuffer[index].events & (EPOLLOUT))
-            {   
+            {   std::cout << "hhhhhhhh" << std::endl;
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-            //    CurrentConnection.generateResponse(CurrentServer.errorPagesGetter());
+                std::cout << "----->" << CurrentConnection.getStatus() << std::endl;
+                CurrentConnection.generateResponse(CurrentServer.errorPagesGetter());
                 const char* httpResponse = 
                         "HTTP/1.1 200 OK\r\n"
                         "Content-Length: 15\r\n"

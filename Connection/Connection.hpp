@@ -28,6 +28,5 @@ public:
     HttpRequest* getRequest();
     Status getStatus() const;
     void    setStatus(Status stat);
-        State getcurrentState() const;
 
 };

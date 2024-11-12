@@ -63,22 +63,9 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
 
 void Connection::generateResponse(std::map<int, std::string> &errorPages)
 {
-    // std::string errorpage;
-    // int code =  request->GetStatusCode();
-    // if (code > 199 &&  code < 400)
-    // {
-    //     std::cout << "db nxof axndir"<< std::endl;
-    // }
-    // else
-    // {
-    //     std::map<int, std::string>::iterator it = errorPages.find(code);// trust path from configfile
-    //     if (it != errorPages.end())
-    //         errorpage = it->second;
-    //     else
-    //         errorpage = DEFAULTERROR;
-    // }
-    std::cout << "generate response : "<< status<<"\nurl route : -"<<request->getUri()<<"__"<<request->getQuery()<<"__"<<request->getCurrentRoute().getPath()<<"\nmethod request: "<<  request->getMethod()<<std::endl; 
-    response->ResponseGenerating(request->getCurrentRoute(), errorPages, request->GetStatusCode(), request->getQuery(), request->getUri(), request->getMethod());
+    std::cout << "generate response : "<< this->getRequest()->getcurrentState() <<"\nurl route : -"<<request->getUri()<<"__"<<request->getQuery()<<"__"<<request->getCurrentRoute().getPath()<<"\nmethod request: "<<  request->getMethod()<<std::endl; 
+    std::vector<uint8_t> buffer = response->ResponseGenerating(request->getCurrentRoute(), errorPages, request->GetStatusCode(), request->getQuery(), request->getUri(), request->getMethod());
+
 }
 
 Status Connection::getStatus() const{
