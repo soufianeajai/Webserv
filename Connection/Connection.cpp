@@ -21,16 +21,11 @@ void Connection::closeConnection(){
 
 }
 void Connection::parseRequest(){
-        std::cout << "----- " << request->getcurrentState() << std::endl;
-
     uint8_t    buffer[Connection::CHUNK_SIZE];
-//    uint8_t    globalBuffer[Connection::MAX_BODY_SIZE];
     int     readSize = 0;
     int clientSocket = getClientSocketId();
-    (void)bodySize;
     memset(buffer, 0, Connection::CHUNK_SIZE);
     readSize = recv(clientSocket, buffer, Connection::CHUNK_SIZE, MSG_DONTWAIT);
-     std::cout << "readSize " << readSize << std::endl;
     if (readSize == 0)
     {
     //    std::cout << " Client closed the connection" << std::endl;
@@ -57,8 +52,9 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
     std::map<std::string, std::string> formFields;
     if (status == READING_PARSING)
         parseRequest();
-    if (status == PROCESSING)
+    if (status == PROCESSING){
         request->process(routes);
+    }
     if (request->getcurrentState() == PROCESS_DONE)
     {
         status = GENARATE_RESPONSE;
