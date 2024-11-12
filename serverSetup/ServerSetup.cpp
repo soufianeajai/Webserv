@@ -130,7 +130,7 @@ void ServerSetup(ParsingConfig &Config)
             {   
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                CurrentConnection.generateResponse(CurrentServer.errorPagesGetter());
+        //        CurrentConnection.generateResponse(CurrentServer.errorPagesGetter());
                 const char* httpResponse = 
                         "HTTP/1.1 200 OK\r\n"
                         "Content-Length: 15\r\n"
