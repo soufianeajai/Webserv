@@ -2,7 +2,7 @@
 #include "../HttpMessage/HttpMessage.hpp"
 #include "../Route/Route.hpp"
 
-
+enum Status {INITIAL, READING_PARSING, PROCESSING, GENARATE_RESPONSE, SENDING_RESPONSE, DONE};
 enum State {
 // FIRST LINE STATES
     METHOD_START,               // Start parsing method

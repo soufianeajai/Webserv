@@ -6,9 +6,14 @@ std::string getCurrentTimeFormatted();
 // #include "../HttpRequest/processRequest.cpp"
 HttpResponse::HttpResponse(){}
 
-void SendData(std::vector<uint8_t> data)
+size_t HttpResponse::getSendbytes()
 {
-    
+    return sendbytes;
+}
+
+void HttpResponse::addToSendbytes(size_t t)
+{
+    sendbytes +=t;
 }
 
 std::string intToString(size_t number)
@@ -71,12 +76,12 @@ void HttpResponse::LoadPage()
     std::ifstream file(Page.c_str());
     if (file.is_open()) // always is true 
     {
-         std::cout << "\n\nbody  from : " << Page <<"\n\n";
+         //std::cout << "\n\nbody  from : " << Page <<"\n\n";
         body.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
     }
     else
     {
-        std::cout << "\n\nno body\n\n";
+        //std::cout << "\n\nno body\n\n";
         body.clear();
     }
 }
@@ -116,15 +121,12 @@ std::vector<uint8_t> HttpResponse::buildResponseBuffer()
     // 1. Append the status line (e.g., HTTP/1.1 200 OK)
     oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
 
-    // 2. Append each header line
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
         oss << it->first << ": " << it->second << "\r\n";
     }
 
-    // 3. End of headers
     oss << "\r\n";
 
-    // 4. Convert `oss` to a string and insert into the response vector
     std::string responseStr = oss.str();
     response.insert(response.end(), responseStr.begin(), responseStr.end());
 
@@ -173,9 +175,10 @@ void HttpResponse::UpdateStatueCode(int code)
         default:  reasonPhrase = "OK"; break; // ???
     }
 }
-void HttpResponse::ResponseGenerating(const Route &route, std::map<int, std::string> &errorPages, int code, 
+std::vector<uint8_t> HttpResponse::ResponseGenerating(const Route &route, std::map<int, std::string> &errorPages, int code, 
                   const std::string &query, const std::string &UrlRequest, const std::string &method)
 {
+
     ValidcgiExtensions.insert(".php");
     ValidcgiExtensions.insert(".py");
     ValidcgiExtensions.insert(".sh");
@@ -210,11 +213,11 @@ void HttpResponse::ResponseGenerating(const Route &route, std::map<int, std::str
             // if (checkIfCGI(UrlRequest))
             // {
             //     // handling cgi 
-            //     std::cout << "cgi handling !!"<< std::endl;
+            //     //std::cout << "cgi handling !!"<< std::endl;
             // }
             // else
             // {
-                std::cout << "static file !!"<< std::endl;
+                //std::cout << "static file !!"<< std::endl;
                 Page = route.getRoot() +  UrlRequest;
         }
         // else if (method == "POST") 
@@ -230,16 +233,17 @@ void HttpResponse::ResponseGenerating(const Route &route, std::map<int, std::str
     if (statusCode > 399 && Page.empty())
         handleError(errorPages);
 
-   // std::cout << "\n___________________________________:"<<statusCode<<" "<<Page<<":___________________________________\n";
+   // //std::cout << "\n___________________________________:"<<statusCode<<" "<<Page<<":___________________________________\n";
     LoadPage();
         headers["Content-Type"] =  getMimeType(UrlRequest);
     //Transfer-Encoding: chunked or content-length ?
     headers["Content-Length"] =  intToString(body.size());
-    std::cout <<"\n\n"<<headers["Content-Length"] <<"\n\n";
+    //std::cout <<"\n\n"<<headers["Content-Length"] <<"\n\n";
     headers["Date"] =  getCurrentTimeFormatted();
     headers["Server"] =  "WebServ 1337";  
     headers["Connection"] = "close";
-    SendData(buildResponseBuffer());
+
+    return(buildResponseBuffer());
 }
 
 /* Find the position of the '?' and pos of / to get script name

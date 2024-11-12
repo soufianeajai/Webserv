@@ -121,8 +121,8 @@ void ServerSetup(ParsingConfig &Config)
                 {
                     CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                     CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                    CurrentConnection->readIncomingData(CurrentServer.getRoutes());
-                    if (CurrentConnection->getStatus() == GENARATE_RESPONSE)
+                    CurrentConnection->readIncomingData(CurrentServer.getRoutes(),CurrentServer.errorPagesGetter());
+                    if (CurrentConnection->getStatus() == SENDING_RESPONSE)
                         evenBuffer[index].events |= EPOLLOUT;
                 }
             }    
@@ -130,34 +130,38 @@ void ServerSetup(ParsingConfig &Config)
             {
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                CurrentConnection->generateResponse(CurrentServer.errorPagesGetter());
+                CurrentConnection->generateResponse();
 
                 // const char* httpResponse = 
                 //         "HTTP/1.1 200 OK\r\n"
                 //         "Content-Length: 15\r\n"
                 //         "\r\n"
                 //         "Connection batiii2a jidan!";
+
+                // // Send using vector.data() and vector.size() to get the pointer and length
                 // send(evenBuffer[index].data.fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
-            //    epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL);
-            //    std::cout << "connection closed after sending response" << std::endl;
                 if (CurrentConnection->getStatus() == DONE)
-                {
+                { 
+                    std::cout << "waaaaaaaaaaaaaaaaaaaaaaaaa";
+                    if (epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL) == -1)
+                    {
+                        perror("epoll_ctl failed to remove client");
+                    }
                     /*
                         cleaning connection when is closed ->  AFTER DONE in state
                     */
+                   
+                  // std::cout << "connection closed after sending response" << std::endl;
                     evenBuffer[index].events &= ~EPOLLOUT;
                 }
             }
 			// EPOLLRHUP The other end of a socket closed or shut down for writing.
             if (evenBuffer[index].events & (EPOLLRDHUP | EPOLLHUP))
             {
-                if (epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL) == -1)
-                {
-                    perror("epoll_ctl failed to remove client");
-                }
+               
                 // clean the connection of the fd and remove it from the server 
                 close(evenBuffer[index].data.fd);
-                std::cout << "Client disconnected\n";
+                //std::cout << "Client disconnected\n";
                 continue;
             }
         }
