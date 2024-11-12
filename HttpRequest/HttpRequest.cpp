@@ -2,7 +2,7 @@
 
 HttpRequest::HttpRequest():HttpMessage(), currentState(METHOD_START), method(""), uri(""),  statusCode(200),
 holder(""), currentHeaderName(""), currentHeaderValue(""), isChunked(false), isMultipart(false), contentLength(0),
-bytesread(1),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), fieldName(""), query(""){
+bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), fieldName(""), query(""){
 // FIRST LINE STATE HANDLERS
     stateHandlers.insert(std::make_pair(METHOD_START, &HttpRequest::handleMethodStart));
     stateHandlers.insert(std::make_pair(METHOD_PARSING, &HttpRequest::handleMethodParsing));
@@ -62,6 +62,7 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
 {
     for(int i = 0; i < readSize && !errorOccured(); i++)
     {
+//        std::cout << "state in state machine parser  " << currentState << std::endl;
         (this->*currentHandler)(buffer[i]);
         std::map<State, StateHandler>::const_iterator it = stateHandlers.find(currentState);
         if (it != stateHandlers.end())
@@ -73,9 +74,6 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
     {
         std::map<State, int>::const_iterator it = errorState.find(currentState);
         statusCode = it->second;
-    }
-    for(std::vector<boundaryPart>::iterator it = parts.begin(); it != parts.end(); it++){
-        std::cout << it->name << " " << it->value << std::endl;
     }
     //  std::cout <<" method is : " << method << std::endl;
     //   std::cout <<" uri is : " << uri << std::endl;
