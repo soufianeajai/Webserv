@@ -1,24 +1,15 @@
 #include "HttpResponse.hpp"
-#include <sys/stat.h>
+std::string intToString(size_t number);
+void SendData(std::vector<uint8_t> data);
+std::string getCurrentTimeFormatted();
+// #include <sys/stat.h>
 // #include "../HttpRequest/processRequest.cpp"
 HttpResponse::HttpResponse(){}
 
-// this function is in  processRequest
-// bool isDirectory(const std::string& path)
-// {
-//     struct stat pathStat;
-//     if (stat(path.c_str(), &pathStat) != 0)
-//     {
-//         perror("stat");  // Print an error if stat fails
-//         return false;    // Treat as non-directory if there's an error
-//     }
-//     return S_ISDIR(pathStat.st_mode);  // Check if it's a directory
-// }
-
-// std::string createSetCookieHeader(const std::string& sessionId)
-// {
-//         return "session_id=" + sessionId + "; Path=/; HttpOnly";
-// }
+void SendData(std::vector<uint8_t> data)
+{
+    
+}
 
 std::string intToString(size_t number)
 {
@@ -40,6 +31,24 @@ std::string getCurrentTimeFormatted()
     strftime(buffer, 80, "%a, %d %b %Y %H:%M:%S GMT", timeInfo);
     return std::string(buffer);
 }
+// this function is in  processRequest
+// bool isDirectory(const std::string& path)
+// {
+//     struct stat pathStat;
+//     if (stat(path.c_str(), &pathStat) != 0)
+//     {
+//         perror("stat");  // Print an error if stat fails
+//         return false;    // Treat as non-directory if there's an error
+//     }
+//     return S_ISDIR(pathStat.st_mode);  // Check if it's a directory
+// }
+
+// std::string createSetCookieHeader(const std::string& sessionId)
+// {
+//         return "session_id=" + sessionId + "; Path=/; HttpOnly";
+// }
+
+
 
 //1xx (Informational): The request was received, continuing process
 
@@ -54,6 +63,8 @@ std::string getCurrentTimeFormatted()
 
 //5xx (Server Error): The server failed to fulfill an apparently
 //valid request
+
+
 
 void HttpResponse::LoadPage()
 {
@@ -162,7 +173,7 @@ void HttpResponse::UpdateStatueCode(int code)
         default:  reasonPhrase = "OK"; break; // ???
     }
 }
-std::vector<uint8_t> HttpResponse::ResponseGenerating(const Route &route, std::map<int, std::string> &errorPages, int code, 
+void HttpResponse::ResponseGenerating(const Route &route, std::map<int, std::string> &errorPages, int code, 
                   const std::string &query, const std::string &UrlRequest, const std::string &method)
 {
     ValidcgiExtensions.insert(".php");
@@ -228,7 +239,7 @@ std::vector<uint8_t> HttpResponse::ResponseGenerating(const Route &route, std::m
     headers["Date"] =  getCurrentTimeFormatted();
     headers["Server"] =  "WebServ 1337";  
     headers["Connection"] = "close";
-    return (buildResponseBuffer());
+    SendData(buildResponseBuffer());
 }
 
 /* Find the position of the '?' and pos of / to get script name

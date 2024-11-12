@@ -14,7 +14,7 @@ private:
     std::set<std::string> ValidcgiExtensions;
     //std::map<std::string, std::map<std::string, std::string>> sessions;
     std::map<std::string, std::string> mimeTypes;
-    
+    size_t sendbytes;
 
     std::string query;
     
@@ -36,7 +36,8 @@ private:
     
 public:
     HttpResponse();
-    std::vector<uint8_t> ResponseGenerating(const Route &route, std::map<int, std::string> &errorPages, int code, 
+    
+    void ResponseGenerating(const Route &route, std::map<int, std::string> &errorPages, int code, 
                   const std::string &query, const std::string &UrlRequest, const std::string &method);
     //void initResponse(const Route &route,std::map<int, std::string> &errorPage, int code,const std::string &query, const std::string UrlRequest, const std::string method);    
     std::string getMimeType(const std::string& filePath) const;

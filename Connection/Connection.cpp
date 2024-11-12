@@ -9,9 +9,9 @@ Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize):
     CLientAddress.sin_addr = acceptedAddr.sin_addr;
     fcntl(fd, F_SETFL, O_NONBLOCK);
 
-    request = new HttpRequest();
-    response = new HttpResponse();
-
+    // request = new HttpRequest();
+    // response = new HttpResponse();
+    (void)bodySize;
  }
 
 int Connection::getClientSocketId() const{
@@ -39,10 +39,10 @@ void Connection::parseRequest(){
     }
     else
     {
-        request->parse(buffer, readSize);
-        if (request->parsingCompleted())
+        request.parse(buffer, readSize);
+        if (request.parsingCompleted())
             status = PROCESSING;
-        if (request->errorOccured())
+        if (request.errorOccured())
             status = ERROR;
     }
 }
@@ -53,9 +53,9 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
     if (status == READING_PARSING)
         parseRequest();
     if (status == PROCESSING){
-        request->process(routes);
+        request.process(routes);
     }
-    if (request->getcurrentState() == PROCESS_DONE)
+    if (request.getcurrentState() == PROCESS_DONE)
     {
         status = GENARATE_RESPONSE;
     }
@@ -63,9 +63,8 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
 
 void Connection::generateResponse(std::map<int, std::string> &errorPages)
 {
-    std::cout << "generate response : "<< this->getRequest()->getcurrentState() <<"\nurl route : -"<<request->getUri()<<"__"<<request->getQuery()<<"__"<<request->getCurrentRoute().getPath()<<"\nmethod request: "<<  request->getMethod()<<std::endl; 
-    std::vector<uint8_t> buffer = response->ResponseGenerating(request->getCurrentRoute(), errorPages, request->GetStatusCode(), request->getQuery(), request->getUri(), request->getMethod());
-
+    std::cout << "generate response : "<< request.getcurrentState() <<"\nurl route : -"<<request.getUri()<<"__"<<request.getQuery()<<"__"<<request.getCurrentRoute().getPath()<<"\nmethod request: "<<  request.getMethod()<<std::endl; 
+    response.ResponseGenerating(request.getCurrentRoute(), errorPages, request.GetStatusCode(), request.getQuery(), request.getUri(), request.getMethod());
 }
 
 Status Connection::getStatus() const{
@@ -76,8 +75,7 @@ void    Connection::setStatus(Status stat){
     status = stat;
 }
 
-
-HttpRequest* Connection::getRequest()
+HttpRequest Connection::getRequest()
 {
     return request;
 }
