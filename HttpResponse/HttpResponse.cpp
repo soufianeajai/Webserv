@@ -1,23 +1,14 @@
 #include "HttpResponse.hpp"
-#include <sys/stat.h>
+std::string intToString(size_t number);
+void SendData(std::vector<uint8_t> data);
+std::string getCurrentTimeFormatted();
+// #include <sys/stat.h>
 // #include "../HttpRequest/processRequest.cpp"
 HttpResponse::HttpResponse(){}
 
-// this function is in  processRequest
-// bool isDirectory(const std::string& path)
-// {
-//     struct stat pathStat;
-//     if (stat(path.c_str(), &pathStat) != 0)
-//     {
-//         perror("stat");  // Print an error if stat fails
-//         return false;    // Treat as non-directory if there's an error
-//     }
-//     return S_ISDIR(pathStat.st_mode);  // Check if it's a directory
-// }
-
-std::string createSetCookieHeader(const std::string& sessionId)
+void SendData(std::vector<uint8_t> data)
 {
-        return "session_id=" + sessionId + "; Path=/; HttpOnly";
+    
 }
 
 std::string intToString(size_t number)
@@ -40,6 +31,24 @@ std::string getCurrentTimeFormatted()
     strftime(buffer, 80, "%a, %d %b %Y %H:%M:%S GMT", timeInfo);
     return std::string(buffer);
 }
+// this function is in  processRequest
+// bool isDirectory(const std::string& path)
+// {
+//     struct stat pathStat;
+//     if (stat(path.c_str(), &pathStat) != 0)
+//     {
+//         perror("stat");  // Print an error if stat fails
+//         return false;    // Treat as non-directory if there's an error
+//     }
+//     return S_ISDIR(pathStat.st_mode);  // Check if it's a directory
+// }
+
+// std::string createSetCookieHeader(const std::string& sessionId)
+// {
+//         return "session_id=" + sessionId + "; Path=/; HttpOnly";
+// }
+
+
 
 //1xx (Informational): The request was received, continuing process
 
@@ -55,6 +64,24 @@ std::string getCurrentTimeFormatted()
 //5xx (Server Error): The server failed to fulfill an apparently
 //valid request
 
+
+
+void HttpResponse::LoadPage()
+{
+    std::ifstream file(Page.c_str());
+    if (file.is_open()) // always is true 
+    {
+         std::cout << "\n\nbody  from : " << Page <<"\n\n";
+        body.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+    }
+    else
+    {
+        std::cout << "\n\nno body\n\n";
+        body.clear();
+    }
+}
+
+
 void HttpResponse::handleError(std::map<int, std::string>& errorPages)
 {
     std::map<int, std::string>::iterator it = errorPages.find(statusCode);
@@ -66,11 +93,52 @@ void HttpResponse::handleError(std::map<int, std::string>& errorPages)
 
 void HttpResponse::handleRedirection(const Route &route)
 {
+    
     if (route.getIsRedirection() && !route.getNewPathRedirection().empty())
+    {
+        UpdateStatueCode(route.getstatusCodeRedirection());
         Page = route.getRoot() + route.getNewPathRedirection(); // path valid trust from process request
+    }
     else
+    {
+        UpdateStatueCode(route.getstatusCodeRedirection());
         Page = DEFAULTERROR;  // Fallback to default error page if redirection path not set
+    }
 }
+
+std::vector<uint8_t> HttpResponse::buildResponseBuffer()
+{
+    std::vector<uint8_t> response;
+    try{
+    // 1 status line example : HTTP/1.1 200 OK
+    std::ostringstream oss;
+
+    // 1. Append the status line (e.g., HTTP/1.1 200 OK)
+    oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
+
+    // 2. Append each header line
+    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+        oss << it->first << ": " << it->second << "\r\n";
+    }
+
+    // 3. End of headers
+    oss << "\r\n";
+
+    // 4. Convert `oss` to a string and insert into the response vector
+    std::string responseStr = oss.str();
+    response.insert(response.end(), responseStr.begin(), responseStr.end());
+
+    // add body 
+    response.insert(response.end(), body.begin(), body.end());
+    
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Exception in buildResponseBuffer: " << e.what() << std::endl;
+        // Handle any other standard exceptions that may occur
+    }
+    return response;
+}
+
 
 void HttpResponse::UpdateStatueCode(int code)
 {
@@ -131,39 +199,47 @@ void HttpResponse::ResponseGenerating(const Route &route, std::map<int, std::str
     
     this->query = query;
     UpdateStatueCode(code);
-    if(route.getIsRedirection() && (statusCode > 300 && statusCode < 309))
+    if(route.getIsRedirection())
         handleRedirection(route);
     
+
     else if (statusCode < 300)
     {
         if (method == "GET") 
         {
-            if (checkIfCGI(UrlRequest))
-            {
-                // handling cgi 
-            }
-            else
+            // if (checkIfCGI(UrlRequest))
+            // {
+            //     // handling cgi 
+            //     std::cout << "cgi handling !!"<< std::endl;
+            // }
+            // else
+            // {
+                std::cout << "static file !!"<< std::endl;
                 Page = route.getRoot() +  UrlRequest;
         }
-        else if (method == "POST") 
-        {
-            //post data
-            // example : setHeader("Location", "/upload/success.html");  
-        }
-        else //delete
-        {
-            std::string filePath = route.getRoot() + UrlRequest;
-            if (remove(filePath.c_str()) == 0)
-                Page = DEFAULTDELETE;
-            else
-                UpdateStatueCode(404);
-        } 
+        // else if (method == "POST") 
+        // {
+            
+        //     //post data
+        //     // example : setHeader("Location", "/upload/success.html");  
+        // }
+        // else //delete
+        //         Page = DEFAULTDELETE;
     }
 
     if (statusCode > 399 && Page.empty())
         handleError(errorPages);
 
    // std::cout << "\n___________________________________:"<<statusCode<<" "<<Page<<":___________________________________\n";
+    LoadPage();
+        headers["Content-Type"] =  getMimeType(UrlRequest);
+    //Transfer-Encoding: chunked or content-length ?
+    headers["Content-Length"] =  intToString(body.size());
+    std::cout <<"\n\n"<<headers["Content-Length"] <<"\n\n";
+    headers["Date"] =  getCurrentTimeFormatted();
+    headers["Server"] =  "WebServ 1337";  
+    headers["Connection"] = "close";
+    SendData(buildResponseBuffer());
 }
 
 /* Find the position of the '?' and pos of / to get script name
@@ -194,7 +270,18 @@ size_t HttpResponse::checkIfCGI(const std::string& url)
     return scriptEndPos;
 }
 
-
+// set best type of mime for content-type !!
+std::string HttpResponse::getMimeType(const std::string& filePath) const
+{
+    size_t pos = filePath.find_last_of('.');
+    if (pos == std::string::npos)
+        return "application/octet-stream";
+    std::string extension = filePath.substr(pos + 1);
+    std::map<std::string, std::string>::const_iterator it = mimeTypes.find(extension);
+    if (it != mimeTypes.end())
+        return it->second;
+    return "application/octet-stream";  // Default type if extension not found
+}
 // std::vector<char*> HttpResponse::createEnvChar(const Connection& connection, size_t scriptEndPos) const
 // {
 //     std::vector<char*> envVars;
@@ -266,25 +353,8 @@ size_t HttpResponse::checkIfCGI(const std::string& url)
 
 
 
-void HttpResponse::LoadPage()
-{
-    std::ifstream file(Page.c_str());
-    if (file.is_open()) // always is true 
-        body.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-}
 
-// // set best type of mime for content-type !!
-// std::string HttpResponse::getMimeType(const std::string& filePath) const
-// {
-//     size_t pos = filePath.find_last_of('.');
-//     if (pos == std::string::npos)
-//         return "application/octet-stream";
-//     std::string extension = filePath.substr(pos + 1);
-//     std::map<std::string, std::string>::const_iterator it = mimeTypes.find(extension);
-//     if (it != mimeTypes.end())
-//         return it->second;
-//     return "application/octet-stream";  // Default type if extension not found
-// }
+
 
 // void HttpResponse::generateResponse(const Connection &connection)
 // {
@@ -298,13 +368,13 @@ void HttpResponse::LoadPage()
 //     else
 //         LoadPage();
 
-//     addHeader("Content-Type", getMimeType(url); // content-type for cgi ?
+    // addHeader("Content-Type", getMimeType(url); // content-type for cgi ?
     
-//     //Transfer-Encoding: chunked or content-length ?
-//     addHeader("Content-Length", intToString(body.size()));
-//     addHeader("Date", getCurrentTimeFormatted());
-//     addHeader("Server", "WebServ 1337");  
-//     addHeader("Connection",connection.GetflagConnection() ? "keep-alive" : "close");
+    // //Transfer-Encoding: chunked or content-length ?
+    // addHeader("Content-Length", intToString(body.size()));
+    // addHeader("Date", getCurrentTimeFormatted());
+    // addHeader("Server", "WebServ 1337");  
+    // addHeader("Connection",connection.GetflagConnection() ? "keep-alive" : "close");
 
 //     //Location: https://example.com/new-path
 //     // from config file  : redirect: old-path 3xx new-path
@@ -317,30 +387,6 @@ void HttpResponse::LoadPage()
 // }
 
 
-// std::vector<uint8_t> HttpResponse::buildResponseBuffer()
-// {
-//     std::vector<uint8_t> response;
-
-//     // 1 status line example : HTTP/1.1 200 OK
-//     std::ostringstream oss;
-//     oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
-//     response.insert(response.end(), oss.str().begin(), oss.str().end());
-
-//     //2 APPEND headers !!
-//     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
-//     {// Clear the buffer
-//         oss.str(""); 
-//         oss << it->first << ": " << it->second << "\r\n";
-//         response.insert(response.end(), oss.str().begin(), oss.str().end());
-//     }
-
-//     response.push_back('\r');
-//     response.push_back('\n');
-
-//     // add body 
-//     response.insert(response.end(), body.begin(), body.end());
-//     return response;
-// }
 
 
 

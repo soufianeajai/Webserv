@@ -102,7 +102,7 @@ void ServerSetup(ParsingConfig &Config)
         for (int index = 0; index < epollEventsNumber; index++)
         {
             Server CurrentServer;
-            Connection CurrentConnection;
+            Connection *CurrentConnection;
             if (evenBuffer[index].events & EPOLLIN)
             {
                 if (((socketServer = ServerSocketSearch(evenBuffer[index].data.fd, Servers)) != -1))
@@ -114,33 +114,39 @@ void ServerSetup(ParsingConfig &Config)
                         break;
 
                     Connection connection(newClient, clientAddr, Servers[socketServer].clientMaxBodySizeGetter());
-                    initializeSocketEpoll(epollInstance, newClient, EPOLLIN | EPOLLRDHUP | EPOLLHUP);
+                    initializeSocketEpoll(epollInstance, newClient, EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLHUP);
                     Servers[socketServer].addConnection(newClient,connection);
                 }
                 else 
                 {
                     CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                     CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                    CurrentConnection.readIncomingData(CurrentServer.getRoutes());
-                    if (CurrentConnection.getStatus() == GENARATE_RESPONSE) // dosnt work for simple request get for post data txt
+                    CurrentConnection->readIncomingData(CurrentServer.getRoutes());
+                    if (CurrentConnection->getStatus() == GENARATE_RESPONSE)
                         evenBuffer[index].events |= EPOLLOUT;
                 }
             }    
             if (evenBuffer[index].events & (EPOLLOUT))
-            {   
+            {
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-            //    CurrentConnection.generateResponse(CurrentServer.errorPagesGetter());
-                const char* httpResponse = 
-                        "HTTP/1.1 200 OK\r\n"
-                        "Content-Length: 15\r\n"
-                        "\r\n"
-                        "Connection batiii2a jidan!";
-                send(evenBuffer[index].data.fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
+                CurrentConnection->generateResponse(CurrentServer.errorPagesGetter());
+
+                // const char* httpResponse = 
+                //         "HTTP/1.1 200 OK\r\n"
+                //         "Content-Length: 15\r\n"
+                //         "\r\n"
+                //         "Connection batiii2a jidan!";
+                // send(evenBuffer[index].data.fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
             //    epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL);
             //    std::cout << "connection closed after sending response" << std::endl;
-                if (CurrentConnection.getStatus() == DONE)
-                   evenBuffer[index].events &= ~EPOLLOUT;
+                if (CurrentConnection->getStatus() == DONE)
+                {
+                    /*
+                        cleaning connection when is closed ->  AFTER DONE in state
+                    */
+                    evenBuffer[index].events &= ~EPOLLOUT;
+                }
             }
 			// EPOLLRHUP The other end of a socket closed or shut down for writing.
             if (evenBuffer[index].events & (EPOLLRDHUP | EPOLLHUP))

@@ -9,8 +9,8 @@ class Connection {
 private:
     sockaddr_in CLientAddress;
     int clientSocketId;
-    HttpRequest  *request;
-    HttpResponse *response;
+    HttpRequest  request;
+    HttpResponse response;
     size_t bodySize;
     Status status;
 
@@ -25,9 +25,8 @@ public:
     void closeConnection();
     int getClientSocketId() const;
     void generateResponse(std::map<int, std::string> &errorPages);
-    HttpRequest* getRequest();
+    HttpRequest getRequest();
     Status getStatus() const;
     void    setStatus(Status stat);
-        State getcurrentState() const;
 
 };

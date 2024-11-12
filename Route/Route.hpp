@@ -41,4 +41,5 @@ public:
     std::string getUploadDir();
     void isDirSetter(bool isDir);
     bool isDirGetter() const;
+    int getstatusCodeRedirection() const;
 };
