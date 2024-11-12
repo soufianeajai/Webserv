@@ -52,8 +52,9 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
     std::map<std::string, std::string> formFields;
     if (status == READING_PARSING)
         parseRequest();
-    if (status == PROCESSING)
+    if (status == PROCESSING){
         request->process(routes);
+    }
     if (request->getcurrentState() == PROCESS_DONE)
     {
         status = GENARATE_RESPONSE;

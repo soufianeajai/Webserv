@@ -169,6 +169,8 @@ void    HttpRequest::handleProcessPost(){
         currentState = PROCESS_MULTIPART_FORM_DATA;
     else if (contentLength)
         currentState = PROCESS_POST_DATA;
+    else
+        currentState = PROCESS_DONE;
 }
 
 void HttpRequest::handleProcessChunkedBody(std::string root) {

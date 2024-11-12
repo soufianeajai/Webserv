@@ -13,7 +13,6 @@ void HttpRequest::handleTransfer(){
     if (headers.find("content-type") != headers.end() && isValidMultipart(headers["content-type"])){
         isMultipart = true;
     }
-    
 }
 
 bool HttpRequest::isValidMultipart(std::string content) {

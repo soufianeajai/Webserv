@@ -2,7 +2,7 @@
 
 HttpRequest::HttpRequest():HttpMessage(), currentState(METHOD_START), method(""), uri(""),  statusCode(200),
 holder(""), currentHeaderName(""), currentHeaderValue(""), isChunked(false), isMultipart(false), contentLength(0),
-bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), fieldName(""), query(""){
+bytesread(1),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), fieldName(""), query(""){
 // FIRST LINE STATE HANDLERS
     stateHandlers.insert(std::make_pair(METHOD_START, &HttpRequest::handleMethodStart));
     stateHandlers.insert(std::make_pair(METHOD_PARSING, &HttpRequest::handleMethodParsing));
