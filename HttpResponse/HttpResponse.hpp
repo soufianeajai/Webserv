@@ -2,7 +2,10 @@
 #include "../HttpMessage/HttpMessage.hpp"
 #include "../HttpRequest/HttpRequest.hpp"
 #include "../Route/Route.hpp"
-
+#include <cstdio>      // for remove
+#include <iostream>    // for std::cerr
+#define DEFAULTERROR "/www/html/errorPages/DefaultError.html"
+#define DEFAULTDELETE "/www/html/defaultpagedelete.html"
 class HttpResponse :  public HttpMessage{
 private:
     int statusCode;
@@ -33,11 +36,14 @@ private:
     
 public:
     HttpResponse();
-    void initResponse(const Route &route,std::string errorPage, int code,const std::string &query, const std::string UrlRequest, const std::string method);    
+    void ResponseGenerating(const Route &route, std::map<int, std::string> &errorPages, int code, 
+                  const std::string &query, const std::string &UrlRequest, const std::string &method);
+    //void initResponse(const Route &route,std::map<int, std::string> &errorPage, int code,const std::string &query, const std::string UrlRequest, const std::string method);    
     std::string getMimeType(const std::string& filePath) const;
-   void LoadPage();
-
-
+    void LoadPage();
+    void UpdateStatueCode(int code);
+    void handleRedirection(const Route &route);
+    void HttpResponse::handleError(std::map<int, std::string>& errorPages);
     size_t checkIfCGI(const std::string& url);
     // void buildingHeaders();
     std::vector<uint8_t> buildResponseBuffer(); // this for building and set it in send syscall

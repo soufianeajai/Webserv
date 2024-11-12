@@ -55,19 +55,31 @@ std::string getCurrentTimeFormatted()
 //5xx (Server Error): The server failed to fulfill an apparently
 //valid request
 
-void HttpResponse::initResponse(const Route &route,std::string errorPage, int code,const std::string &query, const std::string UrlRequest, const std::string method)
+void HttpResponse::handleError(std::map<int, std::string>& errorPages)
 {
+    std::map<int, std::string>::iterator it = errorPages.find(statusCode);
+        if (it != errorPages.end())
+            Page = it->second;
+        else
+            Page = DEFAULTERROR;
+}
 
-    (void)method;
+void HttpResponse::handleRedirection(const Route &route)
+{
+    if (route.getIsRedirection() && !route.getNewPathRedirection().empty())
+        Page = route.getRoot() + route.getNewPathRedirection(); // path valid trust from process request
+    else
+        Page = DEFAULTERROR;  // Fallback to default error page if redirection path not set
+}
+
+void HttpResponse::UpdateStatueCode(int code)
+{
     statusCode = code;
-    this->query = query;
     switch (statusCode)
     {  
-        case 300: reasonPhrase = "Multiple Choices"; break;
         case 301: reasonPhrase = "Moved Permanently"; break;
         case 302: reasonPhrase = "Found"; break;  // Also called "Temporary Redirect" in some contexts
         case 303: reasonPhrase = "See Other"; break;
-        case 304: reasonPhrase = "Not Modified"; break;
         case 307: reasonPhrase = "Temporary Redirect"; break;
         case 308: reasonPhrase = "Permanent Redirect"; break;
         case 400: reasonPhrase = "Bad Request"; break;
@@ -75,31 +87,31 @@ void HttpResponse::initResponse(const Route &route,std::string errorPage, int co
         case 404: reasonPhrase = "Not Found"; break;
         case 405: reasonPhrase = "Method Not Allowed"; break;
         case 500: reasonPhrase = "Internal Server Error"; break;
+        /*
+            for 500 :
+            Scenario:
+            The server has the necessary CGI functionality installed 
+            (e.g., PHP-FPM or another CGI handler for PHP), 
+            but the location configuration in the server (e.g., NGINX)
+             does not specify how to handle .php files.
+
+            501
+            example : 
+            It would indicate that the CGI functionality is not implemented 
+            for that file extension or type.
+        */
+        case 501: reasonPhrase = "501 Not Implemented"; break; // for Unsupported CGI Extension
         case 505: reasonPhrase = "HTTP Version Not Supported"; break;
         default:  reasonPhrase = "OK"; break; // ???
     }
-
-    if (statusCode > 399)
-        Page = errorPage;
-    else if(route.getIsRedirection())
-        Page = route.getRoot() + route.getNewPathRedirection();
-    else
-        Page = route.getRoot() +  UrlRequest;
-
-
-    // if (isDirectory(Page)) // this will be get from request after processing !!
-    // {
-    //     // default file or auto index 
-    // }
-    // else
-    // {
-    //     // is good is file so fitch content of file 
-
-    // }
-
-    // MIME !!
-
-    std::cout << "\n___________________________________:"<<UrlRequest<<":___________________________________\n";
+}
+void HttpResponse::ResponseGenerating(const Route &route, std::map<int, std::string> &errorPages, int code, 
+                  const std::string &query, const std::string &UrlRequest, const std::string &method)
+{
+    ValidcgiExtensions.insert(".php");
+    ValidcgiExtensions.insert(".py");
+    ValidcgiExtensions.insert(".sh");
+    // then compare if we have in config file so we can execute it sinon (500 or 501 status code)
     mimeTypes["html"] = "text/html";
     mimeTypes["css"] = "text/css";
     mimeTypes["js"] = "application/javascript";
@@ -115,6 +127,43 @@ void HttpResponse::initResponse(const Route &route,std::string errorPage, int co
     mimeTypes["zip"] = "application/zip";
     mimeTypes["mp3"] = "audio/mpeg";
     mimeTypes["mp4"] = "video/mp4";
+
+    
+    this->query = query;
+    UpdateStatueCode(code);
+    if(route.getIsRedirection() && (statusCode > 300 && statusCode < 309))
+        handleRedirection(route);
+    
+    else if (statusCode < 300)
+    {
+        if (method == "GET") 
+        {
+            if (checkIfCGI(UrlRequest))
+            {
+                // handling cgi 
+            }
+            else
+                Page = route.getRoot() +  UrlRequest;
+        }
+        else if (method == "POST") 
+        {
+            //post data
+            // example : setHeader("Location", "/upload/success.html");  
+        }
+        else //delete
+        {
+            std::string filePath = route.getRoot() + UrlRequest;
+            if (remove(filePath.c_str()) == 0)
+                Page = DEFAULTDELETE;
+            else
+                UpdateStatueCode(404);
+        } 
+    }
+
+    if (statusCode > 399 && Page.empty())
+        handleError(errorPages);
+
+   // std::cout << "\n___________________________________:"<<statusCode<<" "<<Page<<":___________________________________\n";
 }
 
 /* Find the position of the '?' and pos of / to get script name
