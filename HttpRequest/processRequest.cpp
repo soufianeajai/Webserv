@@ -15,11 +15,11 @@ State processMethod(std::string& myMethod, Route& route){
     };
 }
 
-// bool isPrefix(std::string prefix, std::string uri)
-// {
-//     size_t prefixLength = prefix.length();
-//     return ((uri.compare(0, prefixLength, prefix) == 0) /*&& (uri[prefixLength] == '/')*/);
-// }
+bool isPrefix(std::string prefix, std::string uri)
+{
+    size_t prefixLength = prefix.length();
+    return ((uri.compare(0, prefixLength, prefix) == 0) && (uri.length() == prefixLength || uri[prefixLength] == '/'));
+}
 
 bool isDirectory(const std::string& path)
 {
@@ -40,25 +40,35 @@ void HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes)
     size_t longestMatchLength = 0;
     if (uri[uri.size() - 1] != '/')
         normalize_url = uri + "/";
+    
     it = routes.find(normalize_url);
     if (it != routes.end())
     {
         found = true;
         CurrentRoute = it->second;
-//      std::cout << "Exact matching ----> : " << normalize_url << std::endl;
+      std::cout << "Exact matching ----> : " << normalize_url << std::endl;
     } 
     else 
     {
         for (it = routes.begin(); it != routes.end(); it++) {
-            if (normalize_url.compare(0, it->first.length(), it->first) == 0) {
+            if (isPrefix(it->first, normalize_url)) {
                 if (it->first.length() > longestMatchLength) {
                     CurrentRoute = it->second;
                     longestMatchLength = it->first.length();
                     found = true;
-//                    std::cout << "Prefix matching ----> normalize_url: " << normalize_url << std::endl << "Location: " << it->first << std::endl;
+                    std::cout << "Prefix matching ----> normalize_url: " << normalize_url << std::endl << "Location: " << it->first << std::endl;
                 }
             }
         }
+        if (found != true){
+            std::cout << "Set default te root if exist ----> : " << normalize_url << std::endl;
+            std::map<std::string, Route>::iterator it = routes.find("/");
+            if (it != routes.end()){
+                CurrentRoute = it->second;
+                found = true;
+            }
+        }
+
     }
 
     // Set the current state based on whether a route was found
@@ -168,9 +178,12 @@ void    HttpRequest::handleProcessPost(){
 }
 
 void HttpRequest::handleProcessChunkedBody(std::string root) {
+
     std::map<std::string, std::string>::iterator it = headers.find("Content-Disposition");
     if (it != headers.end())
     {
+                    std::cout << "---------->" << std::endl;
+
         std::string contentDisposition = it->second;
         std::size_t filenamePos = contentDisposition.find("filename=\"");
         if (filenamePos != std::string::npos)
@@ -179,7 +192,7 @@ void HttpRequest::handleProcessChunkedBody(std::string root) {
             std::size_t filenameEndPos = contentDisposition.find("\"", filenamePos);
             std::string filename = contentDisposition.substr(filenamePos, filenameEndPos - filenamePos);
             std::string filePath = root + uri + "/" + filename;
-            saveDataToFile(filePath, body);
+            saveDataToFile("filePath", body);
         } else {
             currentState = ERROR_BOUNDARY;
             return;
