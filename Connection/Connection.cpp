@@ -42,20 +42,22 @@ void Connection::parseRequest(){
         request->parse(buffer, readSize);
         if (request->parsingCompleted())
             status = PROCESSING;
-        if (request->errorOccured())
-            status = ERROR;
+        // if (request->errorOccured())
+        //     status = ERROR;
+//        std::cout << "state in parseRequest after readIncomingData  " << status << std::endl;
     }
 }
 
 void    Connection::readIncomingData(std::map<std::string, Route>& routes)
 {
+//    std::cout << "state in readIncomingData " << status << std::endl;
     std::map<std::string, std::string> formFields;
     if (status == READING_PARSING)
         parseRequest();
     if (status == PROCESSING){
         request->process(routes);
     }
-    if (request->getcurrentState() == PROCESS_DONE)
+    if (request->getcurrentState() == PROCESS_DONE || request->errorOccured())
     {
         status = GENARATE_RESPONSE;
     }
