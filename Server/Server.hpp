@@ -9,7 +9,7 @@ private:
     in_addr_t ip_addr;
     std::vector<int> ports;
     std::vector<int> sockets;
-    std::map<int, Connection> connections;
+    std::map<int, Connection*> connections;
     std::vector<std::string> serverNames; 
     std::string serverRoot;
     std::map<std::string, Route> routes;
@@ -35,17 +35,15 @@ public:
     void addRoute(Route newRoute);
     Route& getRoute(const std::string& path);
     std::map<std::string, Route>& getRoutes();
-    
     void addSocket(int socket);
-
     int SearchSockets(int id);
+
     void addConnection(int socket, const Connection& connection);
+    Connection* GetConnection(int client);
+    bool removeConnection(int socket);
     
-    Connection& GetConnection(int client);
     void portEraser(int pos);
-
     bool hasClient(int client) const;
-
     void setIpaddress(std::string addr);
     in_addr_t getIpaddress();
         // Server();

@@ -20,14 +20,29 @@ bool Server::hasClient(int client) const
     return connections.find(client) != connections.end();
 }
 
-Connection& Server::GetConnection(int client)
+Connection* Server::GetConnection(int socket)
 {
-    return connections[client];
+    if (connections.count(socket) > 0)
+        return connections[socket];
+    else
+        return NULL;
+}
+
+bool Server::removeConnection(int socket)
+{
+    if (connections.count(socket) > 0) 
+    {
+        delete connections[socket];  
+        connections.erase(socket);   
+        return true;   
+    }else 
+        return false; 
 }
 
 void Server::addConnection(int socket, const Connection& connection)
 {
-    connections[socket] = connection;
+    Connection* newConnection = new Connection(connection);
+    connections[socket] = newConnection;
 }
 
 void Server::hostSetter(std::string _host) {
