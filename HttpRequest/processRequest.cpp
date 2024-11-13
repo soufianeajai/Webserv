@@ -177,30 +177,32 @@ void    HttpRequest::handleProcessPost(){
         currentState = PROCESS_DONE;
 }
 
-void HttpRequest::handleProcessChunkedBody(std::string root) {
-
+bool getNameOfFile( std::map<std::string, std::string>& headers, std::string& name) {
     std::map<std::string, std::string>::iterator it = headers.find("Content-Disposition");
     if (it != headers.end())
     {
-                    std::cout << "---------->" << std::endl;
-
         std::string contentDisposition = it->second;
         std::size_t filenamePos = contentDisposition.find("filename=\"");
         if (filenamePos != std::string::npos)
         {
             filenamePos += 10;
             std::size_t filenameEndPos = contentDisposition.find("\"", filenamePos);
-            std::string filename = contentDisposition.substr(filenamePos, filenameEndPos - filenamePos);
-            std::string filePath = root + uri + "/" + filename;
-            saveDataToFile("filePath", body);
-        } else {
-            currentState = ERROR_BOUNDARY;
-            return;
-        }
-    } else {
-        currentState = ERROR_BOUNDARY;
-        return;
+            name = contentDisposition.substr(filenamePos, filenameEndPos - filenamePos);
+            return true;
+        } 
+        else
+            return false;
     }
+    return false;
+}
+
+
+void HttpRequest::handleProcessChunkedBody(std::string root) {
+    (void)root;
+    std::string name;
+    std::string newName = "newFile";
+    name = getNameOfFile(headers, name) ? name : newName;
+    saveDataToFile(name, body);
     currentState = PROCESS_DONE;
 }
 

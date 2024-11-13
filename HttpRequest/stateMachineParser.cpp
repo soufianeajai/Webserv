@@ -171,11 +171,8 @@ void HttpRequest::handleHeaderLF(uint8_t byte) {
 }
 void HttpRequest::handleHeadersEndLF(uint8_t byte) {
     handleTransfer();
-    
-
-
     if (byte == '\n'){
-        if (contentLength == 0)
+        if (contentLength == 0 && !isChunked)
             currentState = MESSAGE_COMPLETE;
         else
             currentState = BODY_START;
@@ -190,12 +187,14 @@ void HttpRequest::handleBodyStart(uint8_t byte) {
     else if (isMultipart)
         handleBodyBoundaryStart(byte);
     else
-        handleBodyContentLength(byte);
+        handleBodyContentLength(byte); 
+    // std::cout << "--------------------> chunked " << isChunked << std::endl;
 
 }
 
 // BODY CHUNKED TRANSFER HANDLERS
 void HttpRequest::handleChunkSizeStart(uint8_t byte) {
+
     chunkbytesread = 0;
     chunkSize = 0;
     holder.clear();

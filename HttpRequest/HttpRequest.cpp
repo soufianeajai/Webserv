@@ -62,7 +62,7 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
 {
     for(int i = 0; i < readSize && !errorOccured(); i++)
     {
-//        std::cout << "state in state machine parser  " << currentState << std::endl;
+            std::cout << buffer[i] << std::endl;
         (this->*currentHandler)(buffer[i]);
         std::map<State, StateHandler>::const_iterator it = stateHandlers.find(currentState);
         if (it != stateHandlers.end())
