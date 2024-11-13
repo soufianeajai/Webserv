@@ -56,16 +56,16 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes, std::
         request.process(routes);
     }
     if (request.getcurrentState() == PROCESS_DONE || request.errorOccured())
-    {
         status = GENARATE_RESPONSE;
-    }        //std::cout << "generate response : "<< request.getcurrentState() <<"\nurl route : -"<<request.getUri()<<"__"<<request.getQuery()<<"__"<<request.getCurrentRoute().getPath()<<"\nmethod request: "<<  request.getMethod()<<std::endl; 
     if (status == GENARATE_RESPONSE)
     {
         std::cout << "----> " << request.GetStatusCode() << std::endl;
-        //request.getCurrentRoute(), errorPages, request.GetStatusCode(), request.getQuery(), request.getUri(), request.getMethod()
         buffer = response.ResponseGenerating(request, errorPages);
         if (!buffer.empty())
             status = SENDING_RESPONSE;
+        // std::cout <<"\n\nResponseGenerating : ";
+        // for(size_t i = 0; i <  buffer.size();i++)
+        //     std::cout <<buffer[i];
         // else
         //     std::cout << "\n2222waaaaaaaaaaaaaaaaa\n";
     }
@@ -80,11 +80,12 @@ void Connection::SendData(const std::vector<uint8_t>& buffer)
     if (status == SENDING_RESPONSE)
     {
         if (buffer.size() < Connection::CHUNK_SIZE)
-            n =  buffer.size();  
+            n =  buffer.size();
+        //std::cout << "buffer length : "<<n <<" "<<response.getSendbytes()<< " "<<buffer[0]<<std::endl;
         SentedBytes = send(clientSocketId, &buffer[response.getSendbytes()], n, MSG_NOSIGNAL);
         if (SentedBytes < 0)
         { 
-            //std::cerr << "Send error: " << std::endl;
+            std::cerr << "Send error: " << std::endl;
             status = DONE;  // handle error as needed
         }
         if (SentedBytes > 0)
@@ -92,12 +93,14 @@ void Connection::SendData(const std::vector<uint8_t>& buffer)
             response.addToSendbytes(SentedBytes);
             //std::cout << "\n\nstatus2 : "<<SentedBytes<<"   "<<buffer.size()<<"\n\n";
         }
-       // std::cout << "::::::::"<<response.getSendbytes()<<std::endl;
-        if (response.getSendbytes()/2 == buffer.size())
+        //std::cout << "::::::::"<<response.getSendbytes()<<std::endl;
+        if (response.getSendbytes() == buffer.size()) 
         {
             status = DONE;
-            // std::cout << "\n\nstatus3\n\n";
+
+             std::cout << "\n\nstatus3\n\n";
         }
+        // if else update state to GENARATE_RESPONSE , buffer.size() is not good need to create lengh total in objet response !!
     }
 
 }

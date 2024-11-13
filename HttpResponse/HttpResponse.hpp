@@ -4,8 +4,9 @@
 #include "../Route/Route.hpp"
 #include <cstdio>      // for remove
 #include <iostream>    // for std::cerr
-#define DEFAULTERROR "/www/html/errorPages/DefaultError.html"
-#define DEFAULTDELETE "/www/html/defaultpagedelete.html"
+#define DEFAULTERROR "www/html/errorPages/DefaultError.html"
+#define DEFAULTDELETE "www/html/defaultpagedelete.html"
+#define DEFAULTINDEX "www/html/indexing.html"
 class HttpResponse :  public HttpMessage{
 private:
     int statusCode;
@@ -15,7 +16,6 @@ private:
     //std::map<std::string, std::map<std::string, std::string>> sessions;
     std::map<std::string, std::string> mimeTypes;
     size_t sendbytes;
-
     std::string query;
     
 
@@ -33,7 +33,7 @@ private:
     SERVER_NAME and SERVER_PORT: Server’s hostname and port.
     
     */
-    
+
 public:
     HttpResponse();
     
@@ -46,7 +46,8 @@ public:
     void handleError(std::map<int, std::string>& errorPages);
     size_t checkIfCGI(const std::string& url);
 
-
+    void HandleIndexing(std::string fullpath, std::string& uri);
+    void GeneratePageIndexing(std::string& fullpath, std::string& uri, std::vector<std::string>& files);
     size_t getSendbytes();
     void addToSendbytes(size_t t);
     // void buildingHeaders();
