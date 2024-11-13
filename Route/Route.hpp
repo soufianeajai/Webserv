@@ -1,8 +1,6 @@
 #pragma once
 #include "../HttpMessage/HttpMessage.hpp"
 
-
-
 class Route {
 private:
     std::string pathLocation; // if pathlocation  == /uploads 
@@ -43,4 +41,5 @@ public:
     std::string getUploadDir();
     void isDirSetter(bool isDir);
     bool isDirGetter() const;
+    int getstatusCodeRedirection() const;
 };

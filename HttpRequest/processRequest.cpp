@@ -15,11 +15,11 @@ State processMethod(std::string& myMethod, Route& route){
     };
 }
 
-// bool isPrefix(std::string prefix, std::string uri)
-// {
-//     size_t prefixLength = prefix.length();
-//     return ((uri.compare(0, prefixLength, prefix) == 0) /*&& (uri[prefixLength] == '/')*/);
-// }
+bool isPrefix(std::string prefix, std::string uri)
+{
+    size_t prefixLength = prefix.length();
+    return ((uri.compare(0, prefixLength, prefix) == 0) && (uri.length() == prefixLength || uri[prefixLength] == '/'));
+}
 
 bool isDirectory(const std::string& path)
 {
@@ -32,41 +32,49 @@ bool isDirectory(const std::string& path)
     return S_ISDIR(pathStat.st_mode);  // Check if it's a directory
 }
 
-void    HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes, Route& myRoute)
+void HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes)
 {
-    // for (std::map<std::string, Route>::const_iterator it = routes.begin(); it != routes.end(); ++it) {
-    //      std::cout << it->first << std::endl;
-    // }
-    std::map<std::string, Route>::iterator it = routes.find(uri);
+    std::map<std::string, Route>::iterator it;
     bool found = false;
-// exact matching
-/*
-    In NGINX, when using exact matching (=), 
-    you generally avoid adding a trailing / in the location path if you want it to match a specific URL without subpaths.
-*/
-    if (it != routes.end()) {
-        myRoute = it->second;
+    size_t longestMatchLength = 0;
+    std::cout << "uri = " << uri << std::endl;
+//    std::cout << "uri = " << uri << std::endl;
+    if (uri[uri.size() - 1] == '/')
+        uri = uri.substr(0, uri.length() - 1);
+    
+    it = routes.find(uri);
+    if (it != routes.end())
+    {
         found = true;
         CurrentRoute = it->second;
-        std::cout << "\n\n\n\n1found : "<<found<<"\n\n\n\n";
-    }
-    else{
-        // check for prefix matching
-        for (std::map<std::string, Route>::const_iterator it = routes.begin(); it != routes.end() && !found; ++it)
-        {
-            const std::string path = it->first;
-            if ((uri.compare(0, path.length(), path) == 0))
-            {
-                myRoute = it->second;
-                CurrentRoute = it->second;
-                found = true;
-                std::cout << "\n\n\n\n2found : "<<found<<"\n\n\n\n";
+      std::cout << "Exact matching ----> : " << uri << std::endl;
+    } 
+    else 
+    {
+        for (it = routes.begin(); it != routes.end(); it++) {
+            if (isPrefix(it->first, uri)) {
+                if (it->first.length() > longestMatchLength) {
+                    CurrentRoute = it->second;
+                    longestMatchLength = it->first.length();
+                    found = true;
+                    std::cout << "Prefix matching ----> uri: " << uri << std::endl << "Location: " << it->first << std::endl;
+                }
             }
         }
+        if (found != true){
+            std::cout << "Set default te root if exist ----> : " << uri << std::endl;
+            std::map<std::string, Route>::iterator it = routes.find("/");
+            if (it != routes.end()){
+                CurrentRoute = it->second;
+                found = true;
+            }
+        }
+
     }
-    std::cout << "\n\n\n\n not found \n\n\n\n";
+
+    // Set the current state based on whether a route was found
     if (found)
-        currentState = processMethod(this->getMethod(), myRoute);
+        currentState = processMethod(this->getMethod(), CurrentRoute);
     else
         currentState = ERROR_INVALID_URI;
 }
@@ -101,8 +109,9 @@ bool ft_rmdir(const char *path)
 }
 
 
-void    HttpRequest::handleProcessDelete(Route& myRoute){
-    std::string file_path = myRoute.getRoot() + uri;
+void    HttpRequest::handleProcessDelete(){
+    std::string file_path = CurrentRoute.getRoot() + uri;
+    std::cout << "root " << CurrentRoute.getRoot() <<  std::endl << "uri" << uri << std::endl;
     if (ft_rmdir(file_path.c_str()) == true)
         currentState = PROCESS_DONE;
     else
@@ -165,12 +174,17 @@ void    HttpRequest::handleProcessPost(){
         currentState = PROCESS_MULTIPART_FORM_DATA;
     else if (contentLength)
         currentState = PROCESS_POST_DATA;
+    else
+        currentState = PROCESS_DONE;
 }
 
 void HttpRequest::handleProcessChunkedBody(std::string root) {
+
     std::map<std::string, std::string>::iterator it = headers.find("Content-Disposition");
     if (it != headers.end())
     {
+                    std::cout << "---------->" << std::endl;
+
         std::string contentDisposition = it->second;
         std::size_t filenamePos = contentDisposition.find("filename=\"");
         if (filenamePos != std::string::npos)
@@ -179,7 +193,7 @@ void HttpRequest::handleProcessChunkedBody(std::string root) {
             std::size_t filenameEndPos = contentDisposition.find("\"", filenamePos);
             std::string filename = contentDisposition.substr(filenamePos, filenameEndPos - filenamePos);
             std::string filePath = root + uri + "/" + filename;
-            saveDataToFile(filePath, body);
+            saveDataToFile("filePath", body);
         } else {
             currentState = ERROR_BOUNDARY;
             return;
@@ -193,17 +207,21 @@ void HttpRequest::handleProcessChunkedBody(std::string root) {
 
 
 void HttpRequest::process(std::map<std::string, Route>& routes){
-    Route myRoute;
+    // for(std::map<std::string, Route>::iterator it = routes.begin(); it != routes.end(); it++){
+    //     std::cout << "route  : " << it->first << std::endl;
+    //     std::cout << "pathLocation  : " << it->second.getPath() << std::endl;
+    //     std::cout << "root  : " << it->second.getRoot() << std::endl << std::endl << std::endl;
+    // }
     currentState = PROCESS_URI;
     while (!errorOccured() && currentState != PROCESS_DONE) {
         switch (currentState)
         {
-            case PROCESS_URI: handleProcessUri_Method(routes, myRoute); break;
-            case PROCESS_DELETE: handleProcessDelete(myRoute); break;
+            case PROCESS_URI: handleProcessUri_Method(routes); break;
+            case PROCESS_DELETE: handleProcessDelete(); break;
             case PROCESS_POST: handleProcessPost(); break;
             case PROCESS_POST_DATA: handleProcessPostData(); break;
-            case PROCESS_CHUNKED_BODY: handleProcessChunkedBody(myRoute.getRoot()); break;
-            case PROCESS_MULTIPART_FORM_DATA: handleProcessMultipart(myRoute.getRoot()); break;
+            case PROCESS_CHUNKED_BODY: handleProcessChunkedBody(CurrentRoute.getRoot()); break;
+            case PROCESS_MULTIPART_FORM_DATA: handleProcessMultipart(CurrentRoute.getRoot()); break;
             case PROCESS_DONE: 
                 break;
             default:

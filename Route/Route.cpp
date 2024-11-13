@@ -1,5 +1,8 @@
 #include "Route.hpp"
-
+int Route::getstatusCodeRedirection() const
+{
+    return statusCodeRedirection;
+}
 
 void Route::setPath(std::string _path) {
     this->pathLocation = _path;

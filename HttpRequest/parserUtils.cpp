@@ -1,8 +1,9 @@
 #include "HttpRequest.hpp"
 
 void HttpRequest::handleTransfer(){
-    if (headers.find("transfer-encoding") != headers.end() && headers["transfer-encoding"] == "chunked")
+    if (headers.find("Transfer-Encoding") != headers.end() && headers["Transfer-Encoding"] == "chunked"){
         isChunked = true;
+    }
     if (headers.find("content-length") != headers.end()){
         char c = 0;
         std::istringstream nbr(headers["content-length"]);
@@ -13,7 +14,6 @@ void HttpRequest::handleTransfer(){
     if (headers.find("content-type") != headers.end() && isValidMultipart(headers["content-type"])){
         isMultipart = true;
     }
-    
 }
 
 bool HttpRequest::isValidMultipart(std::string content) {

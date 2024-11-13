@@ -2,7 +2,7 @@
 #include "../HttpMessage/HttpMessage.hpp"
 #include "../Route/Route.hpp"
 
-
+enum Status {INITIAL, READING_PARSING, PROCESSING, GENARATE_RESPONSE, SENDING_RESPONSE, DONE};
 enum State {
 // FIRST LINE STATES
     METHOD_START,               // Start parsing method
@@ -131,6 +131,7 @@ private:
 
 public:
     HttpRequest();
+    Route& getCurrentRoute();
     void    parse(uint8_t *buffer, int readSize);
     void    process(std::map<std::string, Route>& routes);
     void    setMethod(const std::string methodStr);
@@ -187,8 +188,8 @@ private:
     void    handleBodyPartData(uint8_t byte);
     void    handleBodyPartEnd(uint8_t byte);
 // PROCESS HANDLERS
-    void    handleProcessUri_Method(std::map<std::string, Route>& routes, Route& myRoute);
-    void    handleProcessDelete(Route& myRoute);
+    void    handleProcessUri_Method(std::map<std::string, Route>& routes);
+    void    handleProcessDelete();
     void    handleProcessChunkedBody(std::string root);
     void    handleProcessPost();
     void    handleProcessPostData();
@@ -201,4 +202,5 @@ private:
     void    addCurrentHeader();
     void    handleTransfer();
     bool    isValidMultipart(std::string content);
+    
 };

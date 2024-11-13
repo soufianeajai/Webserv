@@ -1,6 +1,6 @@
 #include "Connection.hpp"
-#define DEFAULTERROR "<html><body><h1>Default Error Page</h1></body></html>"
-Connection::Connection(){}
+
+Connection::Connection():bodySize(0){}
 
 Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize):clientSocketId(fd), bodySize(maxSize), status(READING_PARSING)
  {
@@ -9,9 +9,9 @@ Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize):
     CLientAddress.sin_addr = acceptedAddr.sin_addr;
     fcntl(fd, F_SETFL, O_NONBLOCK);
 
-    request = new HttpRequest();
-    response = new HttpResponse();
-
+    // request = new HttpRequest();
+    // response = new HttpResponse();
+    (void)bodySize;
  }
 
 int Connection::getClientSocketId() const{
@@ -21,16 +21,11 @@ void Connection::closeConnection(){
 
 }
 void Connection::parseRequest(){
-        std::cout << "----- " << request->getcurrentState() << std::endl;
-
     uint8_t    buffer[Connection::CHUNK_SIZE];
-//    uint8_t    globalBuffer[Connection::MAX_BODY_SIZE];
     int     readSize = 0;
     int clientSocket = getClientSocketId();
-    (void)bodySize;
     memset(buffer, 0, Connection::CHUNK_SIZE);
     readSize = recv(clientSocket, buffer, Connection::CHUNK_SIZE, MSG_DONTWAIT);
-     std::cout << "readSize " << readSize << std::endl;
     if (readSize == 0)
     {
     //    std::cout << " Client closed the connection" << std::endl;
@@ -44,63 +39,78 @@ void Connection::parseRequest(){
     }
     else
     {
-        request->parse(buffer, readSize);
-        if (request->parsingCompleted())
+        request.parse(buffer, readSize);
+        if (request.parsingCompleted())
             status = PROCESSING;
-        if (request->errorOccured())
-            status = ERROR;
     }
 }
 
-void    Connection::readIncomingData(std::map<std::string, Route>& routes)
+void    Connection::readIncomingData(std::map<std::string, Route>& routes, std::map<int, std::string> &errorPages)
 {
+//    std::cout << "state in readIncomingData " << status << std::endl;
+    
     std::map<std::string, std::string> formFields;
     if (status == READING_PARSING)
         parseRequest();
-    if (status == PROCESSING)
-        request->process(routes);
-    if (request->getcurrentState() == PROCESS_DONE)
-    {
+    if (status == PROCESSING){
+        request.process(routes);
+    }
+    if (request.getcurrentState() == PROCESS_DONE || request.errorOccured())
         status = GENARATE_RESPONSE;
+    if (status == GENARATE_RESPONSE)
+    {
+        std::cout << "----> " << request.GetStatusCode() << std::endl;
+        buffer = response.ResponseGenerating(request, errorPages);
+        if (!buffer.empty())
+            status = SENDING_RESPONSE;
+        // std::cout <<"\n\nResponseGenerating : ";
+        // for(size_t i = 0; i <  buffer.size();i++)
+        //     std::cout <<buffer[i];
+        // else
+        //     std::cout << "\n2222waaaaaaaaaaaaaaaaa\n";
     }
 }
 
-void Connection::generateResponse(std::map<int, std::string> &errorPages, std::map<std::string, Route>& routes)
-{
-    Route route;
-    std::string errorpage;
-    int code =  request->GetStatusCode();
-    if (code > 199 &&  code < 400)
-    {
-        
-         size_t lastSlashPos = request->getUri().find("/");
-         std::cout << "lastslash[pos] : "<<lastSlashPos << ", url: "<< request->getUri();
-        std::map<std::string, Route>::iterator it = routes.begin();
-        while (it != routes.end()) {
-            std::cout << "\nKey: " << it->first << ", Route destination: " << it->second.getPath() << std::endl;
 
-            ++it;
-        }
-        // std::cout <<"hhhhhhhhhhhhhhhhhh->  request->getUri() : "<<request->getUri()<<"\n\n";
-        // std::map<std::string, Route>::iterator routeIt = routes.find(request->getUri()); // detect url which route is ...
-        // if (routeIt != routes.end())
-        // {
-        //     route = routeIt->second;
-        //     route.setPath(routeIt->first);
-        //     std::cout << "hhhhhhhhhhhhhhhhhhhhhhhhhh";
-        // }
-        // if url is file from a path how can i know that -> we need to cut url
-    }
-    else
+void Connection::SendData(const std::vector<uint8_t>& buffer)
+{
+    ssize_t SentedBytes = 0; // we have  it is :  response.getSendbytes()
+    size_t n = Connection::CHUNK_SIZE;
+    // max sending : Connection::CHUNK_SIZE
+    if (status == SENDING_RESPONSE)
     {
-        std::map<int, std::string>::iterator it = errorPages.find(code);// trust path from configfile
-        if (it != errorPages.end())
-            errorpage = it->second;
-        else
-            errorpage = DEFAULTERROR;
+        if (buffer.size() < Connection::CHUNK_SIZE)
+            n =  buffer.size();
+        //std::cout << "buffer length : "<<n <<" "<<response.getSendbytes()<< " "<<buffer[0]<<std::endl;
+        SentedBytes = send(clientSocketId, &buffer[response.getSendbytes()], n, MSG_NOSIGNAL);
+        if (SentedBytes < 0)
+        { 
+            std::cerr << "Send error: " << std::endl;
+            status = DONE;  // handle error as needed
+        }
+        if (SentedBytes > 0)
+        {
+            response.addToSendbytes(SentedBytes);
+            //std::cout << "\n\nstatus2 : "<<SentedBytes<<"   "<<buffer.size()<<"\n\n";
+        }
+        //std::cout << "::::::::"<<response.getSendbytes()<<std::endl;
+        if (response.getSendbytes() == buffer.size()) 
+        {
+            status = DONE;
+
+             std::cout << "\n\nstatus3\n\n";
+        }
+        // if else update state to GENARATE_RESPONSE , buffer.size() is not good need to create lengh total in objet response !!
     }
-    //std::cout << "generate response : "<< status<<"\nurl route : -"<<request->getUri()<<":"<<route.getPath()<<"\nmethod request: "<<  request->getMethod()<<std::endl; 
-    //response->initResponse(route, errorpage, code, request->getQuery(), request->getUri(), request->getMethod());
+
+}
+void Connection::generateResponse()
+{
+    SendData(buffer);
+    //std::cout <<"___" <<status<<"__________\n";
+    // for(size_t i = 0; i < buffer.size();i++)
+    //     std::cout << buffer[i];
+    //std::cout << "\n__________\n";
 }
 
 Status Connection::getStatus() const{
@@ -111,8 +121,7 @@ void    Connection::setStatus(Status stat){
     status = stat;
 }
 
-
-HttpRequest* Connection::getRequest()
+HttpRequest Connection::getRequest()
 {
     return request;
 }
