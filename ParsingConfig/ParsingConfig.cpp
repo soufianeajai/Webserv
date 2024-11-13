@@ -38,9 +38,9 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
     else if (locationPath.size() > 2)
         ft_error("Error: Invalid location", FILE);
     route.setPath(locationPath[1]);
-     //if (locationPath[1][locationPath[1].length() - 1] == '/')
-     
-         route.isDirSetter(true);
+    if (locationPath[1] != "/" 
+        && (locationPath[1][locationPath[1].length() - 1] == '/' || locationPath[1][0] != '/'))
+        ft_error("Error: Invalid Route " + locationPath[1], FILE);
 
     while (getline(FILE, str))
     {
@@ -113,6 +113,8 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                             ft_error("Error: invalid root", FILE);
                         if (route.getRoot().empty())
                             route.setRoot(arr[1]);
+                        if (route.getRoot() != "/" && (route.getRoot()[0] != '/' || route.getRoot()[route.getRoot().length() - 1] == '/'))
+                            ft_error("Error: invalid root" + route.getRoot(), FILE);
                     }
                     else if (arr[0] == "default_file:")
                     {
