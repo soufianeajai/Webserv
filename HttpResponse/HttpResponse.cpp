@@ -4,7 +4,7 @@ void SendData(std::vector<uint8_t> data);
 std::string getCurrentTimeFormatted();
 // #include <sys/stat.h>
 // #include "../HttpRequest/processRequest.cpp"
-HttpResponse::HttpResponse(){}
+HttpResponse::HttpResponse():sendbytes(0){}
 
 size_t HttpResponse::getSendbytes()
 {
@@ -22,7 +22,6 @@ std::string intToString(size_t number)
     ss << number;
     return ss.str();
 }
-
 
 std::string getCurrentTimeFormatted()
 {
@@ -73,6 +72,7 @@ std::string getCurrentTimeFormatted()
 
 void HttpResponse::LoadPage()
 {
+    try{
     std::ifstream file(Page.c_str());
     if (file.is_open()) // always is true 
     {
@@ -84,6 +84,11 @@ void HttpResponse::LoadPage()
         //std::cout << "\n\nno body\n\n";
         body.clear();
     }
+    }
+    catch (std::exception &e)
+    {
+        std::cout << e.what()<<std::endl;
+    }
 }
 
 
@@ -94,6 +99,7 @@ void HttpResponse::handleError(std::map<int, std::string>& errorPages)
             Page = it->second;
         else
             Page = DEFAULTERROR;
+        std::cout << "page error" << Page << std::endl;
 }
 
 void HttpResponse::handleRedirection(const Route &route)
@@ -119,9 +125,7 @@ std::vector<uint8_t> HttpResponse::buildResponseBuffer()
     std::ostringstream oss;
 
     // 1. Append the status line (e.g., HTTP/1.1 200 OK)
-    std::cout << version << std::endl;
-    std::cout << statusCode << std::endl;
-    std::cout << reasonPhrase << std::endl;
+    std::cout <<"\n\nbuildResponseBuffer : "<< version << " " << statusCode << " " << reasonPhrase <<".\n\n";
     oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
 
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
@@ -149,6 +153,7 @@ void HttpResponse::UpdateStatueCode(int code)
     statusCode = code;
     switch (statusCode)
     {  
+        case 100: reasonPhrase = "Continue"; break; // The server expects the client to continue sending the request, and the body is empty in this response.
         case 301: reasonPhrase = "Moved Permanently"; break;
         case 302: reasonPhrase = "Found"; break;  // Also called "Temporary Redirect" in some contexts
         case 303: reasonPhrase = "See Other"; break;
@@ -174,15 +179,69 @@ void HttpResponse::UpdateStatueCode(int code)
         */
         case 501: reasonPhrase = "501 Not Implemented"; break; // for Unsupported CGI Extension
         case 505: reasonPhrase = "HTTP Version Not Supported"; break;
-        default:  reasonPhrase = "OK"; break; // ???
+        case 201: reasonPhrase = "Created"; break;
+        case 204: reasonPhrase = "No Content"; break;
+        default:  reasonPhrase = "OK"; break;
     }
 }
-//const Route &route, std::map<int, std::string> &errorPages, int code, 
-                 // const std::string &query, const std::string &UrlRequest, const std::string &method
+void HttpResponse::GeneratePageIndexing(std::string& fullpath,std::string& uri, std::vector<std::string>& files)
+{
+    Page = DEFAULTINDEX;
+    std::ofstream file(DEFAULTINDEX, std::ios::out | std::ios::trunc);
+    if (!file)
+    {
+        std::cerr << "Error: Could not open file for writing: " << uri << std::endl;
+        UpdateStatueCode(404);
+        return;
+    }
+    std::ostringstream html;
+    html << "<html><head><title>Index of " << fullpath << "</title></head><body>";
+    html << "<h1>Index of " << fullpath << "</h1><ul>";
+    for (size_t i = 0; i < files.size(); ++i)
+        html << "<li><a href=\"" << files[i] << "\">" << files[i] << "</a></li>";
+    html << "</ul></body></html>";
+
+    file << html.str();
+    file.close();
+}
+
+void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
+{
+    struct stat pathStat;
+    if (stat(fullpath.c_str(), &pathStat) != 0 || !S_ISDIR(pathStat.st_mode))
+    {
+        std::cerr << "Error: Path does not exist or is not a directory." << std::endl;
+        UpdateStatueCode(404);
+        return;
+    }
+    // Open the directory
+    DIR* dir = opendir(fullpath.c_str());
+    if (!dir) {
+        std::cerr << "Error: Unable to open directory." << std::endl;
+        UpdateStatueCode(404);
+        return;
+    }
+
+    std::vector<std::string> files;
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL)
+    {
+        std::string name = entry->d_name;
+        if (name != "." && name != "..")
+            files.push_back(name);
+    }
+    closedir(dir);
+    GeneratePageIndexing(fullpath,uri, files);
+}
+
 std::vector<uint8_t> HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages)
 {
 
     Route& route = request.getCurrentRoute();
+    this->query = request.getQuery();
+    version = request.getVersion();
+    UpdateStatueCode(request.GetStatusCode());
+    route.setRoot("." + route.getRoot());
     ValidcgiExtensions.insert(".php");
     ValidcgiExtensions.insert(".py");
     ValidcgiExtensions.insert(".sh");
@@ -202,52 +261,52 @@ std::vector<uint8_t> HttpResponse::ResponseGenerating(HttpRequest & request, std
     mimeTypes["zip"] = "application/zip";
     mimeTypes["mp3"] = "audio/mpeg";
     mimeTypes["mp4"] = "video/mp4";
-
     
-    this->query = request.getQuery();
-    version = request.getVersion();
-    UpdateStatueCode(request.GetStatusCode());
     if(route.getIsRedirection())
         handleRedirection(route);
-    
-
-    else if (statusCode < 300)
+    Page = "www/html/index.html";
+    //std::cout << "static file !! : "<<route.getPath()<<"__"<<Page<<"__"<<route.isDirGetter()<< std::endl;
+    if(request.getUri().empty())
+        request.getUri() = request.getUri() + "/";
+    std::cout << "get path : "<<route.getPath()<<"\nUri: "<<request.getUri()<<"\nget root: "<<route.getRoot()<<"\nis dir route: "<<route.isDirGetter()<<"\ndefualt file: "<<route.getDefaultFile()<<"\nauto index: "<<route.getAutoindex()<<"\n";
+    if (statusCode ==  200) // GET
     {
-        if (request.getMethod() == "GET") 
+        if (route.getPath() == request.getUri())
         {
-            // if (checkIfCGI(UrlRequest))
-            // {
-            //     // handling cgi 
-            //     //std::cout << "cgi handling !!"<< std::endl;
-            // }
-            // else
-            // {
-                //std::cout << "static file !!"<< std::endl;
-                Page = route.getRoot() +  request.getUri();
+            std::cout << "\nexact!!\n";
+            if (route.isDirGetter())
+            {
+                if(!route.getDefaultFile().empty())
+                {
+                    Page =  route.getRoot() + "/" + route.getDefaultFile();
+                    std::cout << "\ndefault\n";
+                }
+                else if(route.getAutoindex())
+                {
+                    std::cout << "\nindexing: "<<route.getRoot();
+                    HandleIndexing(route.getRoot(),request.getUri());
+                }
+            }
+            else 
+                Page = route.getRoot(); // alert about config file is dir or not !! (if is dir so root will be file also)
+        std::cout << "\npage->>>>>> : "<<Page<<"\n";
         }
-        // else if (method == "POST") 
-        // {
-            
-        //     //post data
-        //     // example : setHeader("Location", "/upload/success.html");  
-        // }
-        // else //delete
-        //         Page = DEFAULTDELETE;
+        else
+            UpdateStatueCode(404);    
     }
-
-    if (statusCode > 399 && Page.empty())
+    
+    if (statusCode > 399)
         handleError(errorPages);
-
-   std::cout << "\n___________________________________:"<<statusCode<<" "<<Page<<":___________________________________\n";
     LoadPage();
-    headers["Content-Type"] =  getMimeType(request.getUri());
+    headers["Content-Type"] =  getMimeType(Page);
     //Transfer-Encoding: chunked or content-length ?
     headers["Content-Length"] =  intToString(body.size());
     //std::cout <<"\n\n"<<headers["Content-Length"] <<"\n\n";
     headers["Date"] =  getCurrentTimeFormatted();
     headers["Server"] =  "WebServ 1337";  
     headers["Connection"] = "close";
-
+    if(Page.empty())
+        UpdateStatueCode(100);
     return(buildResponseBuffer());
 }
 
@@ -291,6 +350,7 @@ std::string HttpResponse::getMimeType(const std::string& filePath) const
         return it->second;
     return "application/octet-stream";  // Default type if extension not found
 }
+
 // std::vector<char*> HttpResponse::createEnvChar(const Connection& connection, size_t scriptEndPos) const
 // {
 //     std::vector<char*> envVars;

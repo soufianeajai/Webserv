@@ -131,20 +131,9 @@ void ServerSetup(ParsingConfig &Config)
             {
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                
                 CurrentConnection->generateResponse();
-
-                // const char* httpResponse = 
-                //         "HTTP/1.1 200 OK\r\n"
-                //         "Content-Length: 15\r\n"
-                //         "\r\n"
-                //         "Connection batiii2a jidan!";
-
-                //  //Send using vector.data() and vector.size() to get the pointer and length
-                //  send(evenBuffer[index].data.fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
                 if (CurrentConnection->getStatus() == DONE)
                 { 
-                    std::cout << "waaaaaaaaaaaaaaaaaaaaaaaaa";
                     if (epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL) == -1)
                     {
                         perror("epoll_ctl failed to remove client");
