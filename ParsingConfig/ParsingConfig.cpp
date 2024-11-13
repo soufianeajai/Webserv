@@ -38,7 +38,8 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
     else if (locationPath.size() > 2)
         ft_error("Error: Invalid location", FILE);
     route.setPath(locationPath[1]);
-    // if (locationPath[1][locationPath[1].length() - 1] == '/')
+     //if (locationPath[1][locationPath[1].length() - 1] == '/')
+     
          route.isDirSetter(true);
 
     while (getline(FILE, str))
