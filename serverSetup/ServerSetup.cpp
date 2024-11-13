@@ -122,6 +122,7 @@ void ServerSetup(ParsingConfig &Config)
                     CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                     CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
                     CurrentConnection->readIncomingData(CurrentServer.getRoutes(),CurrentServer.errorPagesGetter());
+                    
                     if (CurrentConnection->getStatus() == SENDING_RESPONSE)
                         evenBuffer[index].events |= EPOLLOUT;
                 }
@@ -130,6 +131,7 @@ void ServerSetup(ParsingConfig &Config)
             {
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
+                
                 CurrentConnection->generateResponse();
 
                 // const char* httpResponse = 
@@ -138,8 +140,8 @@ void ServerSetup(ParsingConfig &Config)
                 //         "\r\n"
                 //         "Connection batiii2a jidan!";
 
-                // // Send using vector.data() and vector.size() to get the pointer and length
-                // send(evenBuffer[index].data.fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
+                //  //Send using vector.data() and vector.size() to get the pointer and length
+                //  send(evenBuffer[index].data.fd, httpResponse, strlen(httpResponse), MSG_NOSIGNAL);
                 if (CurrentConnection->getStatus() == DONE)
                 { 
                     std::cout << "waaaaaaaaaaaaaaaaaaaaaaaaa";

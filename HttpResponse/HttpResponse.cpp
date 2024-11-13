@@ -119,6 +119,9 @@ std::vector<uint8_t> HttpResponse::buildResponseBuffer()
     std::ostringstream oss;
 
     // 1. Append the status line (e.g., HTTP/1.1 200 OK)
+    std::cout << version << std::endl;
+    std::cout << statusCode << std::endl;
+    std::cout << reasonPhrase << std::endl;
     oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
 
     for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
@@ -126,7 +129,6 @@ std::vector<uint8_t> HttpResponse::buildResponseBuffer()
     }
 
     oss << "\r\n";
-
     std::string responseStr = oss.str();
     response.insert(response.end(), responseStr.begin(), responseStr.end());
 
@@ -175,10 +177,12 @@ void HttpResponse::UpdateStatueCode(int code)
         default:  reasonPhrase = "OK"; break; // ???
     }
 }
-std::vector<uint8_t> HttpResponse::ResponseGenerating(const Route &route, std::map<int, std::string> &errorPages, int code, 
-                  const std::string &query, const std::string &UrlRequest, const std::string &method)
+//const Route &route, std::map<int, std::string> &errorPages, int code, 
+                 // const std::string &query, const std::string &UrlRequest, const std::string &method
+std::vector<uint8_t> HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages)
 {
 
+    Route& route = request.getCurrentRoute();
     ValidcgiExtensions.insert(".php");
     ValidcgiExtensions.insert(".py");
     ValidcgiExtensions.insert(".sh");
@@ -200,15 +204,16 @@ std::vector<uint8_t> HttpResponse::ResponseGenerating(const Route &route, std::m
     mimeTypes["mp4"] = "video/mp4";
 
     
-    this->query = query;
-    UpdateStatueCode(code);
+    this->query = request.getQuery();
+    version = request.getVersion();
+    UpdateStatueCode(request.GetStatusCode());
     if(route.getIsRedirection())
         handleRedirection(route);
     
 
     else if (statusCode < 300)
     {
-        if (method == "GET") 
+        if (request.getMethod() == "GET") 
         {
             // if (checkIfCGI(UrlRequest))
             // {
@@ -218,7 +223,7 @@ std::vector<uint8_t> HttpResponse::ResponseGenerating(const Route &route, std::m
             // else
             // {
                 //std::cout << "static file !!"<< std::endl;
-                Page = route.getRoot() +  UrlRequest;
+                Page = route.getRoot() +  request.getUri();
         }
         // else if (method == "POST") 
         // {
@@ -233,9 +238,9 @@ std::vector<uint8_t> HttpResponse::ResponseGenerating(const Route &route, std::m
     if (statusCode > 399 && Page.empty())
         handleError(errorPages);
 
-   // //std::cout << "\n___________________________________:"<<statusCode<<" "<<Page<<":___________________________________\n";
+   std::cout << "\n___________________________________:"<<statusCode<<" "<<Page<<":___________________________________\n";
     LoadPage();
-        headers["Content-Type"] =  getMimeType(UrlRequest);
+    headers["Content-Type"] =  getMimeType(request.getUri());
     //Transfer-Encoding: chunked or content-length ?
     headers["Content-Length"] =  intToString(body.size());
     //std::cout <<"\n\n"<<headers["Content-Length"] <<"\n\n";

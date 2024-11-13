@@ -1,6 +1,6 @@
 #include "HttpMessage.hpp"
 
-HttpMessage::HttpMessage():version("HTTP/1.1"){};
+HttpMessage::HttpMessage():version(""){};
 
 void  HttpMessage::resetMessage(){
     version.clear();

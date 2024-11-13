@@ -202,4 +202,5 @@ private:
     void    addCurrentHeader();
     void    handleTransfer();
     bool    isValidMultipart(std::string content);
+    
 };

@@ -61,7 +61,9 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes, std::
     }        //std::cout << "generate response : "<< request.getcurrentState() <<"\nurl route : -"<<request.getUri()<<"__"<<request.getQuery()<<"__"<<request.getCurrentRoute().getPath()<<"\nmethod request: "<<  request.getMethod()<<std::endl; 
     if (status == GENARATE_RESPONSE)
     {
-        buffer = response.ResponseGenerating(request.getCurrentRoute(), errorPages, request.GetStatusCode(), request.getQuery(), request.getUri(), request.getMethod());
+        std::cout << "----> " << request.GetStatusCode() << std::endl;
+        //request.getCurrentRoute(), errorPages, request.GetStatusCode(), request.getQuery(), request.getUri(), request.getMethod()
+        buffer = response.ResponseGenerating(request, errorPages);
         if (!buffer.empty())
             status = SENDING_RESPONSE;
         // else
@@ -103,8 +105,8 @@ void Connection::generateResponse()
 {
     SendData(buffer);
     //std::cout <<"___" <<status<<"__________\n";
-    for(size_t i = 0; i < buffer.size();i++)
-        std::cout << buffer[i];
+    // for(size_t i = 0; i < buffer.size();i++)
+    //     std::cout << buffer[i];
     //std::cout << "\n__________\n";
 }
 
