@@ -1,5 +1,7 @@
 #include "ParsingConfig.hpp"
 
+bool isDirectory(const std::string& path);
+
 int numberConversion(std::string &string)
 {
     int number;
@@ -115,9 +117,13 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                             route.setRoot(arr[1]);
                         if (route.getRoot() != "/" && (route.getRoot()[0] != '/' || route.getRoot()[route.getRoot().length() - 1] == '/'))
                             ft_error("Error: invalid root" + route.getRoot(), FILE);
+                        if (isDirectory(route.getRoot()))
+                            route.isDirSetter(true);
                     }
                     else if (arr[0] == "default_file:")
                     {
+                        if (arr.size() != 2 || !arr[1].find("/"))
+                            ft_error("Error: invalid root", FILE);
                         if (route.getDefaultFile().empty())
                             route.setDefaultFile(arr[1]);
                     }
