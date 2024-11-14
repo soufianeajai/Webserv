@@ -121,9 +121,9 @@ void ServerSetup(ParsingConfig &Config)
                 {
                     CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                     CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                    CurrentConnection->readIncomingData(CurrentServer.getRoutes(),CurrentServer.errorPagesGetter());
+                    CurrentConnection->readIncomingData(CurrentServer.getRoutes());
                     
-                    if (CurrentConnection->getStatus() == SENDING_RESPONSE)
+                    if (CurrentConnection->getStatus() == GENARATE_RESPONSE)
                         evenBuffer[index].events |= EPOLLOUT;
                 }
             }    
@@ -131,7 +131,7 @@ void ServerSetup(ParsingConfig &Config)
             {
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                CurrentConnection->generateResponse();
+                CurrentConnection->generateResponse(CurrentServer.errorPagesGetter());
                 if (CurrentConnection->getStatus() == DONE)
                 { 
                     if (epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL) == -1)

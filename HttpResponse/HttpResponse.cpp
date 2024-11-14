@@ -1,20 +1,11 @@
 #include "HttpResponse.hpp"
+#include "../Connection/Connection.hpp"
 std::string intToString(size_t number);
 void SendData(std::vector<uint8_t> data);
 std::string getCurrentTimeFormatted();
 // #include <sys/stat.h>
 // #include "../HttpRequest/processRequest.cpp"
-HttpResponse::HttpResponse():sendbytes(0){}
-
-size_t HttpResponse::getSendbytes()
-{
-    return sendbytes;
-}
-
-void HttpResponse::addToSendbytes(size_t t)
-{
-    sendbytes +=t;
-}
+HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false){}
 
 std::string intToString(size_t number)
 {
@@ -70,37 +61,41 @@ std::string getCurrentTimeFormatted()
 
 
 
-void HttpResponse::LoadPage()
+void HttpResponse::addHeaders()
 {
-    try{
-    std::ifstream file(Page.c_str());
-    if (file.is_open()) // always is true 
-    {
-         //std::cout << "\n\nbody  from : " << Page <<"\n\n";
-        body.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+try{
+        std::ifstream file(Page.c_str());
+        if (!file.is_open())
+        {
+            UpdateStatueCode(404);
+            return ;
+        }
+        file.seekg(0, std::ios::end);
+        totaSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+        headers["Content-Type"] =  getMimeType(Page);
+        headers["Content-Length"] =  intToString(totaSize);
+        headers["Date"] =  getCurrentTimeFormatted();
+        headers["Server"] =  "WebServ 1337";  
+        headers["Connection"] = "close";
+        //body.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
     }
-    else
-    {
-        //std::cout << "\n\nno body\n\n";
-        body.clear();
-    }
-    }
-    catch (std::exception &e)
-    {
+catch (std::exception &e){
         std::cout << e.what()<<std::endl;
+        UpdateStatueCode(404);
     }
 }
 
 
-void HttpResponse::handleError(std::map<int, std::string>& errorPages)
-{
-    std::map<int, std::string>::iterator it = errorPages.find(statusCode);
-        if (it != errorPages.end())
-            Page = it->second;
-        else
-            Page = DEFAULTERROR;
-        std::cout << "page error" << Page << std::endl;
-}
+// void HttpResponse::handleError(std::map<int, std::string>& errorPages)
+// {
+//     std::map<int, std::string>::iterator it = errorPages.find(statusCode);
+//         if (it != errorPages.end())
+//             Page = it->second;
+//         else
+//             Page = DEFAULTERROR;
+//         std::cout << "page error" << Page << std::endl;
+// }
 
 void HttpResponse::handleRedirection(const Route &route)
 {
@@ -117,34 +112,76 @@ void HttpResponse::handleRedirection(const Route &route)
     }
 }
 
-std::vector<uint8_t> HttpResponse::buildResponseBuffer()
+void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
 {
-    std::vector<uint8_t> response;
-    try{
-    // 1 status line example : HTTP/1.1 200 OK
-    std::ostringstream oss;
-
-    // 1. Append the status line (e.g., HTTP/1.1 200 OK)
-    std::cout <<"\n\nbuildResponseBuffer : "<< version << " " << statusCode << " " << reasonPhrase <<".\n\n";
-    oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
-
-    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-        oss << it->first << ": " << it->second << "\r\n";
-    }
-
-    oss << "\r\n";
-    std::string responseStr = oss.str();
-    response.insert(response.end(), responseStr.begin(), responseStr.end());
-
-    // add body 
-    response.insert(response.end(), body.begin(), body.end());
+    ssize_t SentedBytes = 0;
+    std::vector<uint8_t> response(Connection::CHUNK_SIZE);
     
+    try{
+        if(!headerSended)
+        {
+            std::ostringstream oss;
+            std::cout <<"\n\nbuildResponseBuffer : (status : "<<status<<") "<< version << " " << statusCode << " " << reasonPhrase <<".\n\n";
+            
+            oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
+            for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+                oss << it->first << ": " << it->second << "\r\n";
+            oss << "\r\n";
+            std::string responseStr = oss.str();
+            response.insert(response.end(), responseStr.begin(), responseStr.end());
+            SentedBytes = send(clientSocketId, &response[0], response.size(), MSG_NOSIGNAL);
+            if (SentedBytes < 0)
+            { 
+                std::cerr << "Send failed to client "<<clientSocketId << std::endl;
+                status = DONE;  // handle error as needed
+                return;
+            }
+            status = SENDING_RESPONSE;
+            headerSended = true;
+            response.clear();
+        }
+        size_t chunkSize = (totaSize < Connection::CHUNK_SIZE) ? totaSize : Connection::CHUNK_SIZE;
+        std::ifstream file(Page.c_str(), std::ios::binary);
+        if (!file.is_open() || totaSize == -1)
+        {
+            std::cerr << "no body for client :"<<clientSocketId << std::endl;
+            status = DONE;  // handle error as needed
+            return;
+        }
+        file.seekg(offset, std::ios::beg); // go to position actual
+        response.resize(chunkSize); // resize for chunck n 
+        file.read(reinterpret_cast<char*>(response.data()), chunkSize);
+        // std::cout<< "\ndata :\n";
+        // for(size_t i =0;i < response.size();i++)
+        //     std::cout << response[i];
+        // std::cout << "\n end data\n";
+        chunkSize = file.gcount(); // Get the number of bytes actually read
+        offset += chunkSize;
+        if (chunkSize > 0)
+        {
+            SentedBytes = send(clientSocketId, reinterpret_cast<char*>(response.data()), chunkSize, MSG_NOSIGNAL);
+            if (SentedBytes < 0)
+            { 
+                std::cerr << "Send failed to client "<<clientSocketId << std::endl;
+                file.close();
+                status = DONE;  // handle error as needed
+                return;
+            }
+        }
+        // add body 
+        //response.insert(response.end(), body.begin(), body.end());
+
+        if (chunkSize == 0 || offset >= static_cast<size_t>(totaSize))
+        {
+            file.close();
+            std::cout << "\n end of file \n";
+            status = DONE;  // handle error as needed
+        }
     }
     catch (const std::exception& e) {
         std::cerr << "Exception in buildResponseBuffer: " << e.what() << std::endl;
         // Handle any other standard exceptions that may occur
     }
-    return response;
 }
 
 
@@ -183,7 +220,23 @@ void HttpResponse::UpdateStatueCode(int code)
         case 204: reasonPhrase = "No Content"; break;
         default:  reasonPhrase = "OK"; break;
     }
+
+    std::map<int, std::string>::iterator it = defaultErrors.find(statusCode);
+    if (it != defaultErrors.end())
+        Page = it->second;
+    else
+        Page = DEFAULTERROR;
+    std::ifstream file(Page.c_str());
+    if (!file.is_open())
+    {
+        totaSize = -1; // this is last part we can do after check for error response , set it to -1 , then we check it in send response if equal to -1 so close connection no body for client !!
+        return ;
+    }
+    file.seekg(0, std::ios::end);
+    totaSize = file.tellg();
+    file.seekg(0, std::ios::beg);
 }
+
 void HttpResponse::GeneratePageIndexing(std::string& fullpath,std::string& uri, std::vector<std::string>& files)
 {
     Page = DEFAULTINDEX;
@@ -234,9 +287,9 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
     GeneratePageIndexing(fullpath,uri, files);
 }
 
-std::vector<uint8_t> HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages)
+void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, int clientSocketId, Status& status)
 {
-
+    defaultErrors = errorPages;
     Route& route = request.getCurrentRoute();
     this->query = request.getQuery();
     version = request.getVersion();
@@ -264,11 +317,12 @@ std::vector<uint8_t> HttpResponse::ResponseGenerating(HttpRequest & request, std
     
     if(route.getIsRedirection())
         handleRedirection(route);
-    Page = "www/html/index.html";
-    //std::cout << "static file !! : "<<route.getPath()<<"__"<<Page<<"__"<<route.isDirGetter()<< std::endl;
+
     if(request.getUri().empty())
         request.getUri() = request.getUri() + "/";
+
     std::cout << "get path : "<<route.getPath()<<"\nUri: "<<request.getUri()<<"\nget root: "<<route.getRoot()<<"\nis dir route: "<<route.isDirGetter()<<"\ndefualt file: "<<route.getDefaultFile()<<"\nauto index: "<<route.getAutoindex()<<"\n";
+    
     if (statusCode ==  200) // GET
     {
         if (route.getPath() == request.getUri())
@@ -289,25 +343,19 @@ std::vector<uint8_t> HttpResponse::ResponseGenerating(HttpRequest & request, std
             }
             else 
                 Page = route.getRoot(); // alert about config file is dir or not !! (if is dir so root will be file also)
-        std::cout << "\npage->>>>>> : "<<Page<<"\n";
         }
         else
             UpdateStatueCode(404);    
     }
-    
-    if (statusCode > 399)
-        handleError(errorPages);
-    LoadPage();
-    headers["Content-Type"] =  getMimeType(Page);
-    //Transfer-Encoding: chunked or content-length ?
-    headers["Content-Length"] =  intToString(body.size());
-    //std::cout <<"\n\n"<<headers["Content-Length"] <<"\n\n";
-    headers["Date"] =  getCurrentTimeFormatted();
-    headers["Server"] =  "WebServ 1337";  
-    headers["Connection"] = "close";
+    std::cout << "\npage->>>>>> : "<<Page<<"\n";
+    addHeaders();
+    //std::cout <<"\n\n"<<headers["Content-Length"] <<"\n\n";    //Transfer-Encoding: chunked or content-length ?
     if(Page.empty())
+    {
+        std::cout << "page empty  !!\n";
         UpdateStatueCode(100);
-    return(buildResponseBuffer());
+    }
+    buildResponseBuffer(clientSocketId, status);
 }
 
 /* Find the position of the '?' and pos of / to get script name
