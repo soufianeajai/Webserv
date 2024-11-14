@@ -38,7 +38,7 @@ public:
     void addSocket(int socket);
     int SearchSockets(int id);
 
-    void addConnection(int socket, const Connection& connection);
+    void addConnection(int socket, Connection* connection);
     Connection* GetConnection(int client);
     bool removeConnection(int socket);
     
