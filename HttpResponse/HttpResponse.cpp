@@ -13,6 +13,10 @@ std::string intToString(size_t number)
     ss << number;
     return ss.str();
 }
+size_t HttpResponse::getOffset()
+{
+    return offset;
+}
 
 std::string getCurrentTimeFormatted()
 {
@@ -72,6 +76,7 @@ try{
         }
         file.seekg(0, std::ios::end);
         totaSize = file.tellg();
+        std::cout << "waa totalsize : "<<totaSize<<"\n";
         file.seekg(0, std::ios::beg);
         headers["Content-Type"] =  getMimeType(Page);
         headers["Content-Length"] =  intToString(totaSize);
@@ -115,13 +120,13 @@ void HttpResponse::handleRedirection(const Route &route)
 void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
 {
     ssize_t SentedBytes = 0;
-    std::vector<uint8_t> response(Connection::CHUNK_SIZE);
+    std::vector<uint8_t> response;
     
     try{
         if(!headerSended)
         {
             std::ostringstream oss;
-            std::cout <<"\n\nbuildResponseBuffer : (status : "<<status<<") "<< version << " " << statusCode << " " << reasonPhrase <<".\n\n";
+            std::cout <<"\n\nbuildResponseBuffer : (status : "<<status<<") "<<clientSocketId<<" "<< version << " " << statusCode << " " << reasonPhrase <<"\n\n";
             
             oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
             for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
@@ -129,7 +134,7 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
             oss << "\r\n";
             std::string responseStr = oss.str();
             response.insert(response.end(), responseStr.begin(), responseStr.end());
-            SentedBytes = send(clientSocketId, &response[0], response.size(), MSG_NOSIGNAL);
+            SentedBytes = send(clientSocketId, reinterpret_cast<char*>(response.data()), responseStr.size(), MSG_NOSIGNAL);
             if (SentedBytes < 0)
             { 
                 std::cerr << "Send failed to client "<<clientSocketId << std::endl;
@@ -138,6 +143,10 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
             }
             status = SENDING_RESPONSE;
             headerSended = true;
+        //     std::cout<< "\nheader :\n";
+        // for(size_t i =0;i < response.size();i++)
+        //     std::cout << response[i];
+        // std::cout << "\n end header\n";
             response.clear();
         }
         size_t chunkSize = (totaSize < Connection::CHUNK_SIZE) ? totaSize : Connection::CHUNK_SIZE;
@@ -167,6 +176,7 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
                 status = DONE;  // handle error as needed
                 return;
             }
+            
         }
         // add body 
         //response.insert(response.end(), body.begin(), body.end());
@@ -174,7 +184,7 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
         if (chunkSize == 0 || offset >= static_cast<size_t>(totaSize))
         {
             file.close();
-            std::cout << "\n end of file \n";
+            std::cout << "\n end of file : chuncksize->"<< chunkSize<<" offset->"<<offset<<" totalsizefile->"<<totaSize<<std::endl;
             status = DONE;  // handle error as needed
         }
     }
@@ -293,8 +303,10 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
     Route& route = request.getCurrentRoute();
     this->query = request.getQuery();
     version = request.getVersion();
+    std::cout << "version : "<< version<< "\n\n";
     UpdateStatueCode(request.GetStatusCode());
-    route.setRoot("." + route.getRoot());
+    if (route.getRoot()[0] != '.')
+        route.setRoot("." + route.getRoot());
     ValidcgiExtensions.insert(".php");
     ValidcgiExtensions.insert(".py");
     ValidcgiExtensions.insert(".sh");
@@ -333,6 +345,7 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
                 if(!route.getDefaultFile().empty())
                 {
                     Page =  route.getRoot() + "/" + route.getDefaultFile();
+                    std::cout << "\ndefault  page->>>>>> : "<<Page<<"\n";
                     std::cout << "\ndefault\n";
                 }
                 else if(route.getAutoindex())
@@ -348,7 +361,9 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
             UpdateStatueCode(404);    
     }
     std::cout << "\npage->>>>>> : "<<Page<<"\n";
+            std::cout <<"\nbefore totalsizefile->"<<totaSize<<std::endl;
     addHeaders();
+    
     //std::cout <<"\n\n"<<headers["Content-Length"] <<"\n\n";    //Transfer-Encoding: chunked or content-length ?
     if(Page.empty())
     {

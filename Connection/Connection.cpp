@@ -2,7 +2,7 @@
 
 Connection::Connection():bodySize(0){}
 
-Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize):clientSocketId(fd), bodySize(maxSize), status(READING_PARSING)
+Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize, struct epoll_event& epoll):clientSocketId(fd), bodySize(maxSize), status(READING_PARSING),epollfd(epoll)
  {
     CLientAddress.sin_family = acceptedAddr.sin_family;
     CLientAddress.sin_port = acceptedAddr.sin_port;
@@ -14,6 +14,10 @@ Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize):
     (void)bodySize;
  }
 
+struct epoll_event& Connection::getEpollFd()
+{
+    return epollfd;
+}
 int Connection::getClientSocketId() const{
     return clientSocketId;
 }
@@ -105,10 +109,11 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
 // }
 void Connection::generateResponse(std::map<int, std::string> &errorPages)
 {
-    std::cout <<"before___" <<status<<"__________\n";
+    std::cout <<"before___"<<clientSocketId<<" " <<status<<"__________\n";
     response.ResponseGenerating(request, errorPages, clientSocketId, status);
     //SendData(buffer);
-    std::cout <<"after___" <<status<<"__________\n";
+    std::cout <<"after______________" <<status<<"__________\n";
+    
     // for(size_t i = 0; i < buffer.size();i++)
     //     std::cout << buffer[i];
     //std::cout << "\n__________\n";
@@ -125,4 +130,10 @@ void    Connection::setStatus(Status stat){
 HttpRequest Connection::getRequest()
 {
     return request;
+}
+
+
+HttpResponse Connection::getResponse()
+{
+    return response;
 }

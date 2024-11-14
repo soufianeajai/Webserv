@@ -39,10 +39,9 @@ bool Server::removeConnection(int socket)
         return false; 
 }
 
-void Server::addConnection(int socket, const Connection& connection)
+void Server::addConnection(int socket, Connection* connection)
 {
-    Connection* newConnection = new Connection(connection);
-    connections[socket] = newConnection;
+    connections[socket] = connection;
 }
 
 void Server::hostSetter(std::string _host) {

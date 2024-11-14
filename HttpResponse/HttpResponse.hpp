@@ -38,7 +38,7 @@ private:
 
 public:
     HttpResponse();
-    
+    size_t getOffset();
     void ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, int clientSocketId, Status& status);
     //void initResponse(const Route &route,std::map<int, std::string> &errorPage, int code,const std::string &query, const std::string UrlRequest, const std::string method);    
     std::string getMimeType(const std::string& filePath) const;
