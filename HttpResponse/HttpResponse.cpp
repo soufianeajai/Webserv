@@ -67,7 +67,7 @@ std::string getCurrentTimeFormatted()
 
 void HttpResponse::addHeaders()
 {
-try{
+// try{
         std::ifstream file(Page.c_str());
         if (!file.is_open())
         {
@@ -76,19 +76,19 @@ try{
         }
         file.seekg(0, std::ios::end);
         totaSize = file.tellg();
-        std::cout << "waa totalsize : "<<totaSize<<"\n";
         file.seekg(0, std::ios::beg);
         headers["Content-Type"] =  getMimeType(Page);
         headers["Content-Length"] =  intToString(totaSize);
         headers["Date"] =  getCurrentTimeFormatted();
         headers["Server"] =  "WebServ 1337";  
         headers["Connection"] = "close";
+        std::cout << "headers !!\n";
         //body.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-    }
-catch (std::exception &e){
-        std::cout << e.what()<<std::endl;
-        UpdateStatueCode(404);
-    }
+//     }
+// catch (std::exception &e){
+//         std::cout << "ggggggggggggggggggggggggggggggg" <<e.what()<<std::endl;
+//         UpdateStatueCode(404);
+//     }
 }
 
 
@@ -126,7 +126,7 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
         if(!headerSended)
         {
             std::ostringstream oss;
-            std::cout <<"\n\nbuildResponseBuffer : (status : "<<status<<") "<<clientSocketId<<" "<< version << " " << statusCode << " " << reasonPhrase <<"\n\n";
+            std::cout <<"\nbuildResponseBuffer : (status : "<<status<<") "<<clientSocketId<<" "<< version << " " << statusCode << " " << reasonPhrase <<"\n";
             
             oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
             for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
@@ -134,6 +134,8 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
             oss << "\r\n";
             std::string responseStr = oss.str();
             response.insert(response.end(), responseStr.begin(), responseStr.end());
+            for(size_t i= 0;i < response.size();i++)
+                std::cout << response[i];
             SentedBytes = send(clientSocketId, reinterpret_cast<char*>(response.data()), responseStr.size(), MSG_NOSIGNAL);
             if (SentedBytes < 0)
             { 
@@ -185,6 +187,7 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
         {
             file.close();
             std::cout << "\n end of file : chuncksize->"<< chunkSize<<" offset->"<<offset<<" totalsizefile->"<<totaSize<<std::endl;
+            
             status = DONE;  // handle error as needed
         }
     }
@@ -192,6 +195,7 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
         std::cerr << "Exception in buildResponseBuffer: " << e.what() << std::endl;
         // Handle any other standard exceptions that may occur
     }
+    std::cout << "_______________________________________________________________________\n";
 }
 
 
@@ -300,10 +304,11 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
 void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, int clientSocketId, Status& status)
 {
     defaultErrors = errorPages;
+    std::string uri = request.getUri();
     Route& route = request.getCurrentRoute();
     this->query = request.getQuery();
     version = request.getVersion();
-    std::cout << "version : "<< version<< "\n\n";
+   // std::cout << "version : "<< version<< "\n\n";
     UpdateStatueCode(request.GetStatusCode());
     if (route.getRoot()[0] != '.')
         route.setRoot("." + route.getRoot());
@@ -331,45 +336,74 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
         handleRedirection(route);
 
     if(request.getUri().empty())
-        request.getUri() = request.getUri() + "/";
+        uri = request.getUri() + "/";
 
-    std::cout << "get path : "<<route.getPath()<<"\nUri: "<<request.getUri()<<"\nget root: "<<route.getRoot()<<"\nis dir route: "<<route.isDirGetter()<<"\ndefualt file: "<<route.getDefaultFile()<<"\nauto index: "<<route.getAutoindex()<<"\n";
+    //std::cout << "get path : "<<route.getPath()<<"\nUri: "<<uri<<"\nget root: "<<route.getRoot()<<"\nis dir route: "<<route.isDirGetter()<<"\ndefualt file: "<<route.getDefaultFile()<<"\nauto index: "<<route.getAutoindex()<<"\n";
     
     if (statusCode ==  200) // GET
     {
-        if (route.getPath() == request.getUri())
+        if (route.getPath() == uri)
         {
-            std::cout << "\nexact!!\n";
-            if (route.isDirGetter())
+            if(!route.getDefaultFile().empty())
             {
-                if(!route.getDefaultFile().empty())
-                {
-                    Page =  route.getRoot() + "/" + route.getDefaultFile();
-                    std::cout << "\ndefault  page->>>>>> : "<<Page<<"\n";
-                    std::cout << "\ndefault\n";
-                }
-                else if(route.getAutoindex())
-                {
-                    std::cout << "\nindexing: "<<route.getRoot();
-                    HandleIndexing(route.getRoot(),request.getUri());
-                }
+                Page =  route.getRoot() + "/" + route.getDefaultFile();
+                std::cout << "\ndefault  page->>>>>> : "<<Page<<"\n";
+                std::cout << "\ndefault\n";
             }
-            else 
-                Page = route.getRoot(); // alert about config file is dir or not !! (if is dir so root will be file also)
+            else if(route.getAutoindex())
+            {
+                std::cout << "\nindexing: "<<route.getRoot();
+                HandleIndexing(route.getRoot(),request.getUri());
+            }
+            else
+                UpdateStatueCode(404);
         }
         else
-            UpdateStatueCode(404);    
+        {
+            if (route.getPath() != "/" && uri.find(route.getPath()) == 0)
+            {
+                uri.erase(0, route.getPath().size());
+                Page = route.getRoot() + uri;
+                std::cout << "URI: \"" << uri << "\"" << std::endl;
+                std::cout << "Path: \"" << route.getPath() << "\"" << std::endl;
+                std::cout << "PAGE: \"" << Page << "\"" << std::endl;
+            }
+            else
+                UpdateStatueCode(404);
+        }  
     }
-    std::cout << "\npage->>>>>> : "<<Page<<"\n";
-            std::cout <<"\nbefore totalsizefile->"<<totaSize<<std::endl;
-    addHeaders();
     
-    //std::cout <<"\n\n"<<headers["Content-Length"] <<"\n\n";    //Transfer-Encoding: chunked or content-length ?
-    if(Page.empty())
+
+    std::ifstream file(Page.c_str());
+    if (file.is_open())
     {
-        std::cout << "page empty  !!\n";
-        UpdateStatueCode(100);
+        file.seekg(0, std::ios::end);
+        totaSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+        std::cout <<"!!!!!!!!!!!!!!!! file open is in my server : "<<Page.c_str()<<"\n";  
     }
+    else
+    {
+        UpdateStatueCode(404);
+        std::cout <<"!!!!!!!!!!!!!!!! file not exist in my server : "<<Page.c_str()<<"\n";  
+    }
+    headers["Content-Length"] =  intToString(totaSize);
+    headers["Content-Type"] =  getMimeType(Page);
+    headers["Date"] =  getCurrentTimeFormatted();
+    headers["Server"] =  "WebServ 1337";  
+    headers["Connection"] = "close";
+    std::cout << "headers !!\n";
+    
+    //addHeaders();
+    //std::cout <<"\n\n"<<headers["Content-Length"] <<"\n\n";    //Transfer-Encoding: chunked or content-length ?
+    // if(Page.empty())
+    // {
+    //     std::cout << "page empty  !!\n";
+    //     UpdateStatueCode(100);
+    // }
+    std::cout << "\npage->>>>>> : "<<Page<<"\n";
+    
+
     buildResponseBuffer(clientSocketId, status);
 }
 
