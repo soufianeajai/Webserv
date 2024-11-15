@@ -338,9 +338,18 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
     if(request.getUri().empty())
         uri = request.getUri() + "/";
 
-    //std::cout << "get path : "<<route.getPath()<<"\nUri: "<<uri<<"\nget root: "<<route.getRoot()<<"\nis dir route: "<<route.isDirGetter()<<"\ndefualt file: "<<route.getDefaultFile()<<"\nauto index: "<<route.getAutoindex()<<"\n";
+    std::cout << "get path : "<<route.getPath()<<"\nUri: "<<uri<<"\nget root: "<<route.getRoot()<<"\nis dir route: "<<route.isDirGetter()<<"\ndefualt file: "<<route.getDefaultFile()<<"\nauto index: "<<route.getAutoindex()<<"\n";
     
-    if (statusCode ==  200) // GET
+    std::set<std::string> allowedMethods =route.getAllowedMethods();
+     for (std::set<std::string>::iterator it = allowedMethods.begin(); it != allowedMethods.end(); ++it) {
+        std::cout << *it << std::endl;
+    }
+    if (allowedMethods.find("GET") != allowedMethods.end()) {
+    std::cout << "\"GET\" is allowed." << std::endl;
+} else {
+    std::cout << "\"GET\" is not allowed." << std::endl;
+}
+    if (statusCode ==  200 && allowedMethods.find("GET") != allowedMethods.end()) // GET
     {
         if (route.getPath() == uri)
         {
@@ -372,6 +381,16 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
                 UpdateStatueCode(404);
         }  
     }
+    else if (allowedMethods.find("POST") != allowedMethods.end() && statusCode ==  201)
+    {
+        std::cout << "[posted data]\n";
+    }
+    else if (allowedMethods.find("DELETE") != allowedMethods.end() && statusCode ==  204)
+    {
+        std::cout << "[DALETE data]\n";
+    }
+    else
+        UpdateStatueCode(404);
     
 
     std::ifstream file(Page.c_str());
