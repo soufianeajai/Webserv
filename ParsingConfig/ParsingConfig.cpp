@@ -1,7 +1,5 @@
 #include "ParsingConfig.hpp"
 
-bool isDirectory(const std::string& path);
-
 int numberConversion(std::string &string)
 {
     int number;
@@ -72,7 +70,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                 if (locationBlock(server, FILE, arr))
                     return true;
             }
-            else if (arr[0] == "server")
+            else if (str == "server")
             {
 
                 FILE.seekg(-str.length() - 1, std::ios_base::cur); // Go back one line
@@ -97,79 +95,83 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
             }
             else
             {
-                    if (arr[0] == "methods:")
+                route.setAutoindex(false);
+                if (arr[0] == "methods:")
+                {
+                    if (arr.size() < 2)
+                        ft_error("Error: Invalid methods", FILE);
+                    for (size_t i = 1; i < arr.size(); i++)
                     {
-                        for (size_t i = 1; i < arr.size(); i++)
-                        {
-                            if (arr[i] != "GET" && arr[i] != "POST" && arr[i] != "DELETE")
-                            {
-                                std::cout << "Error: Invalid methods" << std::endl;
-                                exit(1);
-                            }
-                            route.addAllowedMethod(arr[i]);
-                        }
+                        if (arr[i] != "GET" && arr[i] != "POST" && arr[i] != "DELETE")
+                            ft_error("Error: Invalid methods", FILE);
+                        route.addAllowedMethod(arr[i]);
                     }
-                    else if (arr[0] == "root:")
-                    {
-                        if (arr.size() != 2)
-                            ft_error("Error: invalid root", FILE);
-                        if (route.getRoot().empty())
-                            route.setRoot(arr[1]);
-                        if (route.getRoot() != "/" && (route.getRoot()[0] != '/' || route.getRoot()[route.getRoot().length() - 1] == '/'))
-                            ft_error("Error: invalid root" + route.getRoot(), FILE);
-                        if (isDirectory(route.getRoot()))
-                            route.isDirSetter(true);
-                    }
-                    else if (arr[0] == "default_file:")
-                    {
-                        if (arr.size() != 2 || !arr[1].find("/"))
-                            ft_error("Error: invalid root", FILE);
-                        if (route.getDefaultFile().empty())
-                            route.setDefaultFile(arr[1]);
-                    }
-                    else if (arr[0] == "autoindex:")
-                    {
-                        if (arr.size() != 2 || (arr[1] != "on" && arr[1] != "off"))
-                            ft_error("Error: invalid autoindex", FILE);
-                        if (arr[1] == "on")
-                            route.setAutoindex(true);
-                        else if (arr[1] == "off")
-                            route.setAutoindex(false);
-                        else
-                            ft_error("Error: invalid autoindex", FILE);
-                    }
-                    else if (arr[0] == "cgi_extension:")
-                    {
-                        for (size_t i = 1; i < arr.size(); i++)
-                        {
-                            route.addCgiExtension(arr[i]);
-                        }
-                    }
-                    else if (arr[0] == "redirect:")
-                    {
-                        int i = 0;
-                        while (arr[2][i])
-                        {
-                            if (!isdigit(arr[2][i]))
-                                ft_error("Error: invalid redirect status code", FILE);
-                            i++;
-                        }
-                        route.setIsRedirection(true);
-                        if (route.getRedirectnewPath().empty())
-                            route.setRedirectnewPath(arr[1]);
-                        int code = numberConversion(arr[2]);
-                        if (code != 301 && code != 302 && code != 303 
-                            && code != 307 && code != 308)
-                            ft_error("Error: invalid redirect status code", FILE);
-                        route.setRedirectCode(code);
-                    }
-                    else if (arr[0] == "upload_dir:")
-                    {
-                        if (route.getUploadDir().empty())
-                            route.setUploadDir(arr[1]);
-                    }
+                }
+                else if (arr[0] == "root:")
+                {
+                    if (arr.size() != 2)
+                        ft_error("Error: invalid root", FILE);
+                    if (route.getRoot().empty())
+                        route.setRoot(arr[1]);
+                    if (route.getRoot() != "/" && (route.getRoot()[0] != '/' || route.getRoot()[route.getRoot().length() - 1] == '/'))
+                        ft_error("Error: invalid root" + route.getRoot(), FILE);
+                }
+                else if (arr[0] == "default_file:")
+                {
+                    if (arr.size() != 2 || !arr[1].find("/"))
+                        ft_error("Error: invalid default_file", FILE);
+                    if (route.getDefaultFile().empty())
+                        route.setDefaultFile(arr[1]);
+                }
+                else if (arr[0] == "autoindex:")
+                {
+                    if (arr.size() != 2 || (arr[1] != "on" && arr[1] != "off"))
+                        ft_error("Error: invalid autoindex", FILE);
+                    if (arr[1] == "on")
+                        route.setAutoindex(true);
+                    else if (arr[1] == "off")
+                        route.setAutoindex(false);
                     else
-                        ft_error("Error: " + arr[0], FILE);
+                        ft_error("Error: invalid autoindex", FILE);
+                }
+                else if (arr[0] == "cgi_extension:")
+                {
+                    if (arr.size() < 2)
+                        ft_error("Error: Invalid cgi_extension", FILE);
+                    for (size_t i = 1; i < arr.size(); i++)
+                    {
+                        route.addCgiExtension(arr[i]);
+                    }
+                }
+                else if (arr[0] == "redirect:")
+                {
+                    if (arr.size() != 3)
+                        ft_error("Error: Invalid redirect", FILE);
+                    int i = 0;
+                    while (arr[2][i])
+                    {
+                        if (!isdigit(arr[2][i]))
+                            ft_error("Error: invalid redirect status code", FILE);
+                        i++;
+                    }
+                    route.setIsRedirection(true);
+                    if (route.getRedirectnewPath().empty())
+                        route.setRedirectnewPath(arr[1]);
+                    int code = numberConversion(arr[2]);
+                    if (code != 301 && code != 302 && code != 303 
+                        && code != 307 && code != 308)
+                        ft_error("Error: invalid redirect status code", FILE);
+                    route.setRedirectCode(code);
+                }
+                else if (arr[0] == "upload_dir:")
+                {
+                    if (arr.size() != 2)
+                        ft_error("Error: Invalid upload_dir", FILE);
+                    if (route.getUploadDir().empty())
+                        route.setUploadDir(arr[1]);
+                }
+                else
+                    ft_error("Error: " + arr[0], FILE);
             }
         }
     }
