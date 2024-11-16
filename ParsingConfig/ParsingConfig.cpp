@@ -140,6 +140,8 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                         ft_error("Error: Invalid cgi_extension", FILE);
                     for (size_t i = 1; i < arr.size(); i++)
                     {
+                        if (arr[i][0] != '.')
+                            ft_error("Error: invalid extension", FILE);
                         route.addCgiExtension(arr[i]);
                     }
                 }
