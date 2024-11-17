@@ -19,11 +19,13 @@ private:
 
 public:
     void serverSocketSetter(int Port, int Socket);
+    std::vector<int> getSockets() const;
     //std::map<int ,int> &serverSocketGetter();
     void hostSetter(std::string host);
-    std::string hostGetter();
+    std::string& hostGetter();
     void portSetter(int port);
     std::vector<int> &portGetter();
+    int GetPort(int socketserver) const;
     void serverNamesSetter(std::string serverName);
     std::vector<std::string> serverNamesGetter();
     void serverRootSetter(std::string serverRoot);

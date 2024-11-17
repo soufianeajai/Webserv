@@ -12,13 +12,14 @@ private:
     int statusCode;
     std::string reasonPhrase;
     std::string Page;
-    std::set<std::string> ValidcgiExtensions;
     std::map<int, std::string> defaultErrors;
     std::map<std::string, std::string> mimeTypes;
     ssize_t totaSize;
     size_t offset;
     bool   headerSended;
     std::string query;
+    bool cgi;
+    int pipefd[2];
     
 
     // cgi
@@ -46,13 +47,13 @@ public:
     void UpdateStatueCode(int code);
     void handleRedirection(const Route &route);
     //void handleError(std::map<int, std::string>& errorPages);
-    size_t checkIfCGI(const std::string& url);
-
+    void checkIfCGI(const std::string& url, std::set<std::string> Extensions);  
     void HandleIndexing(std::string fullpath, std::string& uri);
     void GeneratePageIndexing(std::string& fullpath, std::string& uri, std::vector<std::string>& files);
     size_t getSendbytes();
-    void addToSendbytes(size_t t);
-    // void buildingHeaders();
+    //void addToSendbytes(size_t t);
+    std::vector<char*> createEnvChar(HttpRequest& request);
+    void CheckExistingInServer();
     void buildResponseBuffer(int clientSocketId, Status& status); // this for building and set it in send syscall
 };
 

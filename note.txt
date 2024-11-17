@@ -27,8 +27,7 @@ CHECK IF RESPONSE IS READY
 - Limit client body size.
 -  HTTP methods
 -  HTTP redirection
--  extension
-
+-  extension  will be like this  .%%%
 
 
 

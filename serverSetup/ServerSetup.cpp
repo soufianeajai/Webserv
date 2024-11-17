@@ -83,7 +83,6 @@ void ServerSetup(ParsingConfig &Config)
                 continue;
             }
             fcntl(SocketId, F_SETFL, O_NONBLOCK);
-            it->addSocket(SocketId);
 			int opt = 1;
 			if (setsockopt(SocketId, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1)
                 ft_error("Failed to set SO_REUSEADDR",SocketId);
@@ -93,6 +92,7 @@ void ServerSetup(ParsingConfig &Config)
             it->serverSocketSetter(ports[i], SocketId);
 		}
     }
+    
 	while (1)
     {
         int socketServer;
@@ -114,9 +114,9 @@ void ServerSetup(ParsingConfig &Config)
                     int newClient = accept(evenBuffer[index].data.fd, (struct sockaddr*)&clientAddr, &clientAddrLen);
                     if (newClient < 0)
                         break;
-                    std::cout << "waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+                    //std::cout << "waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
                     struct epoll_event epollfd =  initializeSocketEpoll(epollInstance, newClient, EPOLLIN | EPOLLRDHUP | EPOLLHUP);
-                    Servers[socketServer].addConnection(newClient,new Connection(newClient, clientAddr, Servers[socketServer].clientMaxBodySizeGetter(), epollfd));
+                    Servers[socketServer].addConnection(newClient,new Connection(newClient, clientAddr, Servers[socketServer].clientMaxBodySizeGetter(), epollfd, evenBuffer[index].data.fd));
                 }
                 else 
                 {
@@ -137,8 +137,8 @@ void ServerSetup(ParsingConfig &Config)
                 //std::cerr << "-------------------------- "<< EPOLLOUT <<std::endl;
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                CurrentConnection->generateResponse(CurrentServer.errorPagesGetter());
-                std::cout << "alllllloooooooooo"<<CurrentConnection->getStatus()<<"\n";
+                CurrentConnection->generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.hostGetter() ,CurrentServer.GetPort(CurrentConnection->getsocketserver()));
+                //std::cout << "alllllloooooooooo"<<CurrentConnection->getStatus()<<"\n";
                 if(CurrentConnection->getStatus() == SENDING_RESPONSE)
                 {
                     CurrentConnection->getEpollFd().events = EPOLLOUT;

@@ -1,53 +1,5 @@
 #include "HttpResponse.hpp"
 #include "../Connection/Connection.hpp"
-std::string intToString(size_t number);
-void SendData(std::vector<uint8_t> data);
-std::string getCurrentTimeFormatted();
-// #include <sys/stat.h>
-// #include "../HttpRequest/processRequest.cpp"
-HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false){}
-
-std::string intToString(size_t number)
-{
-    std::stringstream ss;
-    ss << number;
-    return ss.str();
-}
-size_t HttpResponse::getOffset()
-{
-    return offset;
-}
-
-std::string getCurrentTimeFormatted()
-{
-    time_t rawTime;
-    struct tm *timeInfo;
-    char buffer[80];
-    // Get current time
-    time(&rawTime);
-    timeInfo = gmtime(&rawTime); // Use gmtime for GMT time
-    // Format the date and time as "Wed, 29 Oct 2024 15:30:00 GMT"
-    strftime(buffer, 80, "%a, %d %b %Y %H:%M:%S GMT", timeInfo);
-    return std::string(buffer);
-}
-// this function is in  processRequest
-// bool isDirectory(const std::string& path)
-// {
-//     struct stat pathStat;
-//     if (stat(path.c_str(), &pathStat) != 0)
-//     {
-//         perror("stat");  // Print an error if stat fails
-//         return false;    // Treat as non-directory if there's an error
-//     }
-//     return S_ISDIR(pathStat.st_mode);  // Check if it's a directory
-// }
-
-// std::string createSetCookieHeader(const std::string& sessionId)
-// {
-//         return "session_id=" + sessionId + "; Path=/; HttpOnly";
-// }
-
-
 
 //1xx (Informational): The request was received, continuing process
 
@@ -63,58 +15,42 @@ std::string getCurrentTimeFormatted()
 //5xx (Server Error): The server failed to fulfill an apparently
 //valid request
 
-
-
-void HttpResponse::addHeaders()
+HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false)
 {
-// try{
-        std::ifstream file(Page.c_str());
-        if (!file.is_open())
-        {
-            UpdateStatueCode(404);
-            return ;
-        }
-        file.seekg(0, std::ios::end);
-        totaSize = file.tellg();
-        file.seekg(0, std::ios::beg);
-        headers["Content-Type"] =  getMimeType(Page);
-        headers["Content-Length"] =  intToString(totaSize);
-        headers["Date"] =  getCurrentTimeFormatted();
-        headers["Server"] =  "WebServ 1337";  
-        headers["Connection"] = "close";
-        std::cout << "headers !!\n";
-        //body.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-//     }
-// catch (std::exception &e){
-//         std::cout << "ggggggggggggggggggggggggggggggg" <<e.what()<<std::endl;
-//         UpdateStatueCode(404);
-//     }
+}
+std::string intToString(size_t number)
+{
+    std::stringstream ss;
+    ss << number;
+    return ss.str();
 }
 
+size_t HttpResponse::getOffset()
+{
+    return offset;
+}
 
-// void HttpResponse::handleError(std::map<int, std::string>& errorPages)
-// {
-//     std::map<int, std::string>::iterator it = errorPages.find(statusCode);
-//         if (it != errorPages.end())
-//             Page = it->second;
-//         else
-//             Page = DEFAULTERROR;
-//         std::cout << "page error" << Page << std::endl;
-// }
+std::string getCurrentTimeFormatted()
+{
+    time_t rawTime;
+    struct tm *timeInfo;
+    char buffer[80];
+    time(&rawTime);
+    timeInfo = gmtime(&rawTime);
+    strftime(buffer, 80, "%a, %d %b %Y %H:%M:%S GMT", timeInfo);
+    return std::string(buffer);
+}
 
 void HttpResponse::handleRedirection(const Route &route)
 {
-    
+    //Location: https://example.com/new-path ~~!!!
     if (route.getIsRedirection() && !route.getNewPathRedirection().empty())
     {
         UpdateStatueCode(route.getstatusCodeRedirection());
-        Page = route.getRoot() + route.getNewPathRedirection(); // path valid trust from process request
+        Page = route.getRoot() + route.getNewPathRedirection();
     }
     else
-    {
-        UpdateStatueCode(route.getstatusCodeRedirection());
-        Page = DEFAULTERROR;  // Fallback to default error page if redirection path not set
-    }
+        UpdateStatueCode(404);
 }
 
 void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
@@ -126,29 +62,25 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
         if(!headerSended)
         {
             std::ostringstream oss;
-            std::cout <<"\nbuildResponseBuffer : (status : "<<status<<") "<<clientSocketId<<" "<< version << " " << statusCode << " " << reasonPhrase <<"\n";
+            //std::cout <<"\nbuildResponseBuffer : (status : "<<status<<") "<<clientSocketId<<" "<< version << " " << statusCode << " " << reasonPhrase <<"\n";
             
             oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
             for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
                 oss << it->first << ": " << it->second << "\r\n";
-            oss << "\r\n";
+             oss << "\r\n";
             std::string responseStr = oss.str();
             response.insert(response.end(), responseStr.begin(), responseStr.end());
-            for(size_t i= 0;i < response.size();i++)
-                std::cout << response[i];
+            // for(size_t i= 0;i < response.size();i++)
+            //     std::cout << response[i];
             SentedBytes = send(clientSocketId, reinterpret_cast<char*>(response.data()), responseStr.size(), MSG_NOSIGNAL);
             if (SentedBytes < 0)
             { 
                 std::cerr << "Send failed to client "<<clientSocketId << std::endl;
-                status = DONE;  // handle error as needed
+                status = DONE;
                 return;
             }
             status = SENDING_RESPONSE;
             headerSended = true;
-        //     std::cout<< "\nheader :\n";
-        // for(size_t i =0;i < response.size();i++)
-        //     std::cout << response[i];
-        // std::cout << "\n end header\n";
             response.clear();
         }
         size_t chunkSize = (totaSize < Connection::CHUNK_SIZE) ? totaSize : Connection::CHUNK_SIZE;
@@ -156,16 +88,12 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
         if (!file.is_open() || totaSize == -1)
         {
             std::cerr << "no body for client :"<<clientSocketId << std::endl;
-            status = DONE;  // handle error as needed
+            status = DONE; 
             return;
         }
         file.seekg(offset, std::ios::beg); // go to position actual
         response.resize(chunkSize); // resize for chunck n 
         file.read(reinterpret_cast<char*>(response.data()), chunkSize);
-        // std::cout<< "\ndata :\n";
-        // for(size_t i =0;i < response.size();i++)
-        //     std::cout << response[i];
-        // std::cout << "\n end data\n";
         chunkSize = file.gcount(); // Get the number of bytes actually read
         offset += chunkSize;
         if (chunkSize > 0)
@@ -180,22 +108,17 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
             }
             
         }
-        // add body 
-        //response.insert(response.end(), body.begin(), body.end());
-
         if (chunkSize == 0 || offset >= static_cast<size_t>(totaSize))
         {
-            file.close();
-            std::cout << "\n end of file : chuncksize->"<< chunkSize<<" offset->"<<offset<<" totalsizefile->"<<totaSize<<std::endl;
-            
-            status = DONE;  // handle error as needed
+            file.close();            
+            status = DONE;
         }
     }
     catch (const std::exception& e) {
         std::cerr << "Exception in buildResponseBuffer: " << e.what() << std::endl;
+        status = DONE;
         // Handle any other standard exceptions that may occur
     }
-    std::cout << "_______________________________________________________________________\n";
 }
 
 
@@ -243,12 +166,14 @@ void HttpResponse::UpdateStatueCode(int code)
     std::ifstream file(Page.c_str());
     if (!file.is_open())
     {
+        std::cout << "\n-1\n";
         totaSize = -1; // this is last part we can do after check for error response , set it to -1 , then we check it in send response if equal to -1 so close connection no body for client !!
         return ;
     }
     file.seekg(0, std::ios::end);
     totaSize = file.tellg();
     file.seekg(0, std::ios::beg);
+    file.close();
 }
 
 void HttpResponse::GeneratePageIndexing(std::string& fullpath,std::string& uri, std::vector<std::string>& files)
@@ -303,18 +228,17 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
 
 void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, int clientSocketId, Status& status)
 {
+    std::cout << "detection : uri"<<request.getUri()<< " query: "<<request.getQuery()<<"\n";
     defaultErrors = errorPages;
     std::string uri = request.getUri();
     Route& route = request.getCurrentRoute();
     this->query = request.getQuery();
     version = request.getVersion();
-   // std::cout << "version : "<< version<< "\n\n";
+    //cgi = !route.getCgiExtensions().empty();
+    std::set<std::string> allowedMethods =route.getAllowedMethods();
     UpdateStatueCode(request.GetStatusCode());
     if (route.getRoot()[0] != '.')
         route.setRoot("." + route.getRoot());
-    ValidcgiExtensions.insert(".php");
-    ValidcgiExtensions.insert(".py");
-    ValidcgiExtensions.insert(".sh");
     // then compare if we have in config file so we can execute it sinon (500 or 501 status code)
     mimeTypes["html"] = "text/html";
     mimeTypes["css"] = "text/css";
@@ -332,23 +256,11 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
     mimeTypes["mp3"] = "audio/mpeg";
     mimeTypes["mp4"] = "video/mp4";
     
-    if(route.getIsRedirection())
-        handleRedirection(route);
-
     if(request.getUri().empty())
         uri = request.getUri() + "/";
 
-    std::cout << "get path : "<<route.getPath()<<"\nUri: "<<uri<<"\nget root: "<<route.getRoot()<<"\nis dir route: "<<route.isDirGetter()<<"\ndefualt file: "<<route.getDefaultFile()<<"\nauto index: "<<route.getAutoindex()<<"\n";
+    //std::cout << "get path : "<<route.getPath()<<"\nUri: "<<uri<<"\nget root: "<<route.getRoot()<<"\nis dir route: "<<route.isDirGetter()<<"\ndefualt file: "<<route.getDefaultFile()<<"\nauto index: "<<route.getAutoindex()<<"\n";
     
-    std::set<std::string> allowedMethods =route.getAllowedMethods();
-     for (std::set<std::string>::iterator it = allowedMethods.begin(); it != allowedMethods.end(); ++it) {
-        std::cout << *it << std::endl;
-    }
-    if (allowedMethods.find("GET") != allowedMethods.end()) {
-    std::cout << "\"GET\" is allowed." << std::endl;
-} else {
-    std::cout << "\"GET\" is not allowed." << std::endl;
-}
     if (statusCode ==  200 && allowedMethods.find("GET") != allowedMethods.end()) // GET
     {
         if (route.getPath() == uri)
@@ -356,7 +268,6 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
             if(!route.getDefaultFile().empty())
             {
                 Page =  route.getRoot() + "/" + route.getDefaultFile();
-                std::cout << "\ndefault  page->>>>>> : "<<Page<<"\n";
                 std::cout << "\ndefault\n";
             }
             else if(route.getAutoindex())
@@ -387,192 +298,58 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
     }
     else if (allowedMethods.find("DELETE") != allowedMethods.end() && statusCode ==  204)
     {
-        std::cout << "[DALETE data]\n";
+        std::cout << "[DELETE data]\n";
     }
     else
         UpdateStatueCode(404);
     
+    if(route.getIsRedirection())
+        handleRedirection(route);
 
+    if (!route.getCgiExtensions().empty())
+    {
+        std::cout << "\nwelcome to cgi :\n";
+        checkIfCGI(Page, route.getCgiExtensions());
+        if (cgi)
+            std::cout <<"exist cgi in this script\n";
+        else
+            std::cout << "no exist\n";
+    }
+
+    CheckExistingInServer();
+    std::cout << "\npage->>>>>> : "<<Page<<"\n";
+    buildResponseBuffer(clientSocketId, status);
+}
+
+
+void HttpResponse::CheckExistingInServer()
+{
     std::ifstream file(Page.c_str());
     if (file.is_open())
     {
         file.seekg(0, std::ios::end);
         totaSize = file.tellg();
         file.seekg(0, std::ios::beg);
-        std::cout <<"!!!!!!!!!!!!!!!! file open is in my server : "<<Page.c_str()<<"\n";  
+        std::cout <<"\n!!!!!!!!!!!!!!!! file open is in my server : "<<Page.c_str()<<"\n";
+        file.close();
     }
     else
     {
         UpdateStatueCode(404);
-        std::cout <<"!!!!!!!!!!!!!!!! file not exist in my server : "<<Page.c_str()<<"\n";  
+        std::cout <<"\n!!!!!!!!!!!!!!!! file not exist in my server : "<<Page.c_str()<<"\n";  
     }
     headers["Content-Length"] =  intToString(totaSize);
-    headers["Content-Type"] =  getMimeType(Page);
+    if (cgi)
+    {
+        headers["Content-Type"] = "text/html"; // default for cgi
+        std::cout << "\n CGI EXIST \n";
+    }
+    else
+        headers["Content-Type"] =  getMimeType(Page);
     headers["Date"] =  getCurrentTimeFormatted();
     headers["Server"] =  "WebServ 1337";  
     headers["Connection"] = "close";
-    std::cout << "headers !!\n";
-    
-    //addHeaders();
-    //std::cout <<"\n\n"<<headers["Content-Length"] <<"\n\n";    //Transfer-Encoding: chunked or content-length ?
-    // if(Page.empty())
-    // {
-    //     std::cout << "page empty  !!\n";
-    //     UpdateStatueCode(100);
-    // }
-    std::cout << "\npage->>>>>> : "<<Page<<"\n";
-    
-
-    buildResponseBuffer(clientSocketId, status);
 }
-
-/* Find the position of the '?' and pos of / to get script name
-        /cgi/script.php/test/more/path?param1=value1&param2=value2
-                                     pos + 1 = p
-            queryString =   param1=value1&param2=value2
-            scriptName =    /cgi/script.php
-            path_info = /test/more/path                
-    */
-size_t HttpResponse::checkIfCGI(const std::string& url)
-{
-    size_t scriptEndPos = std::string::npos;
-
-    // Iterate over the set of valid CGI extensions
-    for (std::set<std::string>::const_iterator it = ValidcgiExtensions.begin(); it != ValidcgiExtensions.end(); ++it)
-    {
-        const std::string& ext = *it;
-        size_t pos = url.rfind(ext);
-//extension is not at the end or followed by a '/' its invalid like : /cgi/somefile.php.invalid
-        if (pos != std::string::npos &&
-            (pos + ext.length() == url.length() || url[pos + ext.length()] == '/'))
-        {
-            scriptEndPos = pos + ext.length();
-            break; 
-        }
-    }
-
-    return scriptEndPos;
-}
-
-// set best type of mime for content-type !!
-std::string HttpResponse::getMimeType(const std::string& filePath) const
-{
-    size_t pos = filePath.find_last_of('.');
-    if (pos == std::string::npos)
-        return "application/octet-stream";
-    std::string extension = filePath.substr(pos + 1);
-    std::map<std::string, std::string>::const_iterator it = mimeTypes.find(extension);
-    if (it != mimeTypes.end())
-        return it->second;
-    return "application/octet-stream";  // Default type if extension not found
-}
-
-// std::vector<char*> HttpResponse::createEnvChar(const Connection& connection, size_t scriptEndPos) const
-// {
-//     std::vector<char*> envVars;
-//     std::string url = connection.getRequest().getUrl();
-
-//     std::string scriptName;
-//     std::string pathInfo;
-//     std::string queryString;
-//     std::string contentType;
-//     queryString = connection.getRequest().GetQuery();
-//     scriptName = url.substr(0, scriptEndPos);
-//     pathInfo =  url.substr(scriptEndPos);
-//             = (connection.getRequest().getMethod() == "POST") ? connection.getRequest().getHeader("CONTENT_TYPE") : "";
-
-//     env.push_back(const_cast<char*>(("REQUEST_METHOD=" + connection.getRequest().getMethod()).c_str()));
-//     env.push_back(const_cast<char*>(("QUERY_STRING=" + queryString).c_str()));
-//     env.push_back(const_cast<char*>(("SCRIPT_NAME=" + scriptName).c_str()));
-//     env.push_back(const_cast<char*>(("PATH_INFO=" + pathInfo).c_str()));
-//     env.push_back(const_cast<char*>(("CONTENT_TYPE=" + contentType).c_str()));
-//     env.push_back(const_cast<char*>("GATEWAY_INTERFACE=CGI/1.1"));
-//     env.push_back(const_cast<char*>("SERVER_PROTOCOL=" + version).c_str());
-//     //REMOTE_ADDR,REMOTE_HOST,SERVER_NAME,SERVER_PORT,AUTH_TYPE
-//     return envVars;
-// }
-
-
-
-
-
-
-// void HttpResponse::executeCGI(const std::string& scriptPath,std::vector<char*> &envp)
-// {
-    
-//     int pipefd[2];
-//     if (pipe(pipefd) == -1) {
-//         perror("pipe");
-//         return;
-//     }
-//     pid_t pid = fork();
-//     if (pid == -1) {
-//         perror("fork");
-//         return;
-//     }
-//     if (pid == 0)
-//     {
-//         // In child process
-//         dup2(pipefd[1], STDOUT_FILENO);
-//         close(pipefd[0]);
-//         close(pipefd[1]); 
-//         char* argv[] = {const_cast<char*>(scriptPath.c_str()), NULL};
-//         execve(scriptPath.c_str(), argv, &envp[0]); // envp.data() but is in c++11
-//     }
-//     else
-//     {
-//         // In parent process
-//         close(pipefd[1]);
-//         std::string cgiOutput;
-//         char buffer[1024];
-//         ssize_t bytesRead;
-//          while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
-//             cgiOutput.append(buffer, buffer + bytesRead);
-//         close(pipefd[0]);
-//         waitpid(pid, NULL, 0);
-//         body.assign(cgiOutput.begin(), cgiOutput.end());
-//     }
-// }
-
-
-
-
-
-
-
-
-// void HttpResponse::generateResponse(const Connection &connection)
-// {
-//     // detect CGI  
-//     // url /cgi/script.php
-//     bool flagConnection ; 
-//     std::string url = connection.getRequest().getUrl();
-//     size_t scriptEndPos = checkIfCGI(url);  
-//     if (scriptEndPos !=  std::string::npos)
-//         executeCGI(createEnvMap(connection, scriptEndPos));  // createEnvMap builds necessary env variables
-//     else
-//         LoadPage();
-
-    // addHeader("Content-Type", getMimeType(url); // content-type for cgi ?
-    
-    // //Transfer-Encoding: chunked or content-length ?
-    // addHeader("Content-Length", intToString(body.size()));
-    // addHeader("Date", getCurrentTimeFormatted());
-    // addHeader("Server", "WebServ 1337");  
-    // addHeader("Connection",connection.GetflagConnection() ? "keep-alive" : "close");
-
-//     //Location: https://example.com/new-path
-//     // from config file  : redirect: old-path 3xx new-path
-//     //The browser automatically makes a new HTTP request to the URL specified in the Location header
-//     if (statusCode > 299 && statusCode < 400)
-//         addHeader("Location", "localhost?" + "new-path");
-
-//     // cookies header ?
-//     // addHeader("Set-Cookie",createSetCookieHeader());
-// }
-
-
-
 
 
 
