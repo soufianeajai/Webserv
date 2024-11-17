@@ -10,7 +10,7 @@ private:
     std::vector<int> ports;
     std::vector<int> sockets;
     std::map<int, Connection*> connections;
-    std::vector<std::string> serverNames; 
+    std::set<std::string> serverNames; 
     std::string serverRoot;
     std::map<std::string, Route> routes;
     std::map<int, std::string> errorPages;
@@ -25,7 +25,7 @@ public:
     void portSetter(int port);
     std::vector<int> &portGetter();
     void serverNamesSetter(std::string serverName);
-    std::vector<std::string> serverNamesGetter();
+    std::set<std::string> serverNamesGetter();
     void serverRootSetter(std::string serverRoot);
     std::string serverRootGetter();
     void errorPagesSetter(int errorCode, std::string errorPage);
