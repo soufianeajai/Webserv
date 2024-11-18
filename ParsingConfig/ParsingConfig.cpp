@@ -38,9 +38,9 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
     else if (locationPath.size() > 2)
         ft_error("Error: Invalid location", FILE);
     route.setPath(locationPath[1]);
-     //if (locationPath[1][locationPath[1].length() - 1] == '/')
-     
-         route.isDirSetter(true);
+    if (locationPath[1] != "/" 
+        && (locationPath[1][locationPath[1].length() - 1] == '/' || locationPath[1][0] != '/'))
+        ft_error("Error: Invalid Route " + locationPath[1], FILE);
 
     while (getline(FILE, str))
     {
@@ -70,7 +70,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                 if (locationBlock(server, FILE, arr))
                     return true;
             }
-            else if (arr[0] == "server")
+            else if (str == "server")
             {
 
                 FILE.seekg(-str.length() - 1, std::ios_base::cur); // Go back one line
@@ -96,73 +96,90 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
             else
             {
                 route.setAutoindex(false);
-                    if (arr[0] == "methods:")
+                if (arr[0] == "methods:")
+                {
+                    if (arr.size() < 2)
+                        ft_error("Error: Invalid methods", FILE);
+                    for (size_t i = 1; i < arr.size(); i++)
                     {
-                        for (size_t i = 1; i < arr.size(); i++)
-                        {
-                            if (arr[i] != "GET" && arr[i] != "POST" && arr[i] != "DELETE")
-                            {
-                                std::cout << "Error: Invalid methods" << std::endl;
-                                exit(1);
-                            }
-                            route.addAllowedMethod(arr[i]);
-                        }
+                        if (arr[i] != "GET" && arr[i] != "POST" && arr[i] != "DELETE")
+                            ft_error("Error: Invalid methods", FILE);
+                        route.addAllowedMethod(arr[i]);
                     }
-                    else if (arr[0] == "root:")
-                    {
-                        if (arr.size() != 2)
-                            ft_error("Error: invalid root", FILE);
-                        if (route.getRoot().empty())
-                            route.setRoot(arr[1]);
-                    }
-                    else if (arr[0] == "default_file:")
-                    {
-                        if (route.getDefaultFile().empty())
-                            route.setDefaultFile(arr[1]);
-                    }
-                    else if (arr[0] == "autoindex:")
-                    {
-                        if (arr.size() != 2 || (arr[1] != "on" && arr[1] != "off"))
-                            ft_error("Error: invalid autoindex", FILE);
-                        if (arr[1] == "on")
-                            route.setAutoindex(true);
-                        else if (arr[1] == "off")
-                            route.setAutoindex(false);
-                        else
-                            ft_error("Error: invalid autoindex", FILE);
-                    }
-                    else if (arr[0] == "cgi_extension:")
-                    {
-                        for (size_t i = 1; i < arr.size(); i++)
-                        {
-                            route.addCgiExtension(arr[i]);
-                        }
-                    }
-                    else if (arr[0] == "redirect:")
-                    {
-                        int i = 0;
-                        while (arr[2][i])
-                        {
-                            if (!isdigit(arr[2][i]))
-                                ft_error("Error: invalid redirect status code", FILE);
-                            i++;
-                        }
-                        route.setIsRedirection(true);
-                        if (route.getRedirectnewPath().empty())
-                            route.setRedirectnewPath(arr[1]);
-                        int code = numberConversion(arr[2]);
-                        if (code != 301 && code != 302 && code != 303 
-                            && code != 307 && code != 308)
-                            ft_error("Error: invalid redirect status code", FILE);
-                        route.setRedirectCode(code);
-                    }
-                    else if (arr[0] == "upload_dir:")
-                    {
-                        if (route.getUploadDir().empty())
-                            route.setUploadDir(arr[1]);
-                    }
+                }
+                else if (arr[0] == "root:")
+                {
+                    if (arr.size() != 2)
+                        ft_error("Error: invalid root", FILE);
+                    if (route.getRoot().empty())
+                        route.setRoot(arr[1]);
                     else
-                        ft_error("Error: " + arr[0], FILE);
+                        ft_error("Error: root already exists", FILE);
+                    if (route.getRoot() != "/" && (route.getRoot()[0] != '/' || route.getRoot()[route.getRoot().length() - 1] == '/'))
+                        ft_error("Error: invalid root" + route.getRoot(), FILE);
+                }
+                else if (arr[0] == "default_file:")
+                {
+                    if (arr.size() != 2 || !arr[1].find("/"))
+                        ft_error("Error: invalid default_file", FILE);
+                    if (route.getDefaultFile().empty())
+                        route.setDefaultFile(arr[1]);
+                    else
+                        ft_error("Error: default_file already exists", FILE);
+                }
+                else if (arr[0] == "autoindex:")
+                {
+                    if (arr.size() != 2 || (arr[1] != "on" && arr[1] != "off"))
+                        ft_error("Error: invalid autoindex", FILE);
+                    if (arr[1] == "on")
+                        route.setAutoindex(true);
+                    else if (arr[1] == "off")
+                        route.setAutoindex(false);
+                    else
+                        ft_error("Error: invalid autoindex", FILE);
+                }
+                else if (arr[0] == "cgi_extension:")
+                {
+                    if (arr.size() < 2)
+                        ft_error("Error: Invalid cgi_extension", FILE);
+                    for (size_t i = 1; i < arr.size(); i++)
+                    {
+                        if (arr[i][0] != '.')
+                            ft_error("Error: invalid extension", FILE);
+                        route.addCgiExtension(arr[i]);
+                    }
+                }
+                else if (arr[0] == "redirect:")
+                {
+                    if (arr.size() != 3)
+                        ft_error("Error: Invalid redirect", FILE);
+                    int i = 0;
+                    while (arr[2][i])
+                    {
+                        if (!isdigit(arr[2][i]))
+                            ft_error("Error: invalid redirect status code", FILE);
+                        i++;
+                    }
+                    route.setIsRedirection(true);
+                    if (route.getRedirectnewPath().empty())
+                        route.setRedirectnewPath(arr[1]);
+                    int code = numberConversion(arr[2]);
+                    if (code != 301 && code != 302 && code != 303 
+                        && code != 307 && code != 308)
+                        ft_error("Error: invalid redirect status code", FILE);
+                    route.setRedirectCode(code);
+                }
+                else if (arr[0] == "upload_dir:")
+                {
+                    if (arr.size() != 2)
+                        ft_error("Error: Invalid upload_dir", FILE);
+                    if (route.getUploadDir().empty())
+                        route.setUploadDir(arr[1]);
+                    else
+                        ft_error("Error: upload_dir already exists", FILE);
+                }
+                else
+                    ft_error("Error: " + arr[0], FILE);
             }
         }
     }
@@ -200,13 +217,11 @@ bool ParsingConfig::hostCheck(std::string host)
 }
 bool ParsingConfig::checkClientBodySize(std::string &str)
 {
-    for (size_t i = 0; i < str.length() - 1; i++)
+    for (size_t i = 0; i < str.length(); i++)
     {
         if (str[i] < '0' || str[i] > '9')
             return false;
     }
-    if (str[str.length() - 1] != 'm' &&  str[str.length() - 1] != 'M')
-        return false;
     return true;
 }
 
@@ -245,18 +260,60 @@ void checkNecessary(WebServer &webserver, std::ifstream& FILE)
     }
     
 }
-ParsingConfig parsingConfig(const char *configFile)
+void checkFile(std::ifstream &FILE)
 {
-    ParsingConfig parsingConfig;
-
-    std::ifstream FILE(configFile);
     if (FILE.fail())
     {
         std::cout << "Error: failed to open file" << std::endl;
         exit(1);
     }
-    std::string str;
+}
+void checkFileExtension(const char *configFile)
+{
+    std::string str(configFile);
+    int i = str.length() - 1;
+    while (str[i] != '.' && i >= 0)
+    {
+        if (i == 0)
+            break;
+        i--;
+    }
+    if (str[i] != '.' || str.substr(i) != ".config")
+    {
+        std::cout << "Error: invalid file extension" << std::endl;
+        exit(1);
+    }
+}
+bool containeCharachter(std::string str)
+{
+    for (size_t i = 0; i < str.length(); i++)
+    {
+        if (str[i] < '0' || str[i] > '9')
+            return true;
+    }
+    return false;
+}
+bool validServerName(std::string serverName)
+{
+    for (size_t i = 0; i < serverName.length(); i++)
+    {
+        if ((serverName[i] < 'a' || serverName[i] > 'z') && (serverName[i] < 'A' || serverName[i] > 'Z')
+            && (serverName[i] < '0' || serverName[i] > '9') && serverName[i] != '.' && serverName[i] != '-')
+            return true;
+    }
+    return false;
+}
+ParsingConfig parsingConfig(const char *configFile)
+{
+    ParsingConfig parsingConfig;
 
+    std::ifstream FILE(configFile);
+    checkFile(FILE);
+    checkFileExtension(configFile);
+
+
+    // parsing the file
+    std::string str;
     while (str == "server" || getline(FILE, str))
     {
         if (str == "server") // Check if "server" was found in the recursive call
@@ -282,6 +339,8 @@ ParsingConfig parsingConfig(const char *configFile)
                             ft_error("invalid host", FILE);
                         if (server.hostGetter().empty())
                             server.hostSetter(arr[1]);
+                        else
+                            ft_error("Error: host already exists", FILE);
                     }
                     else if (arr[0] == "port:")
                     {
@@ -290,6 +349,8 @@ ParsingConfig parsingConfig(const char *configFile)
                         int port;
                         for (size_t i = 1; i < arr.size(); i++)
                         {
+                            if (containeCharachter(arr[i]))
+                                ft_error("Error: invalid port", FILE);
                             port = numberConversion(arr[i]);
                             if (port < 0)
                                 ft_error("negative port", FILE);
@@ -299,8 +360,13 @@ ParsingConfig parsingConfig(const char *configFile)
                     else if (arr[0] == "server_names:")
                     {
                         for (size_t i = 1; i < arr.size(); i++)
+                        {
+                            if (arr[i].length() > 255 || validServerName(arr[i]) 
+                                || arr[i][0] == '.' || arr[i][arr[i].length() - 1] == '.')
+                                ft_error("Error: invalid server names", FILE);
                             server.serverNamesSetter(arr[i]);
-                        std::vector<std::string> serverNames = server.serverNamesGetter();
+                        }
+                        std::set<std::string> serverNames = server.serverNamesGetter();
                     }
                     else if (arr[0] == "server_root:")
                     {
@@ -340,7 +406,7 @@ ParsingConfig parsingConfig(const char *configFile)
                 }
             }
             parsingConfig.webServer.addServer(server);
-        }    
+        }
     }
     checkNecessary(parsingConfig.webServer, FILE);
     FILE.close();
