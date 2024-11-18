@@ -150,6 +150,7 @@ public:
     std::string getTest(){
         return test;
     }
+    std::string& getHeader(std::string key);
 private:
 // STATE HANDLERS
     void    handleMethodStart(uint8_t byte);

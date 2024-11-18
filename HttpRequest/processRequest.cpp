@@ -37,8 +37,7 @@ void HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes)
     std::map<std::string, Route>::iterator it;
     bool found = false;
     size_t longestMatchLength = 0;
-    std::cout << "uri = " << uri << std::endl;
-//    std::cout << "uri = " << uri << std::endl;
+    //std::cout << "uri = " << uri << std::endl;
     if (uri[uri.size() - 1] == '/')
         uri = uri.substr(0, uri.length() - 1);
     
@@ -47,7 +46,7 @@ void HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes)
     {
         found = true;
         CurrentRoute = it->second;
-      std::cout << "Exact matching ----> : " << uri << std::endl;
+     // std::cout << "Exact matching ----> : " << uri << std::endl;
     } 
     else 
     {
@@ -57,12 +56,12 @@ void HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes)
                     CurrentRoute = it->second;
                     longestMatchLength = it->first.length();
                     found = true;
-                    std::cout << "Prefix matching ----> uri: " << uri << std::endl << "Location: " << it->first << std::endl;
+                    //std::cout << "Prefix matching ----> uri: " << uri << std::endl << "Location: " << it->first << std::endl;
                 }
             }
         }
         if (found != true){
-            std::cout << "Set default te root if exist ----> : " << uri << std::endl;
+            //std::cout << "Set default te root if exist ----> : " << uri << std::endl;
             std::map<std::string, Route>::iterator it = routes.find("/");
             if (it != routes.end()){
                 CurrentRoute = it->second;

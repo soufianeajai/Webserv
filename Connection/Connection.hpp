@@ -14,12 +14,13 @@ private:
     size_t bodySize;
     Status status;
     struct epoll_event epollfd;
+    int socketServer;
 
 public:
     static const ssize_t MAX_BODY_SIZE = 10 * 1024 * 1024;
     static const ssize_t CHUNK_SIZE = 8 * 1024;
     Connection();
-    Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize,struct epoll_event& epollfd);
+    Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize,struct epoll_event& epollfd, int socketserver);
     struct epoll_event& getEpollFd();
     void readIncomingData(std::map<std::string, Route>& routes); // read data from socket clientSocketId in the buffer requestBuffer until the reaching the limit size of the buffer or the reading is ended.
     void parseRequest();
@@ -27,10 +28,11 @@ public:
     // void writedata();
     void closeConnection();
     int getClientSocketId() const;
-    void generateResponse(std::map<int, std::string> &errorPages);
+    void generateResponse(std::map<int, std::string> &errorPages, std::string& host, uint16_t port);
     HttpRequest getRequest();
     HttpResponse getResponse();
     Status getStatus() const;
     void    setStatus(Status stat);
+    int getsocketserver() const;
 
 };

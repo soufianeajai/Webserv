@@ -1,8 +1,13 @@
 #!/usr/bin/php
 <?php
-header("Content-Type: text/html");
+// Set the Content-Type header
+header("Content-Type: text/html; charset=UTF-8");
 
-// Capture query parameters
+// Add additional headers
+header("X-Content-Type-Options: nosniff");
+
+// End of headers, now separate headers and body with "\r\n\r\n"
+echo "\r\n\r\n";
 $name = isset($_GET['name']) ? htmlspecialchars($_GET['name']) : "Guest";
 
 echo <<<HTML
