@@ -75,13 +75,19 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
             SentedBytes = send(clientSocketId, reinterpret_cast<char*>(response.data()), responseStr.size(), MSG_NOSIGNAL);
             if (SentedBytes < 0)
             { 
-                std::cerr << "Send failed to client "<<clientSocketId << std::endl;
+
+                std::cerr << "2 Send failed to client "<<clientSocketId << std::endl;
                 status = DONE;
                 return;
             }
             status = SENDING_RESPONSE;
             headerSended = true;
             response.clear();
+        }
+        if (cgi)
+        {
+            sendCgi(clientSocketId, status);
+            return ;
         }
         size_t chunkSize = (totaSize < Connection::CHUNK_SIZE) ? totaSize : Connection::CHUNK_SIZE;
         std::ifstream file(Page.c_str(), std::ios::binary);
@@ -101,7 +107,7 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
             SentedBytes = send(clientSocketId, reinterpret_cast<char*>(response.data()), chunkSize, MSG_NOSIGNAL);
             if (SentedBytes < 0)
             { 
-                std::cerr << "Send failed to client "<<clientSocketId << std::endl;
+                std::cerr << "1 Send failed to client "<<clientSocketId << std::endl;
                 file.close();
                 status = DONE;  // handle error as needed
                 return;
@@ -226,13 +232,13 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
     GeneratePageIndexing(fullpath,uri, files);
 }
 
-void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, int clientSocketId, Status& status)
+void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, int clientSocketId, Status& status,std::string& host, uint16_t port)
 {
     std::cout << "detection : uri"<<request.getUri()<< " query: "<<request.getQuery()<<"\n";
+     std::cout << "detection : host"<<host<< " port string: "<<intToString(port)<<"\n";
     defaultErrors = errorPages;
     std::string uri = request.getUri();
     Route& route = request.getCurrentRoute();
-    this->query = request.getQuery();
     version = request.getVersion();
     //cgi = !route.getCgiExtensions().empty();
     std::set<std::string> allowedMethods =route.getAllowedMethods();
@@ -261,13 +267,14 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
 
     //std::cout << "get path : "<<route.getPath()<<"\nUri: "<<uri<<"\nget root: "<<route.getRoot()<<"\nis dir route: "<<route.isDirGetter()<<"\ndefualt file: "<<route.getDefaultFile()<<"\nauto index: "<<route.getAutoindex()<<"\n";
     
-    if (statusCode ==  200 && allowedMethods.find("GET") != allowedMethods.end()) // GET
+    if ((statusCode ==  200 || statusCode ==  201) && (allowedMethods.find("GET") != allowedMethods.end() ||  allowedMethods.find("POST") != allowedMethods.end())) // GET
     {
         if (route.getPath() == uri)
         {
             if(!route.getDefaultFile().empty())
             {
                 Page =  route.getRoot() + "/" + route.getDefaultFile();
+                uri += (uri[uri.size() - 1] != '/') ? "/" +  route.getDefaultFile() : route.getDefaultFile();
                 std::cout << "\ndefault\n";
             }
             else if(route.getAutoindex())
@@ -284,6 +291,7 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
             {
                 uri.erase(0, route.getPath().size());
                 Page = route.getRoot() + uri;
+                uri = request.getUri();
                 std::cout << "URI: \"" << uri << "\"" << std::endl;
                 std::cout << "Path: \"" << route.getPath() << "\"" << std::endl;
                 std::cout << "PAGE: \"" << Page << "\"" << std::endl;
@@ -291,10 +299,6 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
             else
                 UpdateStatueCode(404);
         }  
-    }
-    else if (allowedMethods.find("POST") != allowedMethods.end() && statusCode ==  201)
-    {
-        std::cout << "[posted data]\n";
     }
     else if (allowedMethods.find("DELETE") != allowedMethods.end() && statusCode ==  204)
     {
@@ -305,19 +309,32 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
     
     if(route.getIsRedirection())
         handleRedirection(route);
-
-    if (!route.getCgiExtensions().empty())
+    CheckExistingInServer();
+    std::cout << "\npage->>>>>> : "<<Page<<" "<<uri<<"\n";
+    if (!route.getCgiExtensions().empty() && statusCode < 202)
     {
         std::cout << "\nwelcome to cgi :\n";
-        checkIfCGI(Page, route.getCgiExtensions());
+        checkIfCGI(request,Page, route.getCgiExtensions(), uri, host, intToString(port));
         if (cgi)
+        {
             std::cout <<"exist cgi in this script\n";
+            cgi = executeCGI();
+            if (cgi)
+                std::cout << "cgi runed\n";
+            else
+                UpdateStatueCode(404);
+        }
         else
             std::cout << "no exist\n";
     }
-
-    CheckExistingInServer();
-    std::cout << "\npage->>>>>> : "<<Page<<"\n";
+    headers["Content-Length"] =  intToString(totaSize);
+    if (cgi)
+       headers["Content-Type"] =  "text/html";
+   else
+        headers["Content-Type"] =  getMimeType(Page);
+    headers["Date"] =  getCurrentTimeFormatted();
+    headers["Server"] =  "WebServ 1337";  
+    headers["Connection"] = "close";
     buildResponseBuffer(clientSocketId, status);
 }
 
@@ -338,17 +355,6 @@ void HttpResponse::CheckExistingInServer()
         UpdateStatueCode(404);
         std::cout <<"\n!!!!!!!!!!!!!!!! file not exist in my server : "<<Page.c_str()<<"\n";  
     }
-    headers["Content-Length"] =  intToString(totaSize);
-    if (cgi)
-    {
-        headers["Content-Type"] = "text/html"; // default for cgi
-        std::cout << "\n CGI EXIST \n";
-    }
-    else
-        headers["Content-Type"] =  getMimeType(Page);
-    headers["Date"] =  getCurrentTimeFormatted();
-    headers["Server"] =  "WebServ 1337";  
-    headers["Connection"] = "close";
 }
 
 

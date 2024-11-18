@@ -13,8 +13,6 @@ int Server::SearchSockets(int id)
 void Server::serverSocketSetter(int Port, int Socket){
     ports.push_back(Port);
     sockets.push_back(Socket);
-
-    std::cout <<"size ::"<<sockets.size()<<"\n";
 }
 
 bool Server::hasClient(int client) const
@@ -49,15 +47,10 @@ void Server::addConnection(int socket, Connection* connection)
 
 int Server::GetPort(int socketserver) const
 {
-
     int port = ports[0];
     for(size_t i = 0;i < sockets.size();i++)
-    {
-        std::cout << "socket: "<<sockets.size()<<" "<<sockets[i]<<" port: "<<ports[i]<<" "<<socketserver<<"\n";
         if (sockets[i] == socketserver)
             port = ports[i];
-
-    }
     return (port);
 }
 

@@ -116,14 +116,7 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
 // }
 void Connection::generateResponse(std::map<int, std::string> &errorPages,std::string& host, uint16_t port)
 {
-    std::cout <<"before___"<<host<<" " <<port<<"__________\n";
-    response.ResponseGenerating(request, errorPages, clientSocketId, status);
-    //SendData(buffer);
-    //std::cout <<"after______________" <<status<<"__________\n";
-    
-    // for(size_t i = 0; i < buffer.size();i++)
-    //     std::cout << buffer[i];
-    //std::cout << "\n__________\n";
+    response.ResponseGenerating(request, errorPages, clientSocketId, status,host,port);
 }
 
 Status Connection::getStatus() const{
