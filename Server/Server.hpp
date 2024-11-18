@@ -19,11 +19,13 @@ private:
 
 public:
     void serverSocketSetter(int Port, int Socket);
+    std::vector<int> getSockets() const;
     //std::map<int ,int> &serverSocketGetter();
     void hostSetter(std::string host);
-    std::string hostGetter();
+    std::string& hostGetter();
     void portSetter(int port);
     std::vector<int> &portGetter();
+    int GetPort(int socketserver) const;
     void serverNamesSetter(std::string serverName);
     std::set<std::string> serverNamesGetter();
     void serverRootSetter(std::string serverRoot);
@@ -38,7 +40,7 @@ public:
     void addSocket(int socket);
     int SearchSockets(int id);
 
-    void addConnection(int socket, const Connection& connection);
+    void addConnection(int socket, Connection* connection);
     Connection* GetConnection(int client);
     bool removeConnection(int socket);
     

@@ -34,7 +34,7 @@ int main(int ac, char **av)
     //         }
     //         std::cout << it->second.getRoot() << std::endl;
     //         std::cout << it->second.getDefaultFile() << std::endl;
-    //         std::cout << it->second.getAutoindex() << std::endl;
+    //         std::cout << "hahowa" << it->second.getAutoindex() << std::endl;
     //         std::cout << it->second.getIsRedirection() << std::endl;
     //         std::cout << it->second.getRedirectnewPath() << std::endl;
     //         std::set<std::string> cgiExtensions = it->second.getCgiExtensions();
