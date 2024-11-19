@@ -139,11 +139,12 @@ void Server::setIpaddress(std::string host) {
 in_addr_t Server::getIpaddress() {
     return this->ip_addr;
 }
-void Server::closeConnection(int fd, int epollInstance){
-    (void)epollInstance;
+void Server::closeConnection(int fd){
     std::map<int, Connection*>::iterator it =  connections.find(fd);
     if (it != connections.end()){
         delete connections[fd];
         connections.erase(fd);
+        close(fd);
     }
 }
+
