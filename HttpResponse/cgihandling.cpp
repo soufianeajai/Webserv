@@ -11,7 +11,13 @@ std::string HttpResponse::getMimeType(const std::string& filePath) const
         return it->second;
     return "application/octet-stream";  // Default type if extension not found
 }
-
+void HttpResponse::GetFullPathCmd(const std::string& ext)
+{
+    if (ext == ".php")
+        PathCmd = "/usr/bin/php-cgi8.1";
+    else
+        PathCmd = "/usr/bin/python3.10";
+}
 void HttpResponse::checkIfCGI(HttpRequest& request, const std::string& path, std::set<std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port)
 {
     for (std::set<std::string>::const_iterator it = ExtensionsConfig.begin(); it != ExtensionsConfig.end(); ++it)
@@ -24,6 +30,7 @@ void HttpResponse::checkIfCGI(HttpRequest& request, const std::string& path, std
             (pos + ext.length() == path.length() || path[pos + ext.length()] == '/') && (ext == ".php" || ext == ".py"))
         {
             cgi = true;
+            GetFullPathCmd(ext);
             break; 
         }
     }
@@ -65,14 +72,8 @@ bool HttpResponse::executeCGI()
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[0]);
         close(pipefd[1]); 
-
-        // char* argv[] = {(char *)"/usr/bin/php-cgi8.1", const_cast<char*>(Page.c_str()), NULL};
-        // execve("/usr/bin/php-cgi8.1", argv, &envVars[0]);
-        const char *cmd = "/usr/bin/php-cgi";
-        const char *path = "/home/afanidi/WEBSERVERNEW/www/cgi/scriptdefault.php";
-        char* const* envp = &envVars[0];
-        char* argv[] = { (char *)cmd, (char *)path, NULL};
-        execve(cmd, argv, envp);
+        char* argv[] = {const_cast<char*>(PathCmd.c_str()), const_cast<char*>(Page.c_str()), NULL};
+        execve(PathCmd.c_str(), argv, &envVars[0]);
         perror("execve failed");
         exit(1);
     }
@@ -80,29 +81,25 @@ bool HttpResponse::executeCGI()
     {
         close(pipefd[1]);
         waitpid(pid, &status, 0);
-        // if (WIFEXITED(status))
-        // {   
-        //     if (WEXITSTATUS(status) != 0)
-        //     {
-        //         std::cerr << "CGI script exited with error code: " << WEXITSTATUS(status) << std::endl;
-        //         close(pipefd[0]);
-        //         return false;
-        //     }
-        // }
-        // else
-        // {
-        //     std::cerr << "CGI script did not terminate normally." << std::endl;
-        //     close(pipefd[0]);
-        //     return false;
-        // }
-        // Read CGI output (if no Content-Length, EOF marks end)  
+        if (WIFEXITED(status))
+        {   
+            if (WEXITSTATUS(status) != 0)
+            {
+                std::cerr << "CGI script exited with error code: " << WEXITSTATUS(status) << std::endl;
+                close(pipefd[0]);
+                return false;
+            }
+        }
+        else
+        {
+            std::cerr << "CGI script did not terminate normally." << std::endl;
+            close(pipefd[0]);
+            return false;
+        }
     char buffer[1024];
     ssize_t bytesRead;
     while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
-        {
             cgiOutput.append(buffer, buffer + bytesRead);
-            std::cout << buffer;
-        } std::cout << "\nend\n";
     // size_t headerEnd = cgiOutput.find("\r\n\r\n");
     // if (headerEnd != std::string::npos)
     // {
@@ -112,8 +109,6 @@ bool HttpResponse::executeCGI()
     // }
     
         close(pipefd[0]);
-        //dup2(STDOUT_FILENO,original_output);
-        //close(original_output);
     }
     // std::cout << "\nread output cgi:\n";
     // std::cout <<"_"<<headers<<"_ end of header\n";
@@ -171,4 +166,9 @@ void HttpResponse::sendCgi(int clientSocketId, Status& status)
         return;
     }
     offset += SentedBytes;
+}
+
+void HttpResponse::extractPathInfo(std::string& uri)
+{
+    (void)uri;
 }

@@ -15,7 +15,7 @@
 //5xx (Server Error): The server failed to fulfill an apparently
 //valid request
 
-HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false)
+HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd("")
 {
 }
 std::string intToString(size_t number)
@@ -287,6 +287,7 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
         }
         else
         {
+            //extractPathInfo(uri);
             if (route.getPath() != "/" && uri.find(route.getPath()) == 0)
             {
                 uri.erase(0, route.getPath().size());

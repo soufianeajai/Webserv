@@ -52,3 +52,12 @@ CHECK IF RESPONSE IS READY
 
 #############################################
 when we send a request with method not allow set 405 , see also other status code
+
+
+
+
+
+@@@@
+path_info
+split header and body from cgi using "\r\n\r\n"
+use infinit loop in script and try to setup a timeout !

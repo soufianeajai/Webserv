@@ -22,7 +22,8 @@ private:
     std::vector<char*> envVars;
     std::string cgiOutput;
     int pipefd[2];
-    
+    std::string PathCmd;
+    std::string PATH_INFO;
 
     // cgi
     /* example full url possible
@@ -57,7 +58,8 @@ public:
     void sendCgi(int clientSocketId, Status& status);
     void createEnvChar(HttpRequest& request, std::string& uri,const std::string& host,const std::string& port);
     void CheckExistingInServer();
-    
+    void extractPathInfo(std::string& uri);
+    void GetFullPathCmd(const std::string& ext);
     void buildResponseBuffer(int clientSocketId, Status& status); // this for building and set it in send syscall
 };
 
