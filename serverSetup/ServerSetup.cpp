@@ -11,6 +11,25 @@ void ft_error(std::string err, int fd)
     exit (EXIT_FAILURE);
 }
 
+time_t current_time()
+{
+    return static_cast<time_t>(time(NULL));
+}
+
+
+bool check_fd_timeout(int fd, time_t last_access_time)
+{
+    time_t current_time_val = current_time();
+    if (current_time_val - last_access_time > TIMEOUT) {
+        std::cout << "current_time_val :"<<current_time_val<<" last_access_time: "<<last_access_time<<" timeout: "<<current_time_val - last_access_time<<"\n";
+        std::cout << "FD " << fd << " timed out!" << std::endl;
+        return true;
+        
+        // Handle timeout (e.g., kill process or close FD)
+    }
+    return false;
+}
+
 int ServerSocketSearch(int epollFd, std::vector<Server>& servers)
 {
 
@@ -114,15 +133,15 @@ void ServerSetup(ParsingConfig &Config)
                     int newClient = accept(evenBuffer[index].data.fd, (struct sockaddr*)&clientAddr, &clientAddrLen);
                     if (newClient < 0)
                         break;
-                    //std::cout << "waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
                     struct epoll_event epollfd =  initializeSocketEpoll(epollInstance, newClient, EPOLLIN | EPOLLRDHUP | EPOLLHUP);
-                    Servers[socketServer].addConnection(newClient,new Connection(newClient, clientAddr, Servers[socketServer].clientMaxBodySizeGetter(), epollfd, evenBuffer[index].data.fd));
+                    Servers[socketServer].addConnection(newClient,new Connection(newClient, clientAddr, Servers[socketServer].clientMaxBodySizeGetter(), epollfd, evenBuffer[index].data.fd,current_time()));
                 }
                 else 
                 {
-
+                    
                     CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                     CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
+                    CurrentConnection->set_last_access_time(current_time());
                     CurrentConnection->readIncomingData(CurrentServer.getRoutes());
                     if (CurrentConnection->getStatus() == GENARATE_RESPONSE)
                     {
@@ -130,6 +149,7 @@ void ServerSetup(ParsingConfig &Config)
                         evenBuffer[index].events |= EPOLLOUT;
                     }
                 }
+            
             }
     
             if (evenBuffer[index].events & (EPOLLOUT))
@@ -137,7 +157,12 @@ void ServerSetup(ParsingConfig &Config)
                 //std::cerr << "-------------------------- "<< EPOLLOUT <<std::endl;
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                CurrentConnection->generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.hostGetter() ,CurrentServer.GetPort(CurrentConnection->getsocketserver()));
+                CurrentConnection->set_last_access_time(current_time());
+                CurrentConnection->generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.hostGetter() 
+                    ,CurrentServer.GetPort(CurrentConnection->getsocketserver()),CurrentConnection->get_last_access_time());
+                // int pipe = CurrentConnection->getResponse().getpipe();
+                // if (pipe != -1)
+                //     initializeSocketEpoll(epollInstance, pipe, EPOLLIN);
                 //std::cout << "alllllloooooooooo"<<CurrentConnection->getStatus()<<"\n";
                 if(CurrentConnection->getStatus() == SENDING_RESPONSE)
                 {
@@ -169,6 +194,22 @@ void ServerSetup(ParsingConfig &Config)
                 close(evenBuffer[index].data.fd);
                 //std::cout << "Client disconnected\n";
                 continue;
+            } 
+        }
+        for (std::vector< Server>::iterator it = Servers.begin(); it != Servers.end(); it++)
+	    {
+		    std::map<int, Connection*> connections = it->GetCoonections();
+            
+            for (std::map<int, Connection*>::iterator conn_it = connections.begin(); conn_it != connections.end(); ++conn_it)
+            {
+                //std::cout << "time ? : "<<  conn_it->second->get_last_access_time();
+                if(check_fd_timeout(conn_it->first, conn_it->second->get_last_access_time())){
+                    if(epoll_ctl(epollInstance, EPOLL_CTL_DEL, conn_it->first, NULL) != -1)
+                        perror("epoll_ctl failed to remove client");
+                }   
+
+                //std::cout << "time serversetup: "<<conn_it->second->get_last_access_time()<<"\n";
+                //exit(1);
             }
         }
         

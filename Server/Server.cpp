@@ -28,6 +28,11 @@ Connection* Server::GetConnection(int socket)
         return NULL;
 }
 
+std::map<int, Connection*>& Server::GetCoonections() 
+{
+    return (connections);
+}
+
 bool Server::removeConnection(int socket)
 {
     if (connections.count(socket) > 0) 

@@ -58,10 +58,8 @@ void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path, std::set<
             path_info = /test/more/path                
     */
 
-int HttpResponse::executeCGI()
+int HttpResponse::executeCGI(time_t currenttime)
 {
-
-    pid_t pid;
     int status;
     std::string body;
     std::string headers;
@@ -92,36 +90,26 @@ int HttpResponse::executeCGI()
     else
     {
         close(pipefd[1]);
-        int epollFd = epoll_create1(0);
-        if (epollFd == -1) {
-            perror("epoll_create1");
-            return 500;
-        }
-        // Add pipe read end to epoll monitoring
-        struct epoll_event pipeEvent;
-        struct epoll_event evenBuffer[1];
-        pipeEvent.events = EPOLLIN; 
-        pipeEvent.data.fd = pipefd[0];
-        if (epoll_ctl(epollFd, EPOLL_CTL_ADD, pipefd[0], &pipeEvent) == -1)
+        while(true)
         {
-            close(epollFd);
-            perror("epoll_ctl");
-            return 500;
+            pid_t res = waitpid(pid, &status, WNOHANG);
+            std::cout <<"res: "<<res<<" , elasped: "<<(static_cast<time_t>(time(NULL)) - currenttime)<<"\n";
+            if (res == -1)
+            {
+                perror("waitpid failed");
+                close(pipefd[0]);
+                return 500;
+            }
+            if (res > 0) 
+                break;
+           if (static_cast<time_t>(time(NULL)) - currenttime > TIMEOUT)
+            {
+                kill(pid, SIGKILL);
+                waitpid(pid, &status, 0);
+                close(pipefd[0]);
+                return 500;
+            }
         }
-        int eventCount = epoll_wait(epollFd, evenBuffer, 1, TIMEOUT);
-        if (eventCount == -1)
-        {
-            perror("epoll_wait");
-            return 500;
-        }
-        if (eventCount == 0)
-        {
-            std::cerr << "Timeout: CGI process did not finish in time.\n";
-
-            kill(pid, SIGKILL);
-            return 504;
-        }
-        waitpid(pid, &status, 0);
         if (WIFEXITED(status))
         {   
             if (WEXITSTATUS(status) != 0)
@@ -137,33 +125,27 @@ int HttpResponse::executeCGI()
             close(pipefd[0]);
             return 500;
         }
-        std::cout <<"parent\n";
-    char buffer[1024];
-    ssize_t bytesRead;
-    while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
+        std::cout << "timecurrent: "<<currenttime<<" time now: "<<static_cast<time_t>(time(NULL))<< " def: "<<static_cast<time_t>(time(NULL)) - currenttime<<"\n";
+        char buffer[1024];
+        ssize_t bytesRead;
+        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
             cgiOutput.append(buffer, buffer + bytesRead);
-    if (bytesRead == -1)
-    {
-        perror("read failed");
-        close(pipefd[0]);
-        return 500;
-    }
-    // size_t headerEnd = cgiOutput.find("\r\n\r\n");
+        if (bytesRead == -1)
+        {
+            perror("read failed");
+            close(pipefd[0]);
+            return 500;
+        }
+    close(pipefd[0]);
+    totaSize = cgiOutput.size();
+    return 200;    // size_t headerEnd = cgiOutput.find("\r\n\r\n");
     // if (headerEnd != std::string::npos)
     // {
     //     std::cout << "waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n";
     //     headers = cgiOutput.substr(0, headerEnd);  // Extract headers
     //     body = cgiOutput.substr(headerEnd + 4);  // Extract body
     // }
-    
-    close(pipefd[0]);
-    totaSize = cgiOutput.size();
-    return 200;
-}
-    // std::cout << "\nread output cgi:\n";
-    // std::cout <<"_"<<headers<<"_ end of header\n";
-//    std::cout <<"_"<<cgiOutput<<"_ end of body\n";
-    
+    }
 }
 
 

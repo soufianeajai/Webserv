@@ -48,6 +48,8 @@ public:
     bool hasClient(int client) const;
     void setIpaddress(std::string addr);
     in_addr_t getIpaddress();
+
+    std::map<int, Connection*>& GetCoonections() ;
         // Server();
     // Server(const std::string& host, const std::vector<int>& ports) 
     //     : host(host), ports(ports) {}

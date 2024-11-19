@@ -2,7 +2,16 @@
 
 Connection::Connection():bodySize(0){}
 
-Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize, struct epoll_event& epoll, int serversocket):clientSocketId(fd), bodySize(maxSize), status(READING_PARSING),epollfd(epoll)
+time_t Connection::get_last_access_time() const
+{
+    return last_access_time;
+}
+
+void Connection::set_last_access_time(time_t last)
+{
+    last_access_time = last;
+}
+Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize, struct epoll_event& epoll, int serversocket,time_t last):clientSocketId(fd), bodySize(maxSize), status(READING_PARSING),epollfd(epoll),last_access_time(last)
 {
     std::cout << "conneciton: "<<serversocket<<"\n";
     this->socketServer = serversocket;
@@ -114,9 +123,9 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
 //     }
 
 // }
-void Connection::generateResponse(std::map<int, std::string> &errorPages,std::string& host, uint16_t port)
+void Connection::generateResponse(std::map<int, std::string> &errorPages,std::string& host, uint16_t port,time_t currenttime)
 {
-    response.ResponseGenerating(request, errorPages, clientSocketId, status,host,port);
+    response.ResponseGenerating(request, errorPages, clientSocketId, status,host,port,currenttime);
 }
 
 Status Connection::getStatus() const{

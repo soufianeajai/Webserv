@@ -30,6 +30,23 @@ size_t HttpResponse::getOffset()
     return offset;
 }
 
+bool HttpResponse::getCgi() const
+{
+    return cgi;
+}
+
+pid_t HttpResponse::getPid() const
+{
+    return pid;
+}
+
+int HttpResponse::getpipe() const
+{
+    if (cgi)
+        return pipefd[0];
+    return -1;
+}
+
 std::string getCurrentTimeFormatted()
 {
     time_t rawTime;
@@ -233,7 +250,8 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
     GeneratePageIndexing(fullpath,uri, files);
 }
 
-void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, int clientSocketId, Status& status,std::string& host, uint16_t port)
+void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, 
+            int clientSocketId, Status& status,std::string& host, uint16_t port, time_t currenttime)
 {
     std::cout << "detection : uri"<<request.getUri()<< " query: "<<request.getQuery()<<"\n";
      std::cout << "detection : host"<<host<< " port string: "<<intToString(port)<<"\n";
@@ -327,7 +345,7 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
         {
             std::cout <<"exist cgi in this script\n";
             //cgi = ;
-            int statue = executeCGI();
+            int statue = executeCGI(currenttime);
             if (statue == 200)
                 std::cout << "cgi runed\n";
             else
