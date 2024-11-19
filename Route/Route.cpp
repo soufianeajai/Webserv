@@ -1,4 +1,6 @@
 #include "Route.hpp"
+
+Route::Route():pathLocation(""), root(""), autoindex(false), defaultFile(""), uploadDir(""), IsRedirection(false), NewPathRedirection(""){}
 int Route::getstatusCodeRedirection() const
 {
     return statusCodeRedirection;

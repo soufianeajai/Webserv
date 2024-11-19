@@ -64,7 +64,7 @@ void HttpResponse::handleRedirection(const Route &route)
     if (route.getIsRedirection() && !route.getNewPathRedirection().empty())
     {
         UpdateStatueCode(route.getstatusCodeRedirection());
-        Page = route.getRoot() + route.getNewPathRedirection();
+        Page = "." + route.getNewPathRedirection();
     }
     else
         UpdateStatueCode(404);

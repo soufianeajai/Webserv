@@ -15,6 +15,7 @@ private:
     std::string NewPathRedirection; // must be file not folder
     int statusCodeRedirection;
 public:
+    Route();
     void setPath(std::string path);
     std::string getPath() const;
     void addAllowedMethod(std::string method);
