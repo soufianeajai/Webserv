@@ -58,6 +58,7 @@ when we send a request with method not allow set 405 , see also other status cod
 
 
 @@@@
-path_info
-split header and body from cgi using "\r\n\r\n"
-use infinit loop in script and try to setup a timeout !
+path_info ,,, done
+split header and body from cgi using "\r\n\r\n" ,,, waiting
+use infinit loop in script and try to setup a timeout ! done 
+

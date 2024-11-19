@@ -3,15 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>504 Gateway Timeout</title>
+    <title>Timeout Error</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+        h1 {
+            color: #e74c3c;
+            font-size: 36px;
+        }
+        p {
+            font-size: 18px;
+            margin: 20px 0;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
 </head>
 <body>
-    <h1>504 Gateway Timeout</h1>
-    <p>The gateway did not receive a timely response from the upstream server or some other server it needed to access in order to complete the request.</p>
-    <p>Please try again later.</p>
-    <hr>
-    <footer>
-        <p>nginx</p>
-    </footer>
+
+    <div class="container">
+        <h1>Timeout Error</h1>
+        <p>Unfortunately, the request has timed out due to a delay in processing the script.</p>
+        <p>Please try again later, or contact support if the issue persists.</p>
+        <a href="/" class="btn">Go Back to Home</a>
+    </div>
+
 </body>
 </html>

@@ -1,5 +1,7 @@
 #include "HttpResponse.hpp"
 #include "../Connection/Connection.hpp"
+
+
 std::string HttpResponse::getMimeType(const std::string& filePath) const
 {
     size_t pos = filePath.find_last_of('.');
@@ -11,14 +13,20 @@ std::string HttpResponse::getMimeType(const std::string& filePath) const
         return it->second;
     return "application/octet-stream";  // Default type if extension not found
 }
+
 void HttpResponse::GetFullPathCmd(const std::string& ext)
 {
     if (ext == ".php")
         PathCmd = "/usr/bin/php-cgi8.1";
     else
         PathCmd = "/usr/bin/python3.10";
+    if (access(PathCmd.c_str(), F_OK) != 0 || access(PathCmd.c_str(), X_OK) != 0)
+        PathCmd = "";
+    else
+        std::cout << "found path cmd !\n";
 }
-void HttpResponse::checkIfCGI(HttpRequest& request, const std::string& path, std::set<std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port)
+
+void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path, std::set<std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port)
 {
     for (std::set<std::string>::const_iterator it = ExtensionsConfig.begin(); it != ExtensionsConfig.end(); ++it)
     {
@@ -30,6 +38,8 @@ void HttpResponse::checkIfCGI(HttpRequest& request, const std::string& path, std
             (pos + ext.length() == path.length() || path[pos + ext.length()] == '/') && (ext == ".php" || ext == ".py"))
         {
             cgi = true;
+            PATH_INFO = path.substr(pos + ext.length());
+            path = path.substr(0, pos + ext.length());
             GetFullPathCmd(ext);
             break; 
         }
@@ -48,9 +58,10 @@ void HttpResponse::checkIfCGI(HttpRequest& request, const std::string& path, std
             path_info = /test/more/path                
     */
 
-bool HttpResponse::executeCGI()
+int HttpResponse::executeCGI()
 {
-    
+
+    pid_t pid;
     int status;
     std::string body;
     std::string headers;
@@ -59,18 +70,19 @@ bool HttpResponse::executeCGI()
     if (pipe(pipefd) == -1)
     {
         perror("pipe");
-        return false;
+        return 500;
     }
-    pid_t pid = fork();
+    pid = fork();
     if (pid == -1)
     {
         perror("fork");
-        return false;
+        return 500;
     }
     if (pid == 0)
     {
-        dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[0]);
+        std::cout <<"child : cmd : "<<PathCmd<<" Page :"<<Page<<"\n";
+        dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]); 
         char* argv[] = {const_cast<char*>(PathCmd.c_str()), const_cast<char*>(Page.c_str()), NULL};
         execve(PathCmd.c_str(), argv, &envVars[0]);
@@ -80,6 +92,35 @@ bool HttpResponse::executeCGI()
     else
     {
         close(pipefd[1]);
+        int epollFd = epoll_create1(0);
+        if (epollFd == -1) {
+            perror("epoll_create1");
+            return 500;
+        }
+        // Add pipe read end to epoll monitoring
+        struct epoll_event pipeEvent;
+        struct epoll_event evenBuffer[1];
+        pipeEvent.events = EPOLLIN; 
+        pipeEvent.data.fd = pipefd[0];
+        if (epoll_ctl(epollFd, EPOLL_CTL_ADD, pipefd[0], &pipeEvent) == -1)
+        {
+            close(epollFd);
+            perror("epoll_ctl");
+            return 500;
+        }
+        int eventCount = epoll_wait(epollFd, evenBuffer, 1, TIMEOUT);
+        if (eventCount == -1)
+        {
+            perror("epoll_wait");
+            return 500;
+        }
+        if (eventCount == 0)
+        {
+            std::cerr << "Timeout: CGI process did not finish in time.\n";
+
+            kill(pid, SIGKILL);
+            return 504;
+        }
         waitpid(pid, &status, 0);
         if (WIFEXITED(status))
         {   
@@ -87,19 +128,26 @@ bool HttpResponse::executeCGI()
             {
                 std::cerr << "CGI script exited with error code: " << WEXITSTATUS(status) << std::endl;
                 close(pipefd[0]);
-                return false;
+                return 500;
             }
         }
         else
         {
             std::cerr << "CGI script did not terminate normally." << std::endl;
             close(pipefd[0]);
-            return false;
+            return 500;
         }
+        std::cout <<"parent\n";
     char buffer[1024];
     ssize_t bytesRead;
     while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
             cgiOutput.append(buffer, buffer + bytesRead);
+    if (bytesRead == -1)
+    {
+        perror("read failed");
+        close(pipefd[0]);
+        return 500;
+    }
     // size_t headerEnd = cgiOutput.find("\r\n\r\n");
     // if (headerEnd != std::string::npos)
     // {
@@ -108,13 +156,14 @@ bool HttpResponse::executeCGI()
     //     body = cgiOutput.substr(headerEnd + 4);  // Extract body
     // }
     
-        close(pipefd[0]);
-    }
+    close(pipefd[0]);
+    totaSize = cgiOutput.size();
+    return 200;
+}
     // std::cout << "\nread output cgi:\n";
     // std::cout <<"_"<<headers<<"_ end of header\n";
 //    std::cout <<"_"<<cgiOutput<<"_ end of body\n";
-    totaSize = cgiOutput.size();
-    return true;
+    
 }
 
 
@@ -126,7 +175,7 @@ void HttpResponse::createEnvChar(HttpRequest& request, std::string& uri,const st
     envVars.push_back(strdup(("REQUEST_METHOD=" + request.getMethod()).c_str()));
 
     envVars.push_back(strdup(("SCRIPT_NAME=" + uri).c_str()));
-    envVars.push_back(strdup(("PATH_INFO=" + Page).c_str()));
+    envVars.push_back(strdup(("PATH_INFO=" + PATH_INFO).c_str()));
     envVars.push_back(strdup(("PATH_TRANSLATED=" + Page).c_str()));
 
     envVars.push_back(strdup(("SERVER_NAME=" + host).c_str()));
@@ -166,9 +215,4 @@ void HttpResponse::sendCgi(int clientSocketId, Status& status)
         return;
     }
     offset += SentedBytes;
-}
-
-void HttpResponse::extractPathInfo(std::string& uri)
-{
-    (void)uri;
 }

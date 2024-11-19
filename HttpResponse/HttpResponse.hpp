@@ -8,6 +8,7 @@
 #define DEFAULTERROR "www/html/errorPages/DefaultError.html"
 #define DEFAULTDELETE "www/html/defaultpagedelete.html"
 #define DEFAULTINDEX "www/html/indexing.html"
+#define TIMEOUT 5000
 class HttpResponse :  public HttpMessage{
 private:
     int statusCode;
@@ -50,15 +51,14 @@ public:
     void UpdateStatueCode(int code);
     void handleRedirection(const Route &route);
     //void handleError(std::map<int, std::string>& errorPages);
-    void checkIfCGI(HttpRequest& request, const std::string& path, std::set<std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port);
+    void checkIfCGI(HttpRequest& request, std::string& path, std::set<std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port);
     void HandleIndexing(std::string fullpath, std::string& uri);
     void GeneratePageIndexing(std::string& fullpath, std::string& uri, std::vector<std::string>& files);
     size_t getSendbytes();
-    bool executeCGI();
+    int executeCGI();
     void sendCgi(int clientSocketId, Status& status);
     void createEnvChar(HttpRequest& request, std::string& uri,const std::string& host,const std::string& port);
     void CheckExistingInServer();
-    void extractPathInfo(std::string& uri);
     void GetFullPathCmd(const std::string& ext);
     void buildResponseBuffer(int clientSocketId, Status& status); // this for building and set it in send syscall
 };
