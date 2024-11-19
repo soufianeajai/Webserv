@@ -8,7 +8,7 @@
 #define DEFAULTERROR "www/html/errorPages/DefaultError.html"
 #define DEFAULTDELETE "www/html/defaultpagedelete.html"
 #define DEFAULTINDEX "www/html/indexing.html"
-#define TIMEOUT 5
+#define TIMEOUT 2
 class HttpResponse :  public HttpMessage{
 private:
     int statusCode;

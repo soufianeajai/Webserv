@@ -28,7 +28,6 @@ public:
     void parseRequest();
     void SendData(const std::vector<uint8_t>& buffer);
     // void writedata();
-    void closeConnection();
     int getClientSocketId() const;
     void generateResponse(std::map<int, std::string> &errorPages, std::string& host, uint16_t port,time_t currenttime);
     HttpRequest getRequest();

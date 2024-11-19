@@ -39,6 +39,7 @@ public:
     std::map<std::string, Route>& getRoutes();
     void addSocket(int socket);
     int SearchSockets(int id);
+    void closeConnection(int fd, int epollInstance);
 
     void addConnection(int socket, Connection* connection);
     Connection* GetConnection(int client);

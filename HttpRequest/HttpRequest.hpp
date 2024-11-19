@@ -127,7 +127,6 @@ private:
     std::map<State, int> errorState;
     std::map<std::string, std::string> formFields;
     std::vector<boundaryPart> parts;
-        std::string test;
 
 public:
     HttpRequest();
@@ -144,12 +143,6 @@ public:
     int GetStatusCode() const;
     std::string getQuery() const;
     State getcurrentState() const;
-        void setTest(std::string ff){
-        test = ff;
-    }
-    std::string getTest(){
-        return test;
-    }
     std::string& getHeader(std::string key);
 private:
 // STATE HANDLERS

@@ -37,9 +37,7 @@ struct epoll_event& Connection::getEpollFd()
 int Connection::getClientSocketId() const{
     return clientSocketId;
 }
-void Connection::closeConnection(){
 
-}
 void Connection::parseRequest(){
     uint8_t    buffer[Connection::CHUNK_SIZE];
     int     readSize = 0;
@@ -49,7 +47,7 @@ void Connection::parseRequest(){
     if (readSize == 0)
     {
     //    std::cout << " Client closed the connection" << std::endl;
-        closeConnection();
+        //closeConnection();
         return;
     }
     else if (readSize < 0)

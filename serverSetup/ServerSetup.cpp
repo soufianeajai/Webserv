@@ -24,7 +24,7 @@ bool check_fd_timeout(int fd, time_t last_access_time)
         std::cout << "current_time_val :"<<current_time_val<<" last_access_time: "<<last_access_time<<" timeout: "<<current_time_val - last_access_time<<"\n";
         std::cout << "FD " << fd << " timed out!" << std::endl;
         return true;
-        
+
         // Handle timeout (e.g., kill process or close FD)
     }
     return false;
@@ -118,7 +118,6 @@ void ServerSetup(ParsingConfig &Config)
         int epollEventsNumber = epoll_wait(epollInstance, evenBuffer, 1024, 1);
         // if (epollEventsNumber <= 0)
         //     continue;
-        // std::cerr << "---------------0000000-------------- "<< epollEventsNumber <<std::endl;
 
         for (int index = 0; index < epollEventsNumber; index++)
         {
@@ -173,17 +172,9 @@ void ServerSetup(ParsingConfig &Config)
                     }
                 }
                 if (CurrentConnection->getStatus() == DONE)
-                { 
-                    if (epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL) == -1)
-                    {
-                        perror("epoll_ctl failed to remove client");
-                    }
-                    /*
-                        cleaning connection when is closed ->  AFTER DONE in state
-                    */
-
-                  // std::cout << "connection closed after sending response" << std::endl;
-                    evenBuffer[index].events &= ~EPOLLOUT;
+                {
+                    if(epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL) == -1)
+                        perror("epoll_ctl failed to remove client");   
                 }
             }
 			// EPOLLRHUP The other end of a socket closed or shut down for writing.
@@ -204,9 +195,8 @@ void ServerSetup(ParsingConfig &Config)
             {
                 //std::cout << "time ? : "<<  conn_it->second->get_last_access_time();
                 if(check_fd_timeout(conn_it->first, conn_it->second->get_last_access_time())){
-                    if(epoll_ctl(epollInstance, EPOLL_CTL_DEL, conn_it->first, NULL) != -1)
-                        perror("epoll_ctl failed to remove client");
-                }   
+                   it->closeConnection(conn_it->first,epollInstance);
+                }
 
                 //std::cout << "time serversetup: "<<conn_it->second->get_last_access_time()<<"\n";
                 //exit(1);

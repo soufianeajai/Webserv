@@ -79,7 +79,6 @@ int HttpResponse::executeCGI(time_t currenttime)
     if (pid == 0)
     {
         close(pipefd[0]);
-        std::cout <<"child : cmd : "<<PathCmd<<" Page :"<<Page<<"\n";
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]); 
         char* argv[] = {const_cast<char*>(PathCmd.c_str()), const_cast<char*>(Page.c_str()), NULL};
@@ -93,7 +92,6 @@ int HttpResponse::executeCGI(time_t currenttime)
         while(true)
         {
             pid_t res = waitpid(pid, &status, WNOHANG);
-            std::cout <<"res: "<<res<<" , elasped: "<<(static_cast<time_t>(time(NULL)) - currenttime)<<"\n";
             if (res == -1)
             {
                 perror("waitpid failed");
