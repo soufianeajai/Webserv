@@ -8,6 +8,7 @@
 #define DEFAULTERROR "www/html/errorPages/DefaultError.html"
 #define DEFAULTDELETE "www/html/defaultpagedelete.html"
 #define DEFAULTINDEX "www/html/indexing.html"
+#define TIMEOUT 2
 class HttpResponse :  public HttpMessage{
 private:
     int statusCode;
@@ -19,10 +20,12 @@ private:
     size_t offset;
     bool   headerSended;
     bool cgi;
+    pid_t pid;
     std::vector<char*> envVars;
     std::string cgiOutput;
     int pipefd[2];
-    
+    std::string PathCmd;
+    std::string PATH_INFO;
 
     // cgi
     /* example full url possible
@@ -41,23 +44,27 @@ private:
 
 public:
     HttpResponse();
+    bool getCgi() const;
+    pid_t getPid() const;
+    int getpipe() const;
     size_t getOffset();
-    void ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, int clientSocketId, Status& status,std::string& host, uint16_t port);
+    void ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, 
+            int clientSocketId, Status& status,std::string& host, uint16_t port,time_t currenttime);
     //void initResponse(const Route &route,std::map<int, std::string> &errorPage, int code,const std::string &query, const std::string UrlRequest, const std::string method);    
     std::string getMimeType(const std::string& filePath) const;
     void addHeaders();
     void UpdateStatueCode(int code);
     void handleRedirection(const Route &route);
     //void handleError(std::map<int, std::string>& errorPages);
-    void checkIfCGI(HttpRequest& request, const std::string& path, std::set<std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port);
+    void checkIfCGI(HttpRequest& request, std::string& path, std::set<std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port);
     void HandleIndexing(std::string fullpath, std::string& uri);
     void GeneratePageIndexing(std::string& fullpath, std::string& uri, std::vector<std::string>& files);
     size_t getSendbytes();
-    bool executeCGI();
+    int executeCGI(time_t currenttime);
     void sendCgi(int clientSocketId, Status& status);
     void createEnvChar(HttpRequest& request, std::string& uri,const std::string& host,const std::string& port);
     void CheckExistingInServer();
-    
+    void GetFullPathCmd(const std::string& ext);
     void buildResponseBuffer(int clientSocketId, Status& status); // this for building and set it in send syscall
 };
 

@@ -11,6 +11,25 @@ void ft_error(std::string err, int fd)
     exit (EXIT_FAILURE);
 }
 
+time_t current_time()
+{
+    return static_cast<time_t>(time(NULL));
+}
+
+
+bool check_fd_timeout(int fd, time_t last_access_time)
+{
+    time_t current_time_val = current_time();
+    if (current_time_val - last_access_time > TIMEOUT) {
+        std::cout << "current_time_val :"<<current_time_val<<" last_access_time: "<<last_access_time<<" timeout: "<<current_time_val - last_access_time<<"\n";
+        std::cout << "FD " << fd << " timed out!" << std::endl;
+        return true;
+
+        // Handle timeout (e.g., kill process or close FD)
+    }
+    return false;
+}
+
 int ServerSocketSearch(int epollFd, std::vector<Server>& servers)
 {
 
@@ -58,7 +77,21 @@ Server getServerSocketCLient(int client,std::vector<Server> &servers)
     }
     return *it;
 }
-
+void clearConnections(std::vector<Server>& Servers, bool timout){
+    for (std::vector< Server>::iterator it = Servers.begin(); it != Servers.end(); it++)
+	{
+	    std::map<int, Connection*> connections = it->GetCoonections();
+        for (std::map<int, Connection*>::iterator conn_it = connections.begin(); conn_it != connections.end(); ++conn_it)
+        {
+            if (timout){
+                if(check_fd_timeout(conn_it->first, conn_it->second->get_last_access_time()))
+                    it->closeConnection(conn_it->first);
+            }
+            else
+                it->closeConnection(conn_it->first);
+        }
+    }
+}
 
 void ServerSetup(ParsingConfig &Config)
 {
@@ -67,8 +100,9 @@ void ServerSetup(ParsingConfig &Config)
 	int SocketId;
 	int epollInstance = epoll_create1(EPOLL_CLOEXEC);
     struct epoll_event evenBuffer[1024];
-	if (epollInstance < 0)
+	if (epollInstance < 0){
         ft_error("epoll create1 failed",-1);
+    }
 
 
 	for (std::vector< Server>::iterator it = Servers.begin(); it != Servers.end(); it++)
@@ -97,9 +131,10 @@ void ServerSetup(ParsingConfig &Config)
     {
         int socketServer;
         int epollEventsNumber = epoll_wait(epollInstance, evenBuffer, 1024, 1);
-        // if (epollEventsNumber <= 0)
-        //     continue;
-        // std::cerr << "---------------0000000-------------- "<< epollEventsNumber <<std::endl;
+        if (epollEventsNumber < 0){
+            clearConnections(Servers, false);
+            ft_error("Epoll wait failed",-1);
+        }
 
         for (int index = 0; index < epollEventsNumber; index++)
         {
@@ -114,31 +149,28 @@ void ServerSetup(ParsingConfig &Config)
                     int newClient = accept(evenBuffer[index].data.fd, (struct sockaddr*)&clientAddr, &clientAddrLen);
                     if (newClient < 0)
                         break;
-                    //std::cout << "waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
                     struct epoll_event epollfd =  initializeSocketEpoll(epollInstance, newClient, EPOLLIN | EPOLLRDHUP | EPOLLHUP);
-                    Servers[socketServer].addConnection(newClient,new Connection(newClient, clientAddr, Servers[socketServer].clientMaxBodySizeGetter(), epollfd, evenBuffer[index].data.fd));
+                    Servers[socketServer].addConnection(newClient,new Connection(newClient, clientAddr, Servers[socketServer].clientMaxBodySizeGetter(), epollfd, evenBuffer[index].data.fd,current_time()));
                 }
                 else 
                 {
-
                     CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                     CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
+                    CurrentConnection->set_last_access_time(current_time());
                     CurrentConnection->readIncomingData(CurrentServer.getRoutes());
                     if (CurrentConnection->getStatus() == GENARATE_RESPONSE)
-                    {
-                       // std::cerr << "------------_____-------------- "<< EPOLLOUT <<std::endl;
                         evenBuffer[index].events |= EPOLLOUT;
-                    }
                 }
+            
             }
     
             if (evenBuffer[index].events & (EPOLLOUT))
             {
-                //std::cerr << "-------------------------- "<< EPOLLOUT <<std::endl;
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
-                CurrentConnection->generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.hostGetter() ,CurrentServer.GetPort(CurrentConnection->getsocketserver()));
-                //std::cout << "alllllloooooooooo"<<CurrentConnection->getStatus()<<"\n";
+                CurrentConnection->set_last_access_time(current_time());
+                CurrentConnection->generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.hostGetter() 
+                    ,CurrentServer.GetPort(CurrentConnection->getsocketserver()),CurrentConnection->get_last_access_time());
                 if(CurrentConnection->getStatus() == SENDING_RESPONSE)
                 {
                     CurrentConnection->getEpollFd().events = EPOLLOUT;
@@ -148,29 +180,12 @@ void ServerSetup(ParsingConfig &Config)
                     }
                 }
                 if (CurrentConnection->getStatus() == DONE)
-                { 
-                    if (epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL) == -1)
-                    {
-                        perror("epoll_ctl failed to remove client");
-                    }
-                    /*
-                        cleaning connection when is closed ->  AFTER DONE in state
-                    */
-
-                  // std::cout << "connection closed after sending response" << std::endl;
-                    evenBuffer[index].events &= ~EPOLLOUT;
+                {
+                    if(epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL) == -1)
+                        perror("epoll_ctl failed to remove client");   
                 }
             }
-			// EPOLLRHUP The other end of a socket closed or shut down for writing.
-            if (evenBuffer[index].events & (EPOLLRDHUP | EPOLLHUP))
-            {
-
-                // clean the connection of the fd and remove it from the server 
-                close(evenBuffer[index].data.fd);
-                //std::cout << "Client disconnected\n";
-                continue;
-            }
         }
-        
+        clearConnections(Servers, true);
     }
 }

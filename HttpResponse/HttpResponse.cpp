@@ -15,7 +15,7 @@
 //5xx (Server Error): The server failed to fulfill an apparently
 //valid request
 
-HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false)
+HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd("")
 {
 }
 std::string intToString(size_t number)
@@ -28,6 +28,23 @@ std::string intToString(size_t number)
 size_t HttpResponse::getOffset()
 {
     return offset;
+}
+
+bool HttpResponse::getCgi() const
+{
+    return cgi;
+}
+
+pid_t HttpResponse::getPid() const
+{
+    return pid;
+}
+
+int HttpResponse::getpipe() const
+{
+    if (cgi)
+        return pipefd[0];
+    return -1;
 }
 
 std::string getCurrentTimeFormatted()
@@ -131,6 +148,7 @@ void HttpResponse::buildResponseBuffer(int clientSocketId, Status& status)
 void HttpResponse::UpdateStatueCode(int code)
 {
     statusCode = code;
+    cgi = false;
     switch (statusCode)
     {  
         case 100: reasonPhrase = "Continue"; break; // The server expects the client to continue sending the request, and the body is empty in this response.
@@ -232,7 +250,8 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
     GeneratePageIndexing(fullpath,uri, files);
 }
 
-void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, int clientSocketId, Status& status,std::string& host, uint16_t port)
+void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, 
+            int clientSocketId, Status& status,std::string& host, uint16_t port, time_t currenttime)
 {
     std::cout << "detection : uri"<<request.getUri()<< " query: "<<request.getQuery()<<"\n";
      std::cout << "detection : host"<<host<< " port string: "<<intToString(port)<<"\n";
@@ -289,16 +308,23 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
         {
             if (route.getPath() != "/" && uri.find(route.getPath()) == 0)
             {
+                
                 uri.erase(0, route.getPath().size());
                 Page = route.getRoot() + uri;
                 uri = request.getUri();
-                std::cout << "URI: \"" << uri << "\"" << std::endl;
-                std::cout << "Path: \"" << route.getPath() << "\"" << std::endl;
-                std::cout << "PAGE: \"" << Page << "\"" << std::endl;
+                std::cout << "1 URI: \"" << uri << "\"" << std::endl;
+                std::cout << "1 Path: \"" << route.getPath() << "\"" << std::endl;
+                std::cout << "1 PAGE: \"" << Page << "\"" << std::endl;
+                
+                
             }
             else
                 UpdateStatueCode(404);
-        }  
+        }
+        checkIfCGI(request,Page, route.getCgiExtensions(), uri, host, intToString(port));
+        std::cout << "2 URI: \"" << uri << "\"" << std::endl;
+        std::cout << "2 Path: \"" << route.getPath() << "\"" << std::endl;
+        std::cout << "2 PAGE: \"" << Page << "\"" << std::endl;  
     }
     else if (allowedMethods.find("DELETE") != allowedMethods.end() && statusCode ==  204)
     {
@@ -310,31 +336,33 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
     if(route.getIsRedirection())
         handleRedirection(route);
     CheckExistingInServer();
-    std::cout << "\npage->>>>>> : "<<Page<<" "<<uri<<"\n";
+    
     if (!route.getCgiExtensions().empty() && statusCode < 202)
     {
         std::cout << "\nwelcome to cgi :\n";
-        checkIfCGI(request,Page, route.getCgiExtensions(), uri, host, intToString(port));
+        
         if (cgi)
         {
             std::cout <<"exist cgi in this script\n";
-            cgi = executeCGI();
-            if (cgi)
+            //cgi = ;
+            int statue = executeCGI(currenttime);
+            if (statue == 200)
                 std::cout << "cgi runed\n";
             else
-                UpdateStatueCode(404);
+                UpdateStatueCode(statue);
         }
         else
             std::cout << "no exist\n";
     }
     headers["Content-Length"] =  intToString(totaSize);
-    if (cgi)
-       headers["Content-Type"] =  "text/html";
-   else
+    if (!cgi)
         headers["Content-Type"] =  getMimeType(Page);
+    else
+        headers["Content-Type"] = "text/html";
     headers["Date"] =  getCurrentTimeFormatted();
     headers["Server"] =  "WebServ 1337";  
     headers["Connection"] = "close";
+    std::cout << "\npage->>>>>> : "<<Page<<" "<<uri<< "cgi ? : "<<cgi<<"\n";
     buildResponseBuffer(clientSocketId, status);
 }
 
