@@ -21,17 +21,6 @@ bool isPrefix(std::string prefix, std::string uri)
     return ((uri.compare(0, prefixLength, prefix) == 0) && (uri.length() == prefixLength || uri[prefixLength] == '/'));
 }
 
-bool isDirectory(const std::string& path)
-{
-    struct stat pathStat;
-    if (stat(path.c_str(), &pathStat) != 0)
-    {
-        perror("stat");  // Print an error if stat fails
-        return false;    // Treat as non-directory if there's an error
-    }
-    return S_ISDIR(pathStat.st_mode);  // Check if it's a directory
-}
-
 void HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes)
 {
     std::map<std::string, Route>::iterator it;
@@ -132,7 +121,21 @@ void HttpRequest::saveDataToFile(std::string name, std::vector<uint8_t>& body)
 }
 
 void    HttpRequest::handleProcessPostData(){
-    saveDataToFile("Posted_Data", body);
+    std::map<std::string, std::string>::iterator it = headers.find("Content-Disposition");
+    if (it != headers.end())
+    {
+        std::string contentDisposition = it->second;
+        std::size_t filenamePos = contentDisposition.find("filename=\"");
+        if (filenamePos != std::string::npos)
+        {
+            filenamePos += 10;
+            std::size_t filenameEndPos = contentDisposition.find("\"", filenamePos);
+            std::string filename = contentDisposition.substr(filenamePos, filenameEndPos - filenamePos);
+            saveDataToFile(filename + "1", body);
+        }
+    }
+    else
+        saveDataToFile("Posted_Data", body);
     currentState = PROCESS_DONE;
 }
 
@@ -182,8 +185,6 @@ void HttpRequest::handleProcessChunkedBody(std::string root) {
     std::map<std::string, std::string>::iterator it = headers.find("Content-Disposition");
     if (it != headers.end())
     {
-                    std::cout << "---------->" << std::endl;
-
         std::string contentDisposition = it->second;
         std::size_t filenamePos = contentDisposition.find("filename=\"");
         if (filenamePos != std::string::npos)

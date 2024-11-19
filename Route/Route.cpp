@@ -68,12 +68,6 @@ void Route::setUploadDir(std::string _uploadDir) {
 std::string Route::getUploadDir() {
     return this->uploadDir;
 }
-void Route::isDirSetter(bool _isDir) {
-    this->isDir = _isDir;
-}
-bool Route::isDirGetter() const{
-    return isDir;
-}
 
 std::string Route::getNewPathRedirection() const
 {

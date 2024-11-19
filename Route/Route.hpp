@@ -8,7 +8,6 @@ private:
     std::set<std::string> allowedMethods; // Set for allowed HTTP methods
     bool autoindex;
     std::string defaultFile;
-    bool isDir;
     std::string uploadDir;
     std::set<std::string> cgiExtensions;
     bool IsRedirection;
@@ -40,7 +39,5 @@ public:
     // bool isMethodAllowed(const std::string& method) const;
     void setUploadDir(std::string uploadDir);
     std::string getUploadDir();
-    void isDirSetter(bool isDir);
-    bool isDirGetter() const;
     int getstatusCodeRedirection() const;
 };
