@@ -10,7 +10,7 @@ private:
     std::string defaultFile;
     bool isDir;
     std::string uploadDir;
-    std::set<std::string> cgiExtensions;
+    std::map<std::string , std::string> cgiExtensions;
     bool IsRedirection;
     std::string NewPathRedirection; // must be file not folder
     int statusCodeRedirection;
@@ -25,8 +25,8 @@ public:
     std::string getDefaultFile() const;
     void setAutoindex(bool autoindex);
     bool getAutoindex();
-    void addCgiExtension(std::string cgiExtension);
-    std::set<std::string> getCgiExtensions();
+    void addCgiExtension(std::string cgiExtension, std::string cgiPath);
+    std::map<std::string , std::string> getCgiExtensions();
     void setRedirectCode(int redirectCode);
     int getRedirectCode();
     void setRedirectnewPath(std::string redirectnewPath);
