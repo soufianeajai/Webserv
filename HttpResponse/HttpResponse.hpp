@@ -58,7 +58,7 @@ public:
     void UpdateStatueCode(int code);
     void handleRedirection(const Route &route);
     //void handleError(std::map<int, std::string>& errorPages);
-    void checkIfCGI(HttpRequest& request, std::string& path, std::set<std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port);
+    void checkIfCGI(HttpRequest& request, std::string& path, std::map<std::string, std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port);
     void HandleIndexing(std::string fullpath, std::string& uri);
     void GeneratePageIndexing(std::string& fullpath, std::string& uri, std::vector<std::string>& files);
     //size_t getSendbytes();

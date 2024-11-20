@@ -79,6 +79,7 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
         for (std::map<int, Connection*>::iterator conn_it = connections.begin(); conn_it != connections.end(); ++conn_it)
         {
             if (timout){
+                std::cout << "alo\n";
                 if(check_fd_timeout(conn_it->second->get_last_access_time()))
                     it->closeConnection(conn_it->first);
             }
