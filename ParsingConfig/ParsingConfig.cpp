@@ -30,7 +30,7 @@ void ft_error(std::string err, std::ifstream& fd)
     exit (EXIT_FAILURE);
 }
 
-bool ParsingConfig::containsOnlySpaces(std::string &str)
+bool containsOnlySpaces(std::string &str)
 {
     for (size_t i = 0; i < str.length(); i++)
     {
@@ -56,7 +56,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
 
     while (getline(FILE, str))
     {
-        if (!str.empty())
+        if (!str.empty() && !containsOnlySpaces(str))
         {
             std::stringstream ss(str);
             std::string to;
@@ -328,7 +328,7 @@ ParsingConfig parsingConfig(const char *configFile)
             Server server;
             while (getline(FILE, str) && str != "server")
             {
-                if (!str.empty() && !parsingConfig.containsOnlySpaces(str))
+                if (!str.empty() && !containsOnlySpaces(str))
                 {
                     std::stringstream ss(str);
                     std::string to;
@@ -374,11 +374,6 @@ ParsingConfig parsingConfig(const char *configFile)
                             server.serverNamesSetter(arr[i]);
                         }
                         std::set<std::string> serverNames = server.serverNamesGetter();
-                    }
-                    else if (arr[0] == "server_root:")
-                    {
-                        if (server.serverRootGetter().empty())
-                            server.serverRootSetter(arr[1]);
                     }
                     else if (arr[0] == "error_page:")
                     {
