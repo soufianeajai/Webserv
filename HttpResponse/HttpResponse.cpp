@@ -253,8 +253,8 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
 void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, 
             int clientSocketId, Status& status,std::string& host, uint16_t port, time_t currenttime)
 {
-    std::cout << "detection : uri"<<request.getUri()<< " query: "<<request.getQuery()<<"\n";
-     std::cout << "detection : host"<<host<< " port string: "<<intToString(port)<<"\n";
+    // std::cout << "detection : uri"<<request.getUri()<< " query: "<<request.getQuery()<<"\n";
+    //  std::cout << "detection : host"<<host<< " port string: "<<intToString(port)<<"\n";
     defaultErrors = errorPages;
     std::string uri = request.getUri();
     Route& route = request.getCurrentRoute();
@@ -312,9 +312,9 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
                 uri.erase(0, route.getPath().size());
                 Page = route.getRoot() + uri;
                 uri = request.getUri();
-                std::cout << "1 URI: \"" << uri << "\"" << std::endl;
-                std::cout << "1 Path: \"" << route.getPath() << "\"" << std::endl;
-                std::cout << "1 PAGE: \"" << Page << "\"" << std::endl;
+                // std::cout << "1 URI: \"" << uri << "\"" << std::endl;
+                // std::cout << "1 Path: \"" << route.getPath() << "\"" << std::endl;
+                // std::cout << "1 PAGE: \"" << Page << "\"" << std::endl;
                 
                 
             }
@@ -322,9 +322,9 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
                 UpdateStatueCode(404);
         }
         checkIfCGI(request,Page, route.getCgiExtensions(), uri, host, intToString(port));
-        std::cout << "2 URI: \"" << uri << "\"" << std::endl;
-        std::cout << "2 Path: \"" << route.getPath() << "\"" << std::endl;
-        std::cout << "2 PAGE: \"" << Page << "\"" << std::endl;  
+        // std::cout << "2 URI: \"" << uri << "\"" << std::endl;
+        // std::cout << "2 Path: \"" << route.getPath() << "\"" << std::endl;
+        // std::cout << "2 PAGE: \"" << Page << "\"" << std::endl;  
     }
     else if (allowedMethods.find("DELETE") != allowedMethods.end() && statusCode ==  204)
     {
@@ -375,13 +375,13 @@ void HttpResponse::CheckExistingInServer()
         file.seekg(0, std::ios::end);
         totaSize = file.tellg();
         file.seekg(0, std::ios::beg);
-        std::cout <<"\n!!!!!!!!!!!!!!!! file open is in my server : "<<Page.c_str()<<"\n";
+    //    std::cout <<"\n!!!!!!!!!!!!!!!! file open is in my server : "<<Page.c_str()<<"\n";
         file.close();
     }
     else
     {
         UpdateStatueCode(404);
-        std::cout <<"\n!!!!!!!!!!!!!!!! file not exist in my server : "<<Page.c_str()<<"\n";  
+    //    std::cout <<"\n!!!!!!!!!!!!!!!! file not exist in my server : "<<Page.c_str()<<"\n";  
     }
 }
 

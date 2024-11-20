@@ -170,7 +170,9 @@ void HttpRequest::handleHeaderLF(uint8_t byte) {
     }    
 }
 void HttpRequest::handleHeadersEndLF(uint8_t byte) {
+       std::cout << "---------------------------------------------------------------------->" << contentLength <<  std::endl;
     handleTransfer();
+
     if (byte == '\n'){
         if (contentLength == 0 && !isChunked)
             currentState = MESSAGE_COMPLETE;
