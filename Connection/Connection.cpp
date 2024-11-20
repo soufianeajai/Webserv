@@ -73,11 +73,16 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
     if (status == PROCESSING){
         request.process(routes);
     }
-    if (request.getcurrentState() == PROCESS_DONE || request.errorOccured())
+    if (request.getcurrentState() == PROCESS_DONE || request.errorOccured()){
+        if (request.errorOccured())
+        {
+            std::map<State, int>::const_iterator it = request.getErrorState().find(request.getcurrentState());
+            request.SetStatusCode(it->second);
+        }
         status = GENARATE_RESPONSE;
+    }
     if (status == GENARATE_RESPONSE)
     {
-        std::cout << "----> " << request.GetStatusCode() << std::endl;
         // if (!buffer.empty())
         //     status = SENDING_RESPONSE;
         // std::cout <<"\n\nResponseGenerating : ";

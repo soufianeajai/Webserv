@@ -17,16 +17,11 @@ time_t current_time()
 }
 
 
-bool check_fd_timeout(int fd, time_t last_access_time)
+bool check_fd_timeout(time_t last_access_time)
 {
     time_t current_time_val = current_time();
-    if (current_time_val - last_access_time > TIMEOUT) {
-        std::cout << "current_time_val :"<<current_time_val<<" last_access_time: "<<last_access_time<<" timeout: "<<current_time_val - last_access_time<<"\n";
-        std::cout << "FD " << fd << " timed out!" << std::endl;
+    if (current_time_val - last_access_time > TIMEOUT)
         return true;
-
-        // Handle timeout (e.g., kill process or close FD)
-    }
     return false;
 }
 
@@ -84,7 +79,7 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
         for (std::map<int, Connection*>::iterator conn_it = connections.begin(); conn_it != connections.end(); ++conn_it)
         {
             if (timout){
-                if(check_fd_timeout(conn_it->first, conn_it->second->get_last_access_time()))
+                if(check_fd_timeout(conn_it->second->get_last_access_time()))
                     it->closeConnection(conn_it->first);
             }
             else
@@ -182,7 +177,7 @@ void ServerSetup(ParsingConfig &Config)
                 if (CurrentConnection->getStatus() == DONE)
                 {
                     if(epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL) == -1)
-                        perror("epoll_ctl failed to remove client");   
+                        std::cout << "Error: "<<strerror(errno)<<std::endl;
                 }
             }
         }

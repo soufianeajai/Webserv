@@ -64,24 +64,53 @@ void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path, std::set<
             path_info = /test/more/path                
     */
 
-int HttpResponse::executeCGI(time_t currenttime)
+int HttpResponse::parentProcess(int pipefd[],pid_t pid,time_t currenttime)
 {
     int status;
-    std::string body;
-    std::string headers;
-    //std::string cgiOutput;
-    //int original_output = dup(STDOUT_FILENO);
-    if (pipe(pipefd) == -1)
+    char buffer[1024];
+    ssize_t bytesRead;
+    close(pipefd[1]);
+    while(true)
     {
-        perror("pipe");
-        return 500;
+        pid_t res = waitpid(pid, &status, WNOHANG);
+        if (res == -1)
+            return(std::cout << "Error: "<<strerror(errno)<<std::endl,close(pipefd[0]),500);
+        
+        if (res > 0) 
+        {
+            if (WIFEXITED(status))
+            {   
+                if (WEXITSTATUS(status) != 0)
+                    return(std::cerr << "CGI exited with error code: " << WEXITSTATUS(status) << std::endl,close(pipefd[0]),500);
+            }
+            else
+                return(std::cerr << "CGI did not terminate normally.\n",close(pipefd[0]),500);
+            break;
+        }
+        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
+            cgiOutput.append(buffer, buffer + bytesRead);
+        if (bytesRead == -1)
+            return(std::cout << "Error: "<<strerror(errno)<<std::endl,close(pipefd[0]),500);
+        if (static_cast<time_t>(time(NULL)) - currenttime > TIMEOUT)
+            return (kill(pid, SIGKILL),close(pipefd[0]), 500); // need update it to timeout page !!
     }
+    
+    close(pipefd[0]);
+    totaSize = cgiOutput.size();
+    return 200;
+}
+
+int HttpResponse::executeCGI(time_t currenttime)
+{
+
+    int pipefd[2];
+    pid_t pid;
+    fcntl(pipefd[1], F_SETFL, O_NONBLOCK);
+    if (pipe(pipefd) == -1)
+        return(std::cout << "Error: "<<strerror(errno)<<std::endl,500);
     pid = fork();
     if (pid == -1)
-    {
-        perror("fork");
-        return 500;
-    }
+        return(std::cout << "Error: "<<strerror(errno)<<std::endl,500);
     if (pid == 0)
     {
         std::cout << "path: "<<PathCmd<<"\n";
@@ -91,67 +120,11 @@ int HttpResponse::executeCGI(time_t currenttime)
         close(pipefd[1]); 
         char* argv[] = {const_cast<char*>(PathCmd.c_str()), const_cast<char*>(Page.c_str()), NULL};
         execve(PathCmd.c_str(), argv, &envVars[0]);
-        perror("execve failed");
+        std::cout << "Error: "<<strerror(errno)<<std::endl;
         exit(1);
     }
     else
-    {
-        close(pipefd[1]);
-        while(true)
-        {
-            pid_t res = waitpid(pid, &status, WNOHANG);
-            if (res == -1)
-            {
-                perror("waitpid failed");
-                close(pipefd[0]);
-                return 500;
-            }
-            if (res > 0) 
-                break;
-           if (static_cast<time_t>(time(NULL)) - currenttime > TIMEOUT)
-            {
-                kill(pid, SIGKILL);
-                waitpid(pid, &status, 0);
-                close(pipefd[0]);
-                return 500;
-            }
-        }
-        if (WIFEXITED(status))
-        {   
-            if (WEXITSTATUS(status) != 0)
-            {
-                std::cerr << "CGI script exited with error code: " << WEXITSTATUS(status) << std::endl;
-                close(pipefd[0]);
-                return 500;
-            }
-        }
-        else
-        {
-            std::cerr << "CGI script did not terminate normally." << std::endl;
-            close(pipefd[0]);
-            return 500;
-        }
-        std::cout << "timecurrent: "<<currenttime<<" time now: "<<static_cast<time_t>(time(NULL))<< " def: "<<static_cast<time_t>(time(NULL)) - currenttime<<"\n";
-        char buffer[1024];
-        ssize_t bytesRead;
-        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
-            cgiOutput.append(buffer, buffer + bytesRead);
-        if (bytesRead == -1)
-        {
-            perror("read failed");
-            close(pipefd[0]);
-            return 500;
-        }
-    close(pipefd[0]);
-    totaSize = cgiOutput.size();
-    return 200;    // size_t headerEnd = cgiOutput.find("\r\n\r\n");
-    // if (headerEnd != std::string::npos)
-    // {
-    //     std::cout << "waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n";
-    //     headers = cgiOutput.substr(0, headerEnd);  // Extract headers
-    //     body = cgiOutput.substr(headerEnd + 4);  // Extract body
-    // }
-    }
+        return (parentProcess(pipefd, pid, currenttime));
 }
 
 
@@ -159,13 +132,23 @@ int HttpResponse::executeCGI(time_t currenttime)
 void HttpResponse::createEnvChar(HttpRequest& request, std::string& uri,const std::string& host,const std::string& port)
 {
     
+    //REMOTE_PORT,REMOTE_ADDR
+    // envVars.push_back(strdup("REMOTE_PORT=12345"));
+    // envVars.push_back(strdup("REMOTE_ADDR=127.0.0.1"));
+
     envVars.push_back(strdup("GATEWAY_INTERFACE=CGI/1.1"));
     envVars.push_back(strdup(("REQUEST_METHOD=" + request.getMethod()).c_str()));
-
     envVars.push_back(strdup(("SCRIPT_NAME=" + uri).c_str()));
     envVars.push_back(strdup(("PATH_INFO=" + PATH_INFO).c_str()));
-    envVars.push_back(strdup(("PATH_TRANSLATED=" + Page).c_str()));
 
+    //SCRIPT_FILENAME
+    envVars.push_back(strdup(("SCRIPT_FILENAME=" + Page).c_str()));
+    //DOCUMENT_ROOT
+    //envVars.push_back(strdup(("DOCUMENT_ROOT=" + environ["PATH"])));
+    //PHP_SELF
+    envVars.push_back(strdup(("PHP_SELF=" + uri).c_str()));
+    
+    envVars.push_back(strdup(("PATH_TRANSLATED=" + Page).c_str()));
     envVars.push_back(strdup(("SERVER_NAME=" + host).c_str()));
     envVars.push_back(strdup(("SERVER_PORT=" + port).c_str()));
     envVars.push_back(strdup(("SERVER_PROTOCOL=" + version).c_str()));
@@ -173,34 +156,39 @@ void HttpResponse::createEnvChar(HttpRequest& request, std::string& uri,const st
     envVars.push_back(strdup("REDIRECT_STATUS=200"));
     // get
     envVars.push_back(strdup(("QUERY_STRING=" + request.getQuery()).c_str()));
-    // post
-    if (request.getMethod() == "POST")
-    {
-        envVars.push_back(strdup(("CONTENT_TYPE=" + request.getHeader("CONTENT_TYPE")).c_str()));
-        envVars.push_back(strdup(("CONTENT_LENGTH=" + request.getHeader("CONTENT_LENGTH")).c_str()));
-    }
+    envVars.push_back(strdup(("CONTENT_TYPE=" + request.getHeader("CONTENT_TYPE")).c_str()));
+    envVars.push_back(strdup(("CONTENT_LENGTH=" + request.getHeader("CONTENT_LENGTH")).c_str()));
+   for (int i = 0; environ[i] != NULL; ++i)
+       envVars.push_back(strdup(environ[i])); 
     envVars.push_back(NULL);
 }
 
 
 void HttpResponse::sendCgi(int clientSocketId, Status& status)
 {
-    //we have totalSize, and offset = 0
     int SentedBytes;
-    if (offset >= static_cast<size_t>(totaSize))
-    {
-        status = DONE;
-        return;
-    }
     size_t chunkSize = (totaSize - offset < Connection::CHUNK_SIZE) 
                    ? (totaSize - offset) 
                    : Connection::CHUNK_SIZE;
     SentedBytes = send(clientSocketId, &cgiOutput[offset], chunkSize, MSG_NOSIGNAL);
     if (SentedBytes < 0)
     { 
-        std::cerr << "3 Send failed to client "<<clientSocketId << std::endl;
+         std::cerr << "Send failed to client " << clientSocketId 
+                  << ": " << strerror(errno) << std::endl;
         status = DONE;  // handle error as needed
         return;
     }
+    if (SentedBytes == 0) 
+    {
+        // If `send` returns 0, it means the connection might be closed
+        std::cerr << "Connection closed by client " << clientSocketId << std::endl;
+        status = DONE;
+        return;
+    }
     offset += SentedBytes;
+    if (offset >= static_cast<size_t>(totaSize))
+    {
+        status = DONE;
+        return;
+    }
 }
