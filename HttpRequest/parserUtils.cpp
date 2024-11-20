@@ -4,14 +4,14 @@ void HttpRequest::handleTransfer(){
     if (headers.find("Transfer-Encoding") != headers.end() && headers["Transfer-Encoding"] == "chunked"){
         isChunked = true;
     }
-    if (headers.find("content-length") != headers.end()){
+    if (headers.find("Content-Length") != headers.end()){
         char c = 0;
-        std::istringstream nbr(headers["content-length"]);
+        std::istringstream nbr(headers["Content-Length"]);
         nbr >> contentLength >> c;
         if (contentLength <= 0 || c)
             contentLength = 0;            
     }
-    if (headers.find("content-type") != headers.end() && isValidMultipart(headers["content-type"])){
+    if (headers.find("Content-Type") != headers.end() && isValidMultipart(headers["Content-Type"])){
         isMultipart = true;
     }
 }

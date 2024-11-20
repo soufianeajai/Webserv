@@ -52,3 +52,13 @@ CHECK IF RESPONSE IS READY
 
 #############################################
 when we send a request with method not allow set 405 , see also other status code
+
+
+
+
+
+
+split header and body from cgi using "\r\n\r\n" ,,, 
+std::getenv for cmd and also full_PATH (or we use global variabl env to add it to my env) ... ,,, post in cgi and cookies in env !!
+convert string to char * in buffer from pipe , cgi !!
+

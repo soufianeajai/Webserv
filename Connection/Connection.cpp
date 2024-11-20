@@ -2,7 +2,16 @@
 
 Connection::Connection():bodySize(0){}
 
-Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize, struct epoll_event& epoll, int serversocket):clientSocketId(fd), bodySize(maxSize), status(READING_PARSING),epollfd(epoll)
+time_t Connection::get_last_access_time() const
+{
+    return last_access_time;
+}
+
+void Connection::set_last_access_time(time_t last)
+{
+    last_access_time = last;
+}
+Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize, struct epoll_event& epoll, int serversocket,time_t last):clientSocketId(fd), bodySize(maxSize), status(READING_PARSING),epollfd(epoll),last_access_time(last)
 {
     std::cout << "conneciton: "<<serversocket<<"\n";
     this->socketServer = serversocket;
@@ -28,9 +37,7 @@ struct epoll_event& Connection::getEpollFd()
 int Connection::getClientSocketId() const{
     return clientSocketId;
 }
-void Connection::closeConnection(){
 
-}
 void Connection::parseRequest(){
     uint8_t    buffer[Connection::CHUNK_SIZE];
     int     readSize = 0;
@@ -40,7 +47,7 @@ void Connection::parseRequest(){
     if (readSize == 0)
     {
     //    std::cout << " Client closed the connection" << std::endl;
-        closeConnection();
+        //closeConnection();
         return;
     }
     else if (readSize < 0)
@@ -66,11 +73,16 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
     if (status == PROCESSING){
         request.process(routes);
     }
-    if (request.getcurrentState() == PROCESS_DONE || request.errorOccured())
+    if (request.getcurrentState() == PROCESS_DONE || request.errorOccured()){
+        if (request.errorOccured())
+        {
+            std::map<State, int>::const_iterator it = request.getErrorState().find(request.getcurrentState());
+            request.SetStatusCode(it->second);
+        }
         status = GENARATE_RESPONSE;
+    }
     if (status == GENARATE_RESPONSE)
     {
-        std::cout << "----> " << request.GetStatusCode() << std::endl;
         // if (!buffer.empty())
         //     status = SENDING_RESPONSE;
         // std::cout <<"\n\nResponseGenerating : ";
@@ -114,9 +126,9 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
 //     }
 
 // }
-void Connection::generateResponse(std::map<int, std::string> &errorPages,std::string& host, uint16_t port)
+void Connection::generateResponse(std::map<int, std::string> &errorPages,std::string& host, uint16_t port,time_t currenttime)
 {
-    response.ResponseGenerating(request, errorPages, clientSocketId, status,host,port);
+    response.ResponseGenerating(request, errorPages, clientSocketId, status,host,port,currenttime);
 }
 
 Status Connection::getStatus() const{

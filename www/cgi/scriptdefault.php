@@ -1,7 +1,6 @@
-#!/usr/bin/php
 <?php
 // Set the Content-Type header
-header("Content-Type: text/html; charset=UTF-8");
+header("Content-Type: text/html");
 
 // Add additional headers
 header("X-Content-Type-Options: nosniff");
