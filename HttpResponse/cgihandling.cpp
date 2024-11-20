@@ -20,10 +20,14 @@ void HttpResponse::GetFullPathCmd(const std::string& ext)
         PathCmd = "/usr/bin/php-cgi8.1";
     else
         PathCmd = "/usr/bin/python3.10";
+    //std::cout << "waaaaaaaaaaaaaaaaaaaaaaaa getfuull pathcmd : "<< ;
     if (access(PathCmd.c_str(), F_OK) != 0 || access(PathCmd.c_str(), X_OK) != 0)
+    {
         PathCmd = "";
+        //std::cout << "waaaaaaaaaaaaaaaaaaaaaaaa getfuull pathcmd !\n";
+    }
     else
-        std::cout << "found path cmd !\n";
+        std::cout << " found path cmd !\n";
 }
 
 void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path, std::set<std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port)
@@ -40,7 +44,9 @@ void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path, std::set<
             cgi = true;
             PATH_INFO = path.substr(pos + ext.length());
             path = path.substr(0, pos + ext.length());
+           
             GetFullPathCmd(ext);
+           // std::cout << "im in extention !!!: "<<PathCmd<<"\n";
             break; 
         }
     }
@@ -78,6 +84,8 @@ int HttpResponse::executeCGI(time_t currenttime)
     }
     if (pid == 0)
     {
+        std::cout << "path: "<<PathCmd<<"\n";
+        std::cout << "path: "<<Page<<"\n";
         close(pipefd[0]);
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]); 

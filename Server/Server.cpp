@@ -77,9 +77,9 @@ std::vector<int> &Server::portGetter() {
     return this->ports;
 }
 void Server::serverNamesSetter(std::string _serverName) {
-    this->serverNames.push_back(_serverName);
+    this->serverNames.insert(_serverName);
 }
-std::vector<std::string> Server::serverNamesGetter() {
+std::set<std::string> Server::serverNamesGetter() {
     return this->serverNames;
 }
 void Server::serverRootSetter(std::string _serverRoot) {
