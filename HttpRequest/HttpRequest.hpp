@@ -62,6 +62,8 @@ enum State {
     BODY_PART_HEADER_CR2,       // Expect CR after part header
     BODY_PART_HEADER_LF2,       // Expect LF after part header
     BODY_PART_DATA,             // Reading part data (binary safe)
+    POTENTIAL_BOUNDARY_CHECK,
+    POTENTIAL_BOUNDARY_PARSING,
     BODY_PART_END,              // End of current part
     
 // FINAL STATE
@@ -99,6 +101,7 @@ typedef struct s_boundaryPart{
     bool        isFile;
     std::vector<uint8_t> fileBody;
     std::map<std::string, std::string> boundaryHeader;
+    std::vector<char> boundaryCheckBuffer;
 } boundaryPart;
 
 class HttpRequest :  public HttpMessage{
@@ -180,6 +183,8 @@ private:
     void    handleBodyPartHeaderLF(uint8_t byte);
     void    handleBodyPartHeaderLF2(uint8_t byte);
     void    handleBodyPartData(uint8_t byte);
+    void    handlePotentialBoundaryCheck(uint8_t byte);
+    void    handlePotentialBoundaryParsing(uint8_t byte);
     void    handleBodyPartEnd(uint8_t byte);
 // PROCESS HANDLERS
     void    handleProcessUri_Method(std::map<std::string, Route>& routes);

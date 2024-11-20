@@ -42,6 +42,8 @@ bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&Http
     stateHandlers.insert(std::make_pair(BODY_PART_HEADER_LF, &HttpRequest::handleBodyPartHeaderLF));
     stateHandlers.insert(std::make_pair(BODY_PART_HEADER_LF2, &HttpRequest::handleBodyPartHeaderLF2));
     stateHandlers.insert(std::make_pair(BODY_PART_DATA, &HttpRequest::handleBodyPartData));
+    stateHandlers.insert(std::make_pair(POTENTIAL_BOUNDARY_CHECK, &HttpRequest::handlePotentialBoundaryCheck));
+    stateHandlers.insert(std::make_pair(POTENTIAL_BOUNDARY_PARSING, &HttpRequest::handlePotentialBoundaryParsing));
     stateHandlers.insert(std::make_pair(BODY_PART_END, &HttpRequest::handleBodyPartEnd));
 // ERRORS STATE CODES
     errorState.insert(std::make_pair(ERROR_BAD_REQUEST, 400));
@@ -62,7 +64,7 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
 {
     for(int i = 0; i < readSize && !errorOccured(); i++)
     {
-        //    std::cout << buffer[i] << std::endl;
+        std::cout << currentState << std::endl;
         (this->*currentHandler)(buffer[i]);
         std::map<State, StateHandler>::const_iterator it = stateHandlers.find(currentState);
         if (it != stateHandlers.end())
@@ -75,18 +77,18 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
         std::map<State, int>::const_iterator it = errorState.find(currentState);
         statusCode = it->second;
     }
-      std::cout <<" method is : " << method << std::endl;
-    //   std::cout <<" uri is : " << uri << std::endl;
-    //  std::cout << "version is " << version << std::endl;
-      std::cout <<" status code is : " << statusCode << std::endl;
-    // std::cout <<" isChunked are : " << isChunked << std::endl;
-     std::cout <<" isMultipart are : " << isMultipart << std::endl;
-      std::cout <<" contentLength are : " << contentLength << std::endl;
-     std::cout <<" boundary are :                             " << boundary << std::endl;
+       std::cout <<" method is : " << method << std::endl;
+    // //   std::cout <<" uri is : " << uri << std::endl;
+    // //  std::cout << "version is " << version << std::endl;
+    //   std::cout <<" status code is : " << statusCode << std::endl;
+    // // std::cout <<" isChunked are : " << isChunked << std::endl;
+    //  std::cout <<" isMultipart are : " << isMultipart << std::endl;
+    //   std::cout <<" contentLength are : " << contentLength << std::endl;
+    //  std::cout <<" boundary are :                             " << boundary << std::endl;
 
-    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-        std::cout << it->first << ": " << it->second << std::endl;
-    }
+    // for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+    //     std::cout << it->first << ": " << it->second << std::endl;
+    // }
     // std::cout <<" body is : " << std::endl;
     // for (std::vector<uint8_t>::const_iterator it = body.begin(); it != body.end(); ++it) {
     //     std::cout << static_cast<char>(*it);

@@ -292,25 +292,32 @@ void HttpRequest::handleBodyBoundaryStart(uint8_t byte) {
 }
 
 void HttpRequest::handleBodyBoundaryParsing(uint8_t byte) {
+    std::string expectedBoundary = "--" + boundary;
+    std::string finalBoundary = expectedBoundary + "--";
     if (byte == '\r') {
-        std::string expectedBoundary = "--" + boundary;
         if (holder == expectedBoundary) {
             parts.push_back(boundaryPart());
             currentState = BODY_BOUNDARY_LF;
         }
-        else if (holder == expectedBoundary + "--")
+        else if (holder == finalBoundary) {
             currentState = MESSAGE_COMPLETE;
-        else
+        }
+        else {
+                   std::cout << "----- holder" << holder<< std::endl;
+                   std::cout << "----- expectedBoundary" << expectedBoundary<< std::endl;
+                   std::cout << "----- finalBoundary" << finalBoundary<< std::endl;
+
             currentState = ERROR_BOUNDARY;
+        }
         holder.clear();
     }
     else {
         holder += byte;
-        if (holder.length() > boundary.length() + 4){
+        if (holder.length() > boundary.length() + 4) {
             currentState = ERROR_BOUNDARY;
             holder.clear();
         }
-    }   
+    }
 }
 
 void HttpRequest::handleBodyBoundaryLF(uint8_t byte) {
@@ -339,8 +346,9 @@ void HttpRequest::handleBodyPartHeaderName(uint8_t byte) {
 }
 
 void HttpRequest::handleBodyPartHeaderValue(uint8_t byte) {
+    boundaryPart& currentPart = parts.back();
     if (byte == '\r') {
-        parts.back().boundaryHeader[currentHeaderName] = holder;        
+        currentPart.boundaryHeader[currentHeaderName] = holder;        
         // Parse Content-Disposition header
         if (currentHeaderName == "Content-Disposition") {
             std::size_t namePos = holder.find("name=");
@@ -349,16 +357,16 @@ void HttpRequest::handleBodyPartHeaderValue(uint8_t byte) {
                 namePos += 6;
                 std::size_t endPos = holder.find("\"", namePos);
                 if (endPos != std::string::npos)
-                    parts.back().name = holder.substr(namePos, endPos - namePos);
+                    currentPart.name = holder.substr(namePos, endPos - namePos);
             }
             if (filenamePos != std::string::npos) {
                 filenamePos += 10;
                 std::size_t endPos = holder.find("\"", filenamePos);
                 if (endPos != std::string::npos) {
-                    parts.back().fileName = holder.substr(filenamePos, endPos - filenamePos);
-                    parts.back().isFile = true;
+                    currentPart.fileName = holder.substr(filenamePos, endPos - filenamePos);
+                    currentPart.isFile = true;
                 }
-                parts.back().isFile = false;
+                currentPart.isFile = false;
             }
         }
         holder.clear();
@@ -383,16 +391,73 @@ void HttpRequest::handleBodyPartHeaderLF2(uint8_t byte) {
 }
 
 void HttpRequest::handleBodyPartData(uint8_t byte) {
-    if (byte == '\r')
-        currentState = BODY_PART_END;
+    boundaryPart& currentPart = parts.back();
+    if (byte == '\r') {
+        currentPart.boundaryCheckBuffer.clear();
+        currentPart.boundaryCheckBuffer.push_back('\r');
+        currentState = POTENTIAL_BOUNDARY_CHECK;
+    }
     else {
-        if (parts.back().isFile)
-            parts.back().fileBody.push_back(byte);
+        if (currentPart.isFile)
+            currentPart.fileBody.push_back(byte);
         else
-            parts.back().value += byte;
+            currentPart.value += byte;
+    }
+}
+void HttpRequest::handlePotentialBoundaryCheck(uint8_t byte) {
+    boundaryPart& currentPart = parts.back();
+    currentPart.boundaryCheckBuffer.push_back(byte);
+    if (byte == '\n') {
+        currentState = POTENTIAL_BOUNDARY_PARSING;
+    }
+    else {
+        std::string tmpBuffer(currentPart.boundaryCheckBuffer.begin(), currentPart.boundaryCheckBuffer.end());
+        
+        if (parts.back().isFile)
+            parts.back().fileBody.insert(
+                parts.back().fileBody.end(), 
+                currentPart.boundaryCheckBuffer.begin(), 
+                currentPart.boundaryCheckBuffer.end()
+            );
+        else
+            parts.back().value.append(tmpBuffer);
+        
+        currentState = BODY_PART_DATA;
     }
 }
 
+void HttpRequest::handlePotentialBoundaryParsing(uint8_t byte) {
+    boundaryPart& currentPart = parts.back();
+    currentPart.boundaryCheckBuffer.push_back(byte);
+    std::string potentialBoundary(
+        currentPart.boundaryCheckBuffer.begin(), 
+        currentPart.boundaryCheckBuffer.end()
+    );
+    std::string expectedBoundary = "--" + boundary;
+    std::string finalBoundary = expectedBoundary + "--";
+    if (potentialBoundary == expectedBoundary) {
+        currentState = BODY_BOUNDARY_START;
+        currentPart.boundaryCheckBuffer.clear();
+    }
+    else if (potentialBoundary == finalBoundary) {
+        currentState = MESSAGE_COMPLETE;
+        currentPart.boundaryCheckBuffer.clear();
+    }
+    else if (currentPart.boundaryCheckBuffer.size() > expectedBoundary.length() + 2) {
+        std::string tmpBuffer(currentPart.boundaryCheckBuffer.begin(), currentPart.boundaryCheckBuffer.end());
+        
+        if (parts.back().isFile)
+            parts.back().fileBody.insert(
+                parts.back().fileBody.end(), 
+                currentPart.boundaryCheckBuffer.begin(), 
+                currentPart.boundaryCheckBuffer.end()
+            );
+        else
+            parts.back().value.append(tmpBuffer);
+        
+        currentState = BODY_PART_DATA;
+    }
+}
 void HttpRequest::handleBodyPartEnd(uint8_t byte) {
     if (byte == '\n') {
         holder.clear();
