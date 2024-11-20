@@ -16,8 +16,8 @@
 //valid request
 
 HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd("")
-{
-}
+{}
+
 std::string intToString(size_t number)
 {
     std::stringstream ss;
@@ -25,27 +25,27 @@ std::string intToString(size_t number)
     return ss.str();
 }
 
-size_t HttpResponse::getOffset()
-{
-    return offset;
-}
+// size_t HttpResponse::getOffset()
+// {
+//     return offset;
+// }
 
-bool HttpResponse::getCgi() const
-{
-    return cgi;
-}
+// bool HttpResponse::getCgi() const
+// {
+//     return cgi;
+// }
 
-pid_t HttpResponse::getPid() const
-{
-    return pid;
-}
+// pid_t HttpResponse::getPid() const
+// {
+//     return pid;
+// }
 
-int HttpResponse::getpipe() const
-{
-    if (cgi)
-        return pipefd[0];
-    return -1;
-}
+// int HttpResponse::getpipe() const
+// {
+//     if (cgi)
+//         return pipefd[0];
+//     return -1;
+// }
 
 std::string getCurrentTimeFormatted()
 {
@@ -286,7 +286,7 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
 
     //std::cout << "get path : "<<route.getPath()<<"\nUri: "<<uri<<"\nget root: "<<route.getRoot()<<"\nis dir route: "<<route.isDirGetter()<<"\ndefualt file: "<<route.getDefaultFile()<<"\nauto index: "<<route.getAutoindex()<<"\n";
     
-    if ((statusCode ==  200 || statusCode ==  201) && (allowedMethods.find("GET") != allowedMethods.end() ||  allowedMethods.find("POST") != allowedMethods.end())) // GET
+    if (statusCode ==  200 || statusCode ==  201)
     {
         if (route.getPath() == uri)
         {
@@ -326,7 +326,7 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
         std::cout << "2 Path: \"" << route.getPath() << "\"" << std::endl;
         std::cout << "2 PAGE: \"" << Page << "\"" << std::endl;  
     }
-    else if (allowedMethods.find("DELETE") != allowedMethods.end() && statusCode ==  204)
+    else if (statusCode ==  204)
     {
         std::cout << "[DELETE data]\n";
     }

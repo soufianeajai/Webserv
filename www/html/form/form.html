@@ -31,7 +31,7 @@
             color: #555;
         }
         input[type="text"],
-        input[type="email"],
+        input[type="password"],
         textarea {
             width: 100%;
             padding: 8px;
@@ -60,24 +60,32 @@
             background-color: #0056b3;
         }
     </style>
+    <script>
+        function validateForm(event) {
+            const inputs = document.querySelectorAll("input[type='text'], input[type='email']");
+            for (const input of inputs) {
+                if (/\s/.test(input.value)) {
+                    alert("Whitespace is not allowed in any input field.");
+                    event.preventDefault();
+                    return false;
+                }
+            }
+            return true;
+        }
+    </script>
 </head>
 <body>
     <div class="form-container">
         <h2>Submit Data</h2>
-        <form action="/submit-data" method="POST" enctype="multipart/form-data">
-            <label for="firstname">First Name</label>
-            <input type="text" id="firstname" name="firstname" required>
-	    
-	    <label for="lastname">Last Name</label>
-            <input type="text" id="lastname" name="lastname" required>
+        <form action="/form" method="POST" enctype="multipart/form-data" onsubmit="validateForm(event)">
+            <label for="firstname">Username</label>
+            <input type="text" id="username" name="username" required pattern="^\S+$" title="No whitespace allowed">
 
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" required>
-
-
+            <label for="lastname">password</label>
+            <input type="password" id="password" name="password" required pattern="^\S+$" title="No whitespace allowed">
+            
             <button type="submit" class="submit-btn">Submit</button>
         </form>
     </div>
 </body>
 </html>
- 

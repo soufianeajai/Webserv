@@ -145,3 +145,9 @@ std::string& HttpRequest::getHeader(std::string key)
 {
     return headers[key];
 }
+std::map<State, int>& HttpRequest::getErrorState(){
+    return errorState;
+}
+void HttpRequest::SetStatusCode(int status){
+    statusCode = status;
+}

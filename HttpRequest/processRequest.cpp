@@ -4,8 +4,14 @@ State processMethod(std::string& myMethod, Route& route){
     std::set<std::string> allowedmethods;
     allowedmethods = route.getAllowedMethods();
     std::set<std::string>::iterator Methodit = allowedmethods.find(myMethod);
-    if (Methodit == allowedmethods.end())
+    for(std::set<std::string>::iterator itt = allowedmethods.begin(); itt != allowedmethods.end(); itt++)
+        std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++ " << *itt << std::endl;
+
+    if (Methodit == allowedmethods.end()){
+        std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++---- " << std::endl;
+
         return ERROR_INVALID_METHOD;
+    }
     else
     {
         if (myMethod == "GET")
@@ -109,7 +115,8 @@ void    HttpRequest::handleProcessDelete(){
 
 void HttpRequest::saveDataToFile(std::string name, std::vector<uint8_t>& body)
 {
-    std::ofstream file(name.c_str(), std::ios::binary);
+    std::string newName = "." + this->getCurrentRoute().getRoot() + '/' + name;
+    std::ofstream file(newName.c_str(), std::ios::binary);
     if (file.is_open())
         file.write(reinterpret_cast<const char*>(body.data()), body.size());
 
@@ -131,7 +138,7 @@ void    HttpRequest::handleProcessPostData(){
             filenamePos += 10;
             std::size_t filenameEndPos = contentDisposition.find("\"", filenamePos);
             std::string filename = contentDisposition.substr(filenamePos, filenameEndPos - filenamePos);
-            saveDataToFile(filename + "1", body);
+            saveDataToFile(filename, body);
         }
     }
     else
@@ -139,32 +146,20 @@ void    HttpRequest::handleProcessPostData(){
     currentState = PROCESS_DONE;
 }
 
-void    HttpRequest::handleProcessMultipart(std::string root){
-    //upload the file in the current dir and the formfields in the server.
-    std::string name = "boundary-filee";
-    std::ofstream file(name.c_str());
+void    HttpRequest::handleProcessMultipart(){
+    std::string name = "." + this->getCurrentRoute().getRoot() + '/' + "dataBase";
+    std::ofstream file(name.c_str(), std::ios::app);
     for(std::vector<boundaryPart>::iterator it = parts.begin(); it != parts.end(); it++){
-        // for(std::map<std::string, std::string>::iterator itt = it->boundaryHeader.begin(); itt != it->boundaryHeader.end(); itt++)
-        //     std::cout << itt->first << " " << itt->second << std::endl;
-        if (it->isFile)
-        {
-            std::string name = root + uri + "/" + it->fileName;
-            saveDataToFile(name, it->fileBody);
+        if (file.is_open()){
+            std::string data = it->name + ":" + it->value + " "; 
+            file.write(data.c_str(), data.size());
         }
-        else
-        {
-            if (file.is_open()){
-        //        std::cout << it->name << " " << it->value << std::endl;
-                std::string toWrite = it->name + " " + it->value + "\n"; 
-                file.write(toWrite.c_str(), toWrite.size());
-            }
-
-            else {
-                currentState = ERROR_BOUNDARY;
-                return;
-            }
+        else {
+            currentState = ERROR_BOUNDARY;
+            return;
         }
     }
+    file.write("\n", 1);
     file.close();
     currentState = PROCESS_DONE;
 }
@@ -221,13 +216,12 @@ void HttpRequest::process(std::map<std::string, Route>& routes){
             case PROCESS_POST: handleProcessPost(); break;
             case PROCESS_POST_DATA: handleProcessPostData(); break;
             case PROCESS_CHUNKED_BODY: handleProcessChunkedBody(CurrentRoute.getRoot()); break;
-            case PROCESS_MULTIPART_FORM_DATA: handleProcessMultipart(CurrentRoute.getRoot()); break;
+            case PROCESS_MULTIPART_FORM_DATA: handleProcessMultipart(); break;
             case PROCESS_DONE: 
                 break;
             default:
                 break;
         }
     }
-    
 }
 
