@@ -35,10 +35,10 @@ void Route::setAutoindex(bool _autoindex) {
 bool Route::getAutoindex() {
     return this->autoindex;
 }
-void Route::addCgiExtension(std::string cgiExtension) {
-    this->cgiExtensions.insert(cgiExtension);
+void Route::addCgiExtension(std::string cgiExtension, std::string cgiPath) {
+    this->cgiExtensions[cgiExtension] = cgiPath;
 }
-std::set<std::string> Route::getCgiExtensions() {
+std::map<std::string, std::string> Route::getCgiExtensions() {
     return this->cgiExtensions;
 }
 void Route::setRedirectnewPath(std::string _redirectnewPath) {
