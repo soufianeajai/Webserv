@@ -27,8 +27,7 @@ CHECK IF RESPONSE IS READY
 - Limit client body size.
 -  HTTP methods
 -  HTTP redirection
--  extension
-
+-  extension  will be like this  .%%%
 
 
 
@@ -52,16 +51,4 @@ CHECK IF RESPONSE IS READY
 
 
 #############################################
-please when i have GET dont pase body
-~~~
-method request: GET
------ 47
-readSize 555
-sdff fsdf
-dfsdfs fsds
-fsdsdfs fsdfsdf
-sdfsd fs
-fdsfsdf fsdfd
-fsdfsdf fsdfsd
-~~~
-detect default root from request , because i write code again for detection (if 200 in statuscode)
+when we send a request with method not allow set 405 , see also other status code

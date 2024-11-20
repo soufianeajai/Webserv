@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="5;url=https://www.example.com">
+    <title>Redirecting...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+            padding: 50px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #d9534f; /* Red color */
+        }
+        p {
+            font-size: 18px;
+        }
+        .link {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Redirecting...</h1>
+    <p>You are being redirected to another page. If the page doesn't redirect automatically, 
+    <a href="https://www.example.com" class="link">click here</a> to continue.</p>
+    <p>Redirecting in <span id="countdown">5</span> seconds...</p>
+</div>
+
+<script>
+    // Countdown script
+    var countdown = 5;
+    var countdownElement = document.getElementById('countdown');
+
+    setInterval(function() {
+        countdown--;
+        countdownElement.innerHTML = countdown;
+        if (countdown === 0) {
+            clearInterval();
+        }
+    }, 1000);
+</script>
+
+</body>
+</html>

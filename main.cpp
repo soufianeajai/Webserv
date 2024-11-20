@@ -10,7 +10,6 @@ int main(int ac, char **av)
             return 1;
     Config = parsingConfig(av[1]);
     std::vector<Server>server = Config.webServer.getServers();
-
     for (size_t i = 0; i < server.size(); i++)
     {
         std::cout << server[i].hostGetter() << std::endl;
@@ -25,6 +24,5 @@ int main(int ac, char **av)
         std::cout << "--------------------------------" << std::endl;
         }
     }
-
     // ServerSetup(Config);
 }
