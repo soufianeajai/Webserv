@@ -58,3 +58,12 @@ default_file: index.html # not exist
 
 
 
+#################################################################
+location must be like this  : "/toto"
+root must be like this : "/www/html"
+default file must be like this :  "toto.html"  `(if have any / is invalid)`
+cgi must be just extention without "." like this : "php py sh"
+parse for method we have just GET POST DELETE  like this : "GET POST DELETE" any add without this is invalid
+redirection must be start with "/"
+
+about root if exist ( set boolean isdir)

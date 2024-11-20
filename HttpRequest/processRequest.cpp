@@ -21,47 +21,36 @@ bool isPrefix(std::string prefix, std::string uri)
     return ((uri.compare(0, prefixLength, prefix) == 0) && (uri.length() == prefixLength || uri[prefixLength] == '/'));
 }
 
-bool isDirectory(const std::string& path)
-{
-    struct stat pathStat;
-    if (stat(path.c_str(), &pathStat) != 0)
-    {
-        perror("stat");  // Print an error if stat fails
-        return false;    // Treat as non-directory if there's an error
-    }
-    return S_ISDIR(pathStat.st_mode);  // Check if it's a directory
-}
-
 void HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes)
 {
-    std::string normalize_url = uri;
     std::map<std::string, Route>::iterator it;
     bool found = false;
     size_t longestMatchLength = 0;
-    if (uri[uri.size() - 1] != '/')
-        normalize_url = uri + "/";
+    //std::cout << "uri = " << uri << std::endl;
+    if (uri[uri.size() - 1] == '/')
+        uri = uri.substr(0, uri.length() - 1);
     
-    it = routes.find(normalize_url);
+    it = routes.find(uri);
     if (it != routes.end())
     {
         found = true;
         CurrentRoute = it->second;
-      std::cout << "Exact matching ----> : " << normalize_url << std::endl;
+     // std::cout << "Exact matching ----> : " << uri << std::endl;
     } 
     else 
     {
         for (it = routes.begin(); it != routes.end(); it++) {
-            if (isPrefix(it->first, normalize_url)) {
+            if (isPrefix(it->first, uri)) {
                 if (it->first.length() > longestMatchLength) {
                     CurrentRoute = it->second;
                     longestMatchLength = it->first.length();
                     found = true;
-                    std::cout << "Prefix matching ----> normalize_url: " << normalize_url << std::endl << "Location: " << it->first << std::endl;
+                    //std::cout << "Prefix matching ----> uri: " << uri << std::endl << "Location: " << it->first << std::endl;
                 }
             }
         }
         if (found != true){
-            std::cout << "Set default te root if exist ----> : " << normalize_url << std::endl;
+            //std::cout << "Set default te root if exist ----> : " << uri << std::endl;
             std::map<std::string, Route>::iterator it = routes.find("/");
             if (it != routes.end()){
                 CurrentRoute = it->second;
@@ -132,7 +121,21 @@ void HttpRequest::saveDataToFile(std::string name, std::vector<uint8_t>& body)
 }
 
 void    HttpRequest::handleProcessPostData(){
-    saveDataToFile("Posted_Data", body);
+    std::map<std::string, std::string>::iterator it = headers.find("Content-Disposition");
+    if (it != headers.end())
+    {
+        std::string contentDisposition = it->second;
+        std::size_t filenamePos = contentDisposition.find("filename=\"");
+        if (filenamePos != std::string::npos)
+        {
+            filenamePos += 10;
+            std::size_t filenameEndPos = contentDisposition.find("\"", filenamePos);
+            std::string filename = contentDisposition.substr(filenamePos, filenameEndPos - filenamePos);
+            saveDataToFile(filename + "1", body);
+        }
+    }
+    else
+        saveDataToFile("Posted_Data", body);
     currentState = PROCESS_DONE;
 }
 

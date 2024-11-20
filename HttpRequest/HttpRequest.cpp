@@ -140,3 +140,8 @@ std::string HttpRequest::getQuery() const
 State HttpRequest::getcurrentState() const{
     return currentState;
 }
+
+std::string& HttpRequest::getHeader(std::string key)
+{
+    return headers[key];
+}
