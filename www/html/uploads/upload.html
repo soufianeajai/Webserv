@@ -47,17 +47,19 @@
                 alert("Please select a file to upload.");
                 return;
             }
-
+    
             const file = fileInput.files[0];
             const url = '/upload'; // Replace with your server endpoint
-
+    
+            // Fetch API to send the file
             fetch(url, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': file.type || 'application/octet-stream',
+                    // Set Content-Type to application/octet-stream if file type is not available
+                    'Content-Type': file.type ,
                     'Content-Disposition': `attachment; filename="${file.name}"`
                 },
-                body: file
+                body: file // Send the file as the body of the POST request
             })
             .then(response => {
                 if (response.ok) {
@@ -72,5 +74,6 @@
             });
         }
     </script>
+    
 </body>
 </html>

@@ -1,5 +1,17 @@
 #include "ParsingConfig.hpp"
 
+
+void ParsingConfig::addServer(Server& newServer) {
+    this->servers.push_back(newServer);
+}
+Server& ParsingConfig::getServer(int identifier) {
+    return this->servers[identifier];
+}
+std::vector<Server>& ParsingConfig::getServers() {
+    return this->servers;
+}
+
+
 int numberConversion(std::string &string)
 {
     int number;
@@ -220,9 +232,9 @@ bool ParsingConfig::checkClientBodySize(std::string &str)
     return true;
 }
 
-void checkDefaultServer(WebServer &webServer)
+void ParsingConfig::checkDefaultServer()
 {
-    std::vector<Server> servers = webServer.getServers();
+    std::vector<Server> servers = getServers();
     for (size_t i = 1; i < servers.size(); i++) {
         if (servers[0].hostGetter() == servers[i].hostGetter())
         {
@@ -232,8 +244,8 @@ void checkDefaultServer(WebServer &webServer)
             {
                 for (size_t k = 0; k < ports.size(); k++) {
                     if (portsDefault[j] == ports[k]) {
-                        webServer.getServer(i).portEraser(k);
-                        ports = webServer.getServers()[i].portGetter();
+                        getServer(i).portEraser(k);
+                        ports = getServers()[i].portGetter();
                         break;
                     }
                 }
@@ -242,9 +254,9 @@ void checkDefaultServer(WebServer &webServer)
         }
     }    
 }
-void checkNecessary(WebServer &webserver, std::ifstream& FILE)
+void ParsingConfig::checkNecessary(std::ifstream& FILE)
 {
-    std::vector<Server> servers = webserver.getServers();
+    std::vector<Server> servers = getServers();
     for (size_t i = 0; i < servers.size(); i++)
     {
         if (servers[i].hostGetter().empty())
@@ -400,11 +412,11 @@ ParsingConfig parsingConfig(const char *configFile)
                         ft_error("Error: " + arr[0], FILE);
                 }
             }
-            parsingConfig.webServer.addServer(server);
+            parsingConfig.addServer(server);
         }
     }
-    checkNecessary(parsingConfig.webServer, FILE);
+    parsingConfig.checkNecessary(FILE);
     FILE.close();
-    checkDefaultServer(parsingConfig.webServer);
+    parsingConfig.checkDefaultServer();
     return parsingConfig;
 }

@@ -73,10 +73,9 @@ int HttpResponse::parentProcess(int pipefd[],pid_t pid,time_t currenttime)
                 return(std::cerr << "CGI did not terminate normally.\n",close(pipefd[0]),500);
             break;
         }
+         fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
             cgiOutput.append(buffer, buffer + bytesRead);
-        if (bytesRead == -1)
-            return(std::cout << "Error: "<<strerror(errno)<<std::endl,close(pipefd[0]),500);
         if (static_cast<time_t>(time(NULL)) - currenttime > TIMEOUT)
             return (kill(pid, SIGKILL),close(pipefd[0]), 500); // need update it to timeout page !!
     }
@@ -88,10 +87,8 @@ int HttpResponse::parentProcess(int pipefd[],pid_t pid,time_t currenttime)
 
 int HttpResponse::executeCGI(time_t currenttime)
 {
-
     int pipefd[2];
     pid_t pid;
-    fcntl(pipefd[1], F_SETFL, O_NONBLOCK);
     if (pipe(pipefd) == -1)
         return(std::cout << "Error: "<<strerror(errno)<<std::endl,500);
     pid = fork();

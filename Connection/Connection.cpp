@@ -59,7 +59,7 @@ void Connection::parseRequest(){
     {
         request.parse(buffer, readSize);
         if (request.parsingCompleted())
-            status = PROCESSING;
+        status = PROCESSING;
     }
 }
 

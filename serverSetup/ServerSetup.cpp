@@ -79,7 +79,6 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
         for (std::map<int, Connection*>::iterator conn_it = connections.begin(); conn_it != connections.end(); ++conn_it)
         {
             if (timout){
-                std::cout << "alo\n";
                 if(check_fd_timeout(conn_it->second->get_last_access_time()))
                     it->closeConnection(conn_it->first);
             }
@@ -92,7 +91,7 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
 void ServerSetup(ParsingConfig &Config)
 {
     std::vector<int> ServerSocket;
-    std::vector<Server> Servers = Config.webServer.getServers();
+    std::vector<Server> Servers = Config.getServers();
 	int SocketId;
 	int epollInstance = epoll_create1(EPOLL_CLOEXEC);
     struct epoll_event evenBuffer[1024];
