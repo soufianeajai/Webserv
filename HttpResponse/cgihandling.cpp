@@ -14,39 +14,25 @@ std::string HttpResponse::getMimeType(const std::string& filePath) const
     return "application/octet-stream";  // Default type if extension not found
 }
 
-void HttpResponse::GetFullPathCmd(const std::string& ext)
-{
-    if (ext == ".php")
-        PathCmd = "/usr/bin/php-cgi8.1";
-    else
-        PathCmd = "/usr/bin/python3.10";
-    //std::cout << "waaaaaaaaaaaaaaaaaaaaaaaa getfuull pathcmd : "<< ;
-    if (access(PathCmd.c_str(), F_OK) != 0 || access(PathCmd.c_str(), X_OK) != 0)
-    {
-        PathCmd = "";
-        //std::cout << "waaaaaaaaaaaaaaaaaaaaaaaa getfuull pathcmd !\n";
-    }
-    else
-        std::cout << " found path cmd !\n";
-}
 
-void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path, std::set<std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port)
+void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path,std::map<std::string, std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port)
 {
-    for (std::set<std::string>::const_iterator it = ExtensionsConfig.begin(); it != ExtensionsConfig.end(); ++it)
+    for (std::map<std::string, std::string>::const_iterator it = ExtensionsConfig.begin(); it != ExtensionsConfig.end(); ++it)
     {
-        const std::string& ext = *it;
+        const std::string& ext = it->first;
         size_t pos = path.rfind(ext);
         //extension is not at the end or followed by a '/' its invalid like : /cgi/somefile.php.invalid
         // need to update to 501 for cgi exist but is not in my configfile 
+        //&& (ext == ".php" || ext == ".py")
         if (pos != std::string::npos &&
-            (pos + ext.length() == path.length() || path[pos + ext.length()] == '/') && (ext == ".php" || ext == ".py"))
+            (pos + ext.length() == path.length() || path[pos + ext.length()] == '/') )
         {
             cgi = true;
             PATH_INFO = path.substr(pos + ext.length());
             path = path.substr(0, pos + ext.length());
-           
-            GetFullPathCmd(ext);
-           // std::cout << "im in extention !!!: "<<PathCmd<<"\n";
+            PathCmd = it->second;
+            if (access(PathCmd.c_str(), F_OK) != 0 || access(PathCmd.c_str(), X_OK) != 0)
+                PathCmd = "";
             break; 
         }
     }
@@ -87,10 +73,9 @@ int HttpResponse::parentProcess(int pipefd[],pid_t pid,time_t currenttime)
                 return(std::cerr << "CGI did not terminate normally.\n",close(pipefd[0]),500);
             break;
         }
+         fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
         while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
             cgiOutput.append(buffer, buffer + bytesRead);
-        if (bytesRead == -1)
-            return(std::cout << "Error: "<<strerror(errno)<<std::endl,close(pipefd[0]),500);
         if (static_cast<time_t>(time(NULL)) - currenttime > TIMEOUT)
             return (kill(pid, SIGKILL),close(pipefd[0]), 500); // need update it to timeout page !!
     }
@@ -102,10 +87,8 @@ int HttpResponse::parentProcess(int pipefd[],pid_t pid,time_t currenttime)
 
 int HttpResponse::executeCGI(time_t currenttime)
 {
-
     int pipefd[2];
     pid_t pid;
-    fcntl(pipefd[1], F_SETFL, O_NONBLOCK);
     if (pipe(pipefd) == -1)
         return(std::cout << "Error: "<<strerror(errno)<<std::endl,500);
     pid = fork();

@@ -1,5 +1,17 @@
 #include "ParsingConfig.hpp"
 
+
+void ParsingConfig::addServer(Server& newServer) {
+    this->servers.push_back(newServer);
+}
+Server& ParsingConfig::getServer(int identifier) {
+    return this->servers[identifier];
+}
+std::vector<Server>& ParsingConfig::getServers() {
+    return this->servers;
+}
+
+
 int numberConversion(std::string &string)
 {
     int number;
@@ -140,14 +152,9 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                 }
                 else if (arr[0] == "cgi_extension:")
                 {
-                    if (arr.size() < 2)
+                    if (arr.size() != 3 || arr[1][0] != '.')
                         ft_error("Error: Invalid cgi_extension", FILE);
-                    for (size_t i = 1; i < arr.size(); i++)
-                    {
-                        if (arr[i][0] != '.')
-                            ft_error("Error: invalid extension", FILE);
-                        route.addCgiExtension(arr[i]);
-                    }
+                    route.addCgiExtension(arr[1], arr[2]);
                 }
                 else if (arr[0] == "redirect:")
                 {
@@ -225,9 +232,9 @@ bool ParsingConfig::checkClientBodySize(std::string &str)
     return true;
 }
 
-void checkDefaultServer(WebServer &webServer)
+void ParsingConfig::checkDefaultServer()
 {
-    std::vector<Server> servers = webServer.getServers();
+    std::vector<Server> servers = getServers();
     for (size_t i = 1; i < servers.size(); i++) {
         if (servers[0].hostGetter() == servers[i].hostGetter())
         {
@@ -237,8 +244,8 @@ void checkDefaultServer(WebServer &webServer)
             {
                 for (size_t k = 0; k < ports.size(); k++) {
                     if (portsDefault[j] == ports[k]) {
-                        webServer.getServer(i).portEraser(k);
-                        ports = webServer.getServers()[i].portGetter();
+                        getServer(i).portEraser(k);
+                        ports = getServers()[i].portGetter();
                         break;
                     }
                 }
@@ -247,9 +254,9 @@ void checkDefaultServer(WebServer &webServer)
         }
     }    
 }
-void checkNecessary(WebServer &webserver, std::ifstream& FILE)
+void ParsingConfig::checkNecessary(std::ifstream& FILE)
 {
-    std::vector<Server> servers = webserver.getServers();
+    std::vector<Server> servers = getServers();
     for (size_t i = 0; i < servers.size(); i++)
     {
         if (servers[i].hostGetter().empty())
@@ -405,11 +412,11 @@ ParsingConfig parsingConfig(const char *configFile)
                         ft_error("Error: " + arr[0], FILE);
                 }
             }
-            parsingConfig.webServer.addServer(server);
+            parsingConfig.addServer(server);
         }
     }
-    checkNecessary(parsingConfig.webServer, FILE);
+    parsingConfig.checkNecessary(FILE);
     FILE.close();
-    checkDefaultServer(parsingConfig.webServer);
+    parsingConfig.checkDefaultServer();
     return parsingConfig;
 }

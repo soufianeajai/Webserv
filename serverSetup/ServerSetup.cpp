@@ -91,7 +91,7 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
 void ServerSetup(ParsingConfig &Config)
 {
     std::vector<int> ServerSocket;
-    std::vector<Server> Servers = Config.webServer.getServers();
+    std::vector<Server> Servers = Config.getServers();
 	int SocketId;
 	int epollInstance = epoll_create1(EPOLL_CLOEXEC);
     struct epoll_event evenBuffer[1024];
