@@ -3,77 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Direct File Upload</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        h1 {
-            color: #0078d7;
-        }
-        input[type="file"] {
-            margin: 20px 0;
-        }
-        button {
-            background-color: #0078d7;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #005bb5;
-        }
-    </style>
+    <title>File Upload</title>
 </head>
 <body>
-    <h1>Direct File Upload</h1>
-    <input type="file" id="fileInput">
-    <button onclick="uploadFile()">Upload File</button>
+    <h1>Upload a File</h1>
+    <input type="file" id="fileInput" required>
+    <button onclick="uploadFile()">Upload</button>
 
     <script>
         function uploadFile() {
-            const fileInput = document.getElementById('fileInput');
-            if (fileInput.files.length === 0) {
+            const fileInput = document.getElementById("fileInput");
+
+            if (!fileInput.files.length) {
                 alert("Please select a file to upload.");
                 return;
             }
-    
+
             const file = fileInput.files[0];
-            const url = '/upload'; // Replace with your server endpoint
-    
-            // Fetch API to send the file
-            fetch(url, {
-                method: 'POST',
+
+            fetch("http://localhost:2020/upload", { // Replace with your server URL
+                method: "POST",
                 headers: {
-                    // Set Content-Type to application/octet-stream if file type is not available
-                    'Content-Type': file.type ,
-                    'Content-Disposition': `attachment; filename="${file.name}"`
+                    "Content-Type": "application/octet-stream"
                 },
-                body: file // Send the file as the body of the POST request
+                body: file
             })
             .then(response => {
                 if (response.ok) {
                     alert("File uploaded successfully!");
                 } else {
-                    alert("Failed to upload file.");
+                    alert("File upload failed. Status: " + response.status);
                 }
             })
-            .catch(error => {
-                console.error("Error uploading file:", error);
-                alert("An error occurred while uploading the file.");
+            .catch(err => {
+                alert("An error occurred during the upload: " + err.message);
             });
         }
     </script>
-    
 </body>
 </html>
