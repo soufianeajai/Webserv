@@ -24,7 +24,8 @@
             fetch("http://localhost:2020/upload", { // Replace with your server URL
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/octet-stream"
+                    "Content-Type": "application/octet-stream",
+                    "Content-Disposition": `attachment; filename="${encodeURIComponent(file.name)}"`
                 },
                 body: file
             })
