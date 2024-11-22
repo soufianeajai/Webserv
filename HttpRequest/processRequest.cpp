@@ -4,11 +4,11 @@ State processMethod(std::string& myMethod, Route& route){
     std::set<std::string> allowedmethods;
     allowedmethods = route.getAllowedMethods();
     std::set<std::string>::iterator Methodit = allowedmethods.find(myMethod);
-    for(std::set<std::string>::iterator itt = allowedmethods.begin(); itt != allowedmethods.end(); itt++)
-        std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++ " << *itt << std::endl;
+    //for(std::set<std::string>::iterator itt = allowedmethods.begin(); itt != allowedmethods.end(); itt++)
+     //   std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++ " << *itt << std::endl;
 
     if (Methodit == allowedmethods.end()){
-        std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++---- " << std::endl;
+       // std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++---- " << std::endl;
 
         return ERROR_INVALID_METHOD;
     }

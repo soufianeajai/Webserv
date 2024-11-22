@@ -38,8 +38,8 @@ void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path,std::map<s
     }
     if (cgi)
         createEnvChar(request, uri, host, port);
-    for (size_t i = 0; i < envVars.size() && envVars[i] != NULL; ++i)
-        std::cout << envVars[i] << std::endl;
+    // for (size_t i = 0; i < envVars.size() && envVars[i] != NULL; ++i)
+    //     std::cout << envVars[i] << std::endl;
 }
 
 /* Find the position of the '?' and pos of / to get script name
@@ -50,50 +50,44 @@ void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path,std::map<s
             path_info = /test/more/path                
     */
 
-int HttpResponse::parentProcess(int pipefd[],pid_t pid,time_t currenttime)
+int HttpResponse::parentProcess(time_t currenttime)
 {
     int status;
     char buffer[1024];
     ssize_t bytesRead;
-    close(pipefd[1]);
-    while(true)
+    pid_t res = waitpid(pid, &status, WNOHANG);
+    if (res == -1)
+        return(std::cout << "Error pipe no: "<<strerror(errno)<<std::endl,close(pipefd[0]),1);
+    while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
+        cgiOutput.append(buffer, buffer + bytesRead);
+
+    if (static_cast<time_t>(time(NULL)) - currenttime > TIMEOUT)
+        return (kill(pid, SIGKILL),close(pipefd[0]), 1); // need update it to timeout page !!
+    if (res > 0) 
     {
-        pid_t res = waitpid(pid, &status, WNOHANG);
-        if (res == -1)
-            return(std::cout << "Error: "<<strerror(errno)<<std::endl,close(pipefd[0]),500);
-        
-        if (res > 0) 
-        {
-            if (WIFEXITED(status))
-            {   
-                if (WEXITSTATUS(status) != 0)
-                    return(std::cerr << "CGI exited with error code: " << WEXITSTATUS(status) << std::endl,close(pipefd[0]),500);
-            }
-            else
-                return(std::cerr << "CGI did not terminate normally.\n",close(pipefd[0]),500);
-            break;
+        std::cout << "finish child\n";
+        if (WIFEXITED(status))
+        {   
+            if (WEXITSTATUS(status) != 0)
+                return(std::cerr << "CGI exited with error code: " << WEXITSTATUS(status) << std::endl,close(pipefd[0]),500);
         }
-         fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
-        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
-            cgiOutput.append(buffer, buffer + bytesRead);
-        if (static_cast<time_t>(time(NULL)) - currenttime > TIMEOUT)
-            return (kill(pid, SIGKILL),close(pipefd[0]), 500); // need update it to timeout page !!
+        else
+            return(std::cerr << "CGI did not terminate normally.\n",close(pipefd[0]),500);
+        close(pipefd[0]);
+        totaSize = cgiOutput.size();
+        return 0;
     }
-    
-    close(pipefd[0]);
-    totaSize = cgiOutput.size();
-    return 200;
+    return -1;
 }
 
-int HttpResponse::executeCGI(time_t currenttime)
+int HttpResponse::executeCGI()
 {
-    int pipefd[2];
-    pid_t pid;
+    fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
     if (pipe(pipefd) == -1)
-        return(std::cout << "Error: "<<strerror(errno)<<std::endl,500);
+        return(std::cout << "Error: "<<strerror(errno)<<std::endl,1);
     pid = fork();
     if (pid == -1)
-        return(std::cout << "Error: "<<strerror(errno)<<std::endl,500);
+        return(std::cout << "Error: "<<strerror(errno)<<std::endl,1);
     if (pid == 0)
     {
         std::cout << "path: "<<PathCmd<<"\n";
@@ -106,8 +100,8 @@ int HttpResponse::executeCGI(time_t currenttime)
         std::cout << "Error: "<<strerror(errno)<<std::endl;
         exit(1);
     }
-    else
-        return (parentProcess(pipefd, pid, currenttime));
+    close(pipefd[1]);
+    return 0;
 }
 
 
