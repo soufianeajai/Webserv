@@ -78,6 +78,7 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
 	    std::map<int, Connection*> connections = it->GetCoonections();
         for (std::map<int, Connection*>::iterator conn_it = connections.begin(); conn_it != connections.end(); ++conn_it)
         {
+            
             if (timout){
                 if(check_fd_timeout(conn_it->second->get_last_access_time()))
                     it->closeConnection(conn_it->first);
@@ -133,6 +134,7 @@ void ServerSetup(ParsingConfig &Config)
 
         for (int index = 0; index < epollEventsNumber; index++)
         {
+            
             Server CurrentServer;
             Connection *CurrentConnection;
             if (evenBuffer[index].events & EPOLLIN)
@@ -166,8 +168,10 @@ void ServerSetup(ParsingConfig &Config)
                 CurrentConnection->set_last_access_time(current_time());
                 CurrentConnection->generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.hostGetter() 
                     ,CurrentServer.GetPort(CurrentConnection->getsocketserver()),CurrentConnection->get_last_access_time());
+                    
                 if(CurrentConnection->getStatus() == SENDING_RESPONSE)
                 {
+                    
                     CurrentConnection->getEpollFd().events = EPOLLOUT;
                     if (epoll_ctl(epollInstance, EPOLL_CTL_MOD, evenBuffer[index].data.fd, &CurrentConnection->getEpollFd()) == -1) {
                         std::cerr << "Failed to register for EPOLLOUT: " << strerror(errno) << std::endl;

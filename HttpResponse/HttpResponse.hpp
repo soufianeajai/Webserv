@@ -29,6 +29,7 @@ private:
     std::string PWD;
     int pipefd[2];
     pid_t pid;
+    time_t currenttime; 
 
     // cgi
     /* example full url possible
@@ -52,11 +53,11 @@ public:
     //int getpipe() const;
     //size_t getOffset();
     void ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, 
-                 Status& status,std::string& host, uint16_t port);
-    void printResponse();
+                 Status& status,std::string& host, uint16_t port, time_t currenttime);
+    void handleRequest(std::string& host, uint16_t port,HttpRequest & request);
     //void HttpResponse::resolveRequestPath(HttpRequest& request, Route& route, std::string& uri, std::string& host, uint16_t port)
     std::string getMimeType(const std::string& filePath) const;
-    void addHeaders();
+    void addHeaders(std::string size, std::string mime);
     void UpdateStatueCode(int code);
     void handleRedirection(const Route &route);
     //void handleError(std::map<int, std::string>& errorPages);
@@ -65,11 +66,11 @@ public:
     void GeneratePageIndexing(std::string& fullpath, std::string& uri, std::vector<std::string>& files);
     //size_t getSendbytes();
     int executeCGI();
-    int parentProcess(time_t currenttime);
+    int parentProcess();
     void sendCgi(int clientSocketId, Status& status);
     void createEnvChar(HttpRequest& request, std::string& uri,const std::string& host,const std::string& port);
     void CheckExistingInServer();
     void GetFullPathCmd(const std::string& ext);
-    void sendData(int clientSocketId, Status& status, time_t currenttime); // this for building and set it in send syscall
+    void sendData(int clientSocketId, Status& status); // this for building and set it in send syscall
 };
 

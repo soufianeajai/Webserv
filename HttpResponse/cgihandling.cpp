@@ -50,7 +50,7 @@ void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path,std::map<s
             path_info = /test/more/path                
     */
 
-int HttpResponse::parentProcess(time_t currenttime)
+int HttpResponse::parentProcess()
 {
     int status;
     char buffer[1024];
@@ -60,7 +60,7 @@ int HttpResponse::parentProcess(time_t currenttime)
         return(std::cout << "Error pipe no: "<<strerror(errno)<<std::endl,close(pipefd[0]),1);
     while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
         cgiOutput.append(buffer, buffer + bytesRead);
-
+    std::cout << "_________________________alo time :"<<static_cast<time_t>(time(NULL)) - currenttime<<"\n";
     if (static_cast<time_t>(time(NULL)) - currenttime > TIMEOUT)
         return (kill(pid, SIGKILL),close(pipefd[0]), 1); // need update it to timeout page !!
     if (res > 0) 
@@ -90,8 +90,8 @@ int HttpResponse::executeCGI()
         return(std::cout << "Error: "<<strerror(errno)<<std::endl,1);
     if (pid == 0)
     {
-        std::cout << "path: "<<PathCmd<<"\n";
-        std::cout << "path: "<<Page<<"\n";
+        //std::cout << "path: "<<PathCmd<<"\n";
+        //std::cout << "path: "<<Page<<"\n";
         close(pipefd[0]);
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]); 

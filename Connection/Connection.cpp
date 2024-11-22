@@ -131,13 +131,15 @@ void Connection::generateResponse(std::map<int, std::string> &errorPages,std::st
     // std::cout << "status :  "<< status<< ".\n";
     if (status == GENARATE_RESPONSE)
     {
-        std::cout << "generate data ...\n";
-        response.ResponseGenerating(request, errorPages, status,host,port);
+       // std::cout << "generate data ... "<<currenttime<<"\n";
+        response.ResponseGenerating(request, errorPages, status,host,port, currenttime);
+        
     
     }else if (status == SENDING_RESPONSE)
     {
-        std::cout << "sending data ...\n";
-        response.sendData(clientSocketId, status, currenttime);
+        
+        response.sendData(clientSocketId, status);
+        std::cout << "data sended...\n";
     }
 }
 

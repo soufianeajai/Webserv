@@ -9,8 +9,27 @@
 //fulfilled
 //5xx (Server Error): The server failed to fulfill an apparently
 //valid request
+// size_t HttpResponse::getOffset()
+// {
+//     return offset;
+// }
+// bool HttpResponse::getCgi() const
+// {
+//     return cgi;
+// }
+// pid_t HttpResponse::getPid() const
+// {
+//     return pid;
+// }
+// int HttpResponse::getpipe() const
+// {
+//     if (cgi)
+//         return pipefd[0];
+//     return -1;
+// }
 
-std::string getPWDVariable() {
+std::string getPWDVariable()
+{
     for (char** current = environ; *current != NULL; ++current)
     {
         if (std::strncmp(*current, "PWD=", 4) == 0)
@@ -19,7 +38,7 @@ std::string getPWDVariable() {
     return ""; // Return an empty string if PATH is not found
 }
 
-HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable())
+HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable()),currenttime(0)
 {
     mimeTypes["html"] = "text/html";
     mimeTypes["css"] = "text/css";
@@ -45,28 +64,6 @@ std::string intToString(size_t number)
     return ss.str();
 }
 
-// size_t HttpResponse::getOffset()
-// {
-//     return offset;
-// }
-
-// bool HttpResponse::getCgi() const
-// {
-//     return cgi;
-// }
-
-// pid_t HttpResponse::getPid() const
-// {
-//     return pid;
-// }
-
-// int HttpResponse::getpipe() const
-// {
-//     if (cgi)
-//         return pipefd[0];
-//     return -1;
-// }
-
 std::string getCurrentTimeFormatted()
 {
     time_t rawTime;
@@ -90,8 +87,6 @@ void HttpResponse::handleRedirection(const Route &route)
         UpdateStatueCode(404);
 }
 
-
-
 void HttpResponse::UpdateStatueCode(int code)
 {
     statusCode = code;
@@ -109,19 +104,6 @@ void HttpResponse::UpdateStatueCode(int code)
         case 404: reasonPhrase = "Not Found"; break;
         case 405: reasonPhrase = "Method Not Allowed"; break;
         case 500: reasonPhrase = "Internal Server Error"; break;
-        /*
-            for 500 :
-            Scenario:
-            The server has the necessary CGI functionality installed 
-            (e.g., PHP-FPM or another CGI handler for PHP), 
-            but the location configuration in the server (e.g., NGINX)
-             does not specify how to handle .php files.
-
-            501
-            example : 
-            It would indicate that the CGI functionality is not implemented 
-            for that file extension or type.
-        */
         case 501: reasonPhrase = "501 Not Implemented"; break; // for Unsupported CGI Extension
         case 505: reasonPhrase = "HTTP Version Not Supported"; break;
         case 201: reasonPhrase = "Created"; break;
@@ -137,7 +119,6 @@ void HttpResponse::UpdateStatueCode(int code)
     std::ifstream file(Page.c_str());
     if (!file.is_open())
     {
-        std::cout << "\n-1\n";
         totaSize = -1; // this is last part we can do after check for error response , set it to -1 , then we check it in send response if equal to -1 so close connection no body for client !!
         return ;
     }
@@ -179,7 +160,6 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
         UpdateStatueCode(404);
         return;
     }
-    // Open the directory
     DIR* dir = opendir(fullpath.c_str());
     if (!dir) {
         std::cerr << "Error: Unable to open directory." << std::endl;
@@ -199,18 +179,11 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
     GeneratePageIndexing(fullpath,uri, files);
 }
 
-void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages
-                    , Status& status,std::string& host, uint16_t port)
+void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & request)
 {
-    // std::cout << "detection : uri"<<request.getUri()<< " query: "<<request.getQuery()<<"\n";
-    //  std::cout << "detection : host"<<host<< " port string: "<<intToString(port)<<"\n";
-    defaultErrors = errorPages;
+    UpdateStatueCode(request.GetStatusCode());
     std::string uri = request.getUri();
     Route& route = request.getCurrentRoute();
-    version = request.getVersion();
-    //cgi = !route.getCgiExtensions().empty();
-    std::set<std::string> allowedMethods =route.getAllowedMethods();
-    UpdateStatueCode(request.GetStatusCode());
     route.setRoot(PWD + route.getRoot());
     if(request.getUri().empty())
         uri = request.getUri() + "/";
@@ -222,13 +195,9 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
             {
                 Page =  route.getRoot() + "/" + route.getDefaultFile();
                 uri += (uri[uri.size() - 1] != '/') ? "/" +  route.getDefaultFile() : route.getDefaultFile(); // need delete this
-                //std::cout << "\ndefault\n";
             }
             else if(route.getAutoindex())
-            {
-               // std::cout << "\nindexing: "<<route.getRoot();
                 HandleIndexing(route.getRoot(),request.getUri());
-            }
             else
                 UpdateStatueCode(404);
         }
@@ -240,57 +209,56 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
                 uri.erase(0, route.getPath().size());
                 Page = route.getRoot() + uri;
                 uri = request.getUri();
-                // std::cout << "1 URI: \"" << uri << "\"" << std::endl;
-                // std::cout << "1 Path: \"" << route.getPath() << "\"" << std::endl;
-                // std::cout << "1 PAGE: \"" << Page << "\"" << std::endl;
             }
             else
                 UpdateStatueCode(404);
         }
+        (void)port;(void)host;
         checkIfCGI(request,Page, route.getCgiExtensions(), uri, host, intToString(port));
-        // std::cout << "2 URI: \"" << uri << "\"" << std::endl;
-        // std::cout << "2 Path: \"" << route.getPath() << "\"" << std::endl;
-        // std::cout << "2 PAGE: \"" << Page << "\"" << std::endl;  
     }
     else if (statusCode ==  204)
-    {
         std::cout << "[DELETE data]\n";
-    }
-    else
-        UpdateStatueCode(404);
-    
     if(route.getIsRedirection())
         handleRedirection(route);
     CheckExistingInServer();
-    
-    if (!route.getCgiExtensions().empty() && statusCode < 202)
-    {
-        if (cgi)
-        {
-            int res = executeCGI();
-            std::cout <<"exist cgi in this script <<"<<res<<">>\n";
-            if (res == 1)
-                UpdateStatueCode(500);
-            else
-            {
-                status = SENDING_RESPONSE;
-                return ;
-            }
-        }
-        else
-            std::cout << "no exist\n";
-    }
-    headers["Content-Length"] =  intToString(totaSize);
-    if (!cgi)
-        headers["Content-Type"] =  getMimeType(Page);
-    else
-        headers["Content-Type"] = "text/html";
+}
+
+void HttpResponse::addHeaders(std::string size, std::string mime)
+{
+    headers["Content-Length"] =  size;
+    headers["Content-Type"] = mime;
     headers["Date"] =  getCurrentTimeFormatted();
     headers["Server"] =  "WebServ 1337";  
     headers["Connection"] = "close";
+}
+
+void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages
+                    , Status& status,std::string& host, uint16_t port, time_t currenttime)
+{
+    this->currenttime = currenttime;
+    defaultErrors = errorPages;
+    version = request.getVersion();
+    
+    handleRequest(host,port, request);
+    std::cout << "page : "<<Page<<"cgi detected : "<<cgi<<"\n";
+    // if (!route.getCgiExtensions().empty() && statusCode < 202)
+    // {
+    //     if (cgi)
+    //     {
+    //         int res = executeCGI();
+    //         if (res == 1)
+    //             UpdateStatueCode(500);
+    //         else
+    //         {
+    //             status = SENDING_RESPONSE;
+    //             return ;
+    //         }
+    //     }
+    //     else
+    //         std::cout << "no exist\n";
+    // }
+    addHeaders(intToString(totaSize),getMimeType(Page));
     status = SENDING_RESPONSE;
-    //std::cout << "\npage->>>>>> : "<<Page<<" "<<uri<< "cgi ? : "<<cgi<<"\n";
-    //sendData(clientSocketId, status);
 }
 
 

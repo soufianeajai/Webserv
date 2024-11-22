@@ -1,6 +1,6 @@
 #include "HttpResponse.hpp"
 #include "../Connection/Connection.hpp"
-void HttpResponse::sendData(int clientSocketId, Status& status, time_t currenttime)
+void HttpResponse::sendData(int clientSocketId, Status& status)
 {
     ssize_t SentedBytes = 0;
     std::vector<uint8_t> response;
@@ -32,15 +32,14 @@ void HttpResponse::sendData(int clientSocketId, Status& status, time_t currentti
         if (cgi)
         {
             
-            statusChild = parentProcess(currenttime);
-            std::cout << "we are in cgi status: "<<statusChild<<"\n";
+            statusChild = parentProcess();
+            //std::cout << "we are in cgi status: "<<statusChild<<"\n";
             if (statusChild == -1)
                 return;
             else if (statusChild == 1)
             {
-                cgi =  false;
                 UpdateStatueCode(500);
-                sendData(clientSocketId,status,currenttime);
+                sendData(clientSocketId,status);
             }
             else if (!statusChild)
                 sendCgi(clientSocketId, status);
