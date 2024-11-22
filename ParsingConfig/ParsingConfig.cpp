@@ -94,7 +94,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                 return true;  // Indicate that "server" was found to all recursive calls
             }
             else if (arr[0] == "host:" || arr[0] == "port:"
-                || arr[0] == "server_names:" || arr[0] == "server_root:"
+                || arr[0] == "server_names:"
                 || arr[0] == "error_page:" || arr[0] == "client_body_size:")
             {
                 FILE.seekg(-str.length() - 1, std::ios_base::cur); // Go back one line
