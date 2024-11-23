@@ -393,7 +393,7 @@ ParsingConfig parsingConfig(const char *configFile)
                         }
                         int ErrorCode = numberConversion(arr[1]);
                         if (ErrorCode != 400 && ErrorCode != 403 && ErrorCode != 404
-                            && ErrorCode != 405 && ErrorCode != 500 && ErrorCode != 505)
+                            && ErrorCode != 405 && ErrorCode != 500  && ErrorCode != 504 &&  ErrorCode != 505)
                             ft_error("Error: invalid error page code", FILE);
                         server.errorPagesSetter(numberConversion(arr[1]), arr[2]);
                     }

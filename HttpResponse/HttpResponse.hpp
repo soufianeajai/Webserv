@@ -48,8 +48,8 @@ private:
 
 public:
     HttpResponse();
-    //bool getCgi() const;
-    //pid_t getPid() const;
+    bool getCgi() const;
+    pid_t getPid() const;
     //int getpipe() const;
     //size_t getOffset();
     void ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, 
@@ -61,7 +61,7 @@ public:
     void UpdateStatueCode(int code);
     void handleRedirection(const Route &route);
     //void handleError(std::map<int, std::string>& errorPages);
-    void checkIfCGI(HttpRequest& request, std::string& path, std::map<std::string, std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port);
+    void checkIfCGI(std::string& path, std::map<std::string, std::string> ExtensionsConfig );
     void HandleIndexing(std::string fullpath, std::string& uri);
     void GeneratePageIndexing(std::string& fullpath, std::string& uri, std::vector<std::string>& files);
     //size_t getSendbytes();
@@ -72,5 +72,6 @@ public:
     void CheckExistingInServer();
     void GetFullPathCmd(const std::string& ext);
     void sendData(int clientSocketId, Status& status); // this for building and set it in send syscall
+    void SendHeaders(int clientSocketId, Status& status);
 };
 

@@ -13,14 +13,14 @@
 // {
 //     return offset;
 // }
-// bool HttpResponse::getCgi() const
-// {
-//     return cgi;
-// }
-// pid_t HttpResponse::getPid() const
-// {
-//     return pid;
-// }
+bool HttpResponse::getCgi() const
+{
+    return cgi;
+}
+pid_t HttpResponse::getPid() const
+{
+    return pid;
+}
 // int HttpResponse::getpipe() const
 // {
 //     if (cgi)
@@ -38,7 +38,7 @@ std::string getPWDVariable()
     return ""; // Return an empty string if PATH is not found
 }
 
-HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable()),currenttime(0)
+HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable()),pid(-1),currenttime(0)
 {
     mimeTypes["html"] = "text/html";
     mimeTypes["css"] = "text/css";
@@ -104,7 +104,8 @@ void HttpResponse::UpdateStatueCode(int code)
         case 404: reasonPhrase = "Not Found"; break;
         case 405: reasonPhrase = "Method Not Allowed"; break;
         case 500: reasonPhrase = "Internal Server Error"; break;
-        case 501: reasonPhrase = "501 Not Implemented"; break; // for Unsupported CGI Extension
+        case 501: reasonPhrase = "Not Implemented"; break; // for Unsupported CGI Extension
+        case 504: reasonPhrase = "Gateway Timeout";break;
         case 505: reasonPhrase = "HTTP Version Not Supported"; break;
         case 201: reasonPhrase = "Created"; break;
         case 204: reasonPhrase = "No Content"; break;
@@ -205,7 +206,6 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
         {
             if (route.getPath() != "/" && uri.find(route.getPath()) == 0)
             {
-                
                 uri.erase(0, route.getPath().size());
                 Page = route.getRoot() + uri;
                 uri = request.getUri();
@@ -213,14 +213,15 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
             else
                 UpdateStatueCode(404);
         }
-        (void)port;(void)host;
-        checkIfCGI(request,Page, route.getCgiExtensions(), uri, host, intToString(port));
+        checkIfCGI(Page, route.getCgiExtensions());
     }
     else if (statusCode ==  204)
         std::cout << "[DELETE data]\n";
     if(route.getIsRedirection())
         handleRedirection(route);
     CheckExistingInServer();
+    if (cgi)
+        createEnvChar(request, uri, host, intToString(port));
 }
 
 void HttpResponse::addHeaders(std::string size, std::string mime)
@@ -238,9 +239,15 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
     this->currenttime = currenttime;
     defaultErrors = errorPages;
     version = request.getVersion();
-    
     handleRequest(host,port, request);
-    std::cout << "page : "<<Page<<"cgi detected : "<<cgi<<"\n";
+    std::cout << "page : "<<Page<<" , cgi detected : "<<cgi<<"\n";
+    if (cgi)
+    {
+        int res = executeCGI();
+        if (res == 1)
+            UpdateStatueCode(500);
+        
+    }  
     // if (!route.getCgiExtensions().empty() && statusCode < 202)
     // {
     //     if (cgi)

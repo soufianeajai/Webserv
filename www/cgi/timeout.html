@@ -3,57 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timeout Error</title>
+    <title>CGI Timeout</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
+            background-color: #f8d7da;
+            color: #721c24;
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
+            text-align: center;
         }
         .container {
-            text-align: center;
-            background-color: #fff;
-            padding: 30px;
+            background-color: white;
+            padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 400px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
         }
         h1 {
-            color: #e74c3c;
-            font-size: 36px;
+            font-size: 2rem;
+            margin-bottom: 20px;
         }
         p {
-            font-size: 18px;
-            margin: 20px 0;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
         }
-        .btn {
-            display: inline-block;
-            background-color: #3498db;
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 5px;
+        a {
+            font-size: 1rem;
+            color: #007bff;
             text-decoration: none;
-            font-size: 16px;
-            margin-top: 20px;
         }
-        .btn:hover {
-            background-color: #2980b9;
+        a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h1>Timeout Error</h1>
-        <p>Unfortunately, the request has timed out due to a delay in processing the script.</p>
-        <p>Please try again later, or contact support if the issue persists.</p>
-        <a href="/" class="btn">Go Back to Home</a>
+        <h1>CGI Timeout</h1>
+        <p>Unfortunately, the CGI script has timed out. This can happen if the server took too long to process your request.</p>
+        <p>Please try again later or contact the administrator if the issue persists.</p>
+        <p><a href="/">Go Back to Home</a></p>
     </div>
-
 </body>
 </html>

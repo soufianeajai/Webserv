@@ -20,8 +20,12 @@ time_t current_time()
 bool check_fd_timeout(time_t last_access_time)
 {
     time_t current_time_val = current_time();
+    //std::cout << "___________connection time: "<<last_access_time<< ", def: "<<current_time_val - last_access_time<<"_______\n";
     if (current_time_val - last_access_time > TIMEOUT)
+    {
+        std::cout << "timeout\n";
         return true;
+    }
     return false;
 }
 
@@ -79,9 +83,17 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
         for (std::map<int, Connection*>::iterator conn_it = connections.begin(); conn_it != connections.end(); ++conn_it)
         {
             
-            if (timout){
+            if (timout)
+            {
                 if(check_fd_timeout(conn_it->second->get_last_access_time()))
+                {
+                    if(conn_it->second->getResponse().getPid() != -1)
+                    {
+                        std::cout <<"ps killed\n";
+                        kill(conn_it->second->getResponse().getPid() , SIGKILL);
+                    }
                     it->closeConnection(conn_it->first);
+                }
             }
             else
                 it->closeConnection(conn_it->first);
@@ -118,7 +130,7 @@ void ServerSetup(ParsingConfig &Config)
                 ft_error("Failed to set SO_REUSEADDR",SocketId);
             it->setIpaddress(it->hostGetter());
 			bindAndListen(SocketId, ports[i], it->getIpaddress());
-			initializeSocketEpoll(epollInstance, SocketId, POLLIN);
+			initializeSocketEpoll(epollInstance, SocketId, EPOLLIN);
             it->serverSocketSetter(ports[i], SocketId);
 		}
     }
@@ -134,7 +146,7 @@ void ServerSetup(ParsingConfig &Config)
 
         for (int index = 0; index < epollEventsNumber; index++)
         {
-            
+            //std::cout<< " index: "<<index <<" epoolevents: "<<epollEventsNumber<<".\n";
             Server CurrentServer;
             Connection *CurrentConnection;
             if (evenBuffer[index].events & EPOLLIN)
@@ -184,6 +196,7 @@ void ServerSetup(ParsingConfig &Config)
                         std::cout << "Error: "<<strerror(errno)<<std::endl;
                 }
             }
+            
         }
         clearConnections(Servers, true);
     }

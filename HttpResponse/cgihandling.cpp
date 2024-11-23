@@ -15,7 +15,7 @@ std::string HttpResponse::getMimeType(const std::string& filePath) const
 }
 
 
-void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path,std::map<std::string, std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port)
+void HttpResponse::checkIfCGI( std::string& path,std::map<std::string, std::string> ExtensionsConfig)
 {
     for (std::map<std::string, std::string>::const_iterator it = ExtensionsConfig.begin(); it != ExtensionsConfig.end(); ++it)
     {
@@ -36,8 +36,6 @@ void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path,std::map<s
             break; 
         }
     }
-    if (cgi)
-        createEnvChar(request, uri, host, port);
     // for (size_t i = 0; i < envVars.size() && envVars[i] != NULL; ++i)
     //     std::cout << envVars[i] << std::endl;
 }
@@ -55,14 +53,15 @@ int HttpResponse::parentProcess()
     int status;
     char buffer[1024];
     ssize_t bytesRead;
+    fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
     pid_t res = waitpid(pid, &status, WNOHANG);
     if (res == -1)
         return(std::cout << "Error pipe no: "<<strerror(errno)<<std::endl,close(pipefd[0]),1);
     while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
-        cgiOutput.append(buffer, buffer + bytesRead);
-    std::cout << "_________________________alo time :"<<static_cast<time_t>(time(NULL)) - currenttime<<"\n";
-    if (static_cast<time_t>(time(NULL)) - currenttime > TIMEOUT)
-        return (kill(pid, SIGKILL),close(pipefd[0]), 1); // need update it to timeout page !!
+    {
+        body.insert(body.end(), buffer, buffer + bytesRead);
+        std::cout << "___________parent read bytes: "<<bytesRead<<" ____________\n";
+    }
     if (res > 0) 
     {
         std::cout << "finish child\n";
@@ -74,15 +73,17 @@ int HttpResponse::parentProcess()
         else
             return(std::cerr << "CGI did not terminate normally.\n",close(pipefd[0]),500);
         close(pipefd[0]);
-        totaSize = cgiOutput.size();
+        totaSize = body.size();
         return 0;
     }
+    if (static_cast<time_t>(time(NULL)) - currenttime > TIMEOUT)
+        return 1;
     return -1;
 }
 
 int HttpResponse::executeCGI()
 {
-    fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
+    
     if (pipe(pipefd) == -1)
         return(std::cout << "Error: "<<strerror(errno)<<std::endl,1);
     pid = fork();
@@ -96,11 +97,17 @@ int HttpResponse::executeCGI()
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]); 
         char* argv[] = {const_cast<char*>(PathCmd.c_str()), const_cast<char*>(Page.c_str()), NULL};
-        execve(PathCmd.c_str(), argv, &envVars[0]);
-        std::cout << "Error: "<<strerror(errno)<<std::endl;
-        exit(1);
+        if (execve(PathCmd.c_str(), argv, &envVars[0]) == -1)
+        {
+            std::cout << "Error: "<<strerror(errno)<<std::endl;
+            close(pipefd[1]);
+            exit(1);
+        }
     }
-    close(pipefd[1]);
+    else{ // Parent process
+        close(pipefd[1]); // Close the write end of the pipe
+        // The parent will read from the pipe in the senddata function
+    }
     return 0;
 }
 
@@ -147,7 +154,7 @@ void HttpResponse::sendCgi(int clientSocketId, Status& status)
     size_t chunkSize = (totaSize - offset < Connection::CHUNK_SIZE) 
                    ? (totaSize - offset) 
                    : Connection::CHUNK_SIZE;
-    SentedBytes = send(clientSocketId, &cgiOutput[offset], chunkSize, MSG_NOSIGNAL);
+    SentedBytes = send(clientSocketId, &body[offset], chunkSize, MSG_NOSIGNAL);
     if (SentedBytes < 0)
     { 
          std::cerr << "Send failed to client " << clientSocketId 
