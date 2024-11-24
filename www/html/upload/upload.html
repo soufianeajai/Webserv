@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+</head>
+<body>
+    <h1>Upload a File</h1>
+    <input type="file" id="fileInput" required>
+    <button onclick="uploadFile()">Upload</button>
+
+    <script>
+        function uploadFile() {
+            const fileInput = document.getElementById("fileInput");
+
+            if (!fileInput.files.length) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            const file = fileInput.files[0];
+
+            fetch("http://localhost:2020/upload", { // Replace with your server URL
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/octet-stream",
+                    "Content-Disposition": `attachment; filename="${encodeURIComponent(file.name)}"`
+                },
+                body: file
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("File uploaded successfully!");
+                } else {
+                    alert("File upload failed. Status: " + response.status);
+                }
+            })
+            .catch(err => {
+                alert("An error occurred during the upload: " + err.message);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -10,7 +10,7 @@
 #define DEFAULTDELETE "www/html/defaultpagedelete.html"
 #define DEFAULTINDEX "www/html/indexing.html"
 extern char **environ; 
-#define TIMEOUT 2
+#define TIMEOUT 5
 class HttpResponse :  public HttpMessage{
 private:
     int statusCode;
@@ -23,11 +23,14 @@ private:
     bool   headerSended;
     bool cgi;
     std::vector<char*> envVars;
-    std::string cgiOutput; // delete
-    std::string bodyCgi;
-    std::string headersCgi;
+    std::vector<uint8_t> cgiOutput; // delete
     std::string PathCmd;
     std::string PATH_INFO;
+    std::string PWD;
+    int pipefd[2];
+    pid_t pid;
+    time_t currenttime;
+    bool ChildFInish; 
 
     // cgi
     /* example full url possible
@@ -46,28 +49,29 @@ private:
 
 public:
     HttpResponse();
-    //bool getCgi() const;
-    //pid_t getPid() const;
+    bool getCgi() const;
+    pid_t getPid() const;
     //int getpipe() const;
     //size_t getOffset();
     void ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, 
-            int clientSocketId, Status& status,std::string& host, uint16_t port,time_t currenttime);
-    //void initResponse(const Route &route,std::map<int, std::string> &errorPage, int code,const std::string &query, const std::string UrlRequest, const std::string method);    
+                 Status& status,std::string& host, uint16_t port, time_t currenttime);
+    void handleRequest(std::string& host, uint16_t port,HttpRequest & request);
+    //void HttpResponse::resolveRequestPath(HttpRequest& request, Route& route, std::string& uri, std::string& host, uint16_t port)
     std::string getMimeType(const std::string& filePath) const;
-    void addHeaders();
     void UpdateStatueCode(int code);
     void handleRedirection(const Route &route);
     //void handleError(std::map<int, std::string>& errorPages);
-    void checkIfCGI(HttpRequest& request, std::string& path, std::map<std::string, std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port);
+    void checkIfCGI(std::string& path, std::map<std::string, std::string> ExtensionsConfig );
     void HandleIndexing(std::string fullpath, std::string& uri);
     void GeneratePageIndexing(std::string& fullpath, std::string& uri, std::vector<std::string>& files);
     //size_t getSendbytes();
-    int executeCGI(time_t currenttime);
-    int parentProcess(int pipefd[],pid_t pid,time_t currenttime);
+    int executeCGI();
+    int parentProcess();
     void sendCgi(int clientSocketId, Status& status);
     void createEnvChar(HttpRequest& request, std::string& uri,const std::string& host,const std::string& port);
     void CheckExistingInServer();
-    void GetFullPathCmd(const std::string& ext);
-    void buildResponseBuffer(int clientSocketId, Status& status); // this for building and set it in send syscall
+    void sendData(int clientSocketId, Status& status); // this for building and set it in send syscall
+    void SendHeaders(int clientSocketId, Status& status,std::vector<uint8_t>& heads);
+    void ExtractHeaders();
 };
-
+std::string intToString(size_t number);

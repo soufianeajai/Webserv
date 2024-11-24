@@ -1,7 +1,6 @@
 #include "HttpResponse.hpp"
 #include "../Connection/Connection.hpp"
 
-
 std::string HttpResponse::getMimeType(const std::string& filePath) const
 {
     size_t pos = filePath.find_last_of('.');
@@ -15,7 +14,7 @@ std::string HttpResponse::getMimeType(const std::string& filePath) const
 }
 
 
-void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path,std::map<std::string, std::string> ExtensionsConfig, std::string& uri,const std::string& host,const std::string& port)
+void HttpResponse::checkIfCGI( std::string& path,std::map<std::string, std::string> ExtensionsConfig)
 {
     for (std::map<std::string, std::string>::const_iterator it = ExtensionsConfig.begin(); it != ExtensionsConfig.end(); ++it)
     {
@@ -36,10 +35,8 @@ void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path,std::map<s
             break; 
         }
     }
-    if (cgi)
-        createEnvChar(request, uri, host, port);
-    for (size_t i = 0; i < envVars.size() && envVars[i] != NULL; ++i)
-        std::cout << envVars[i] << std::endl;
+    // for (size_t i = 0; i < envVars.size() && envVars[i] != NULL; ++i)
+    //     std::cout << envVars[i] << std::endl;
 }
 
 /* Find the position of the '?' and pos of / to get script name
@@ -50,64 +47,146 @@ void HttpResponse::checkIfCGI(HttpRequest& request, std::string& path,std::map<s
             path_info = /test/more/path                
     */
 
-int HttpResponse::parentProcess(int pipefd[],pid_t pid,time_t currenttime)
+bool parseCGIOutput(const std::vector<uint8_t>& cgiOutput, std::vector<uint8_t>& headers, std::vector<uint8_t>& body)
+{
+    const uint8_t delimiter[] = {'\r', '\n', '\r', '\n'};
+    const size_t delimiterLength = 4;
+
+    for (size_t i = 0; i + delimiterLength <= cgiOutput.size(); ++i)
+    {
+        if (cgiOutput[i] == delimiter[0] &&
+            cgiOutput[i + 1] == delimiter[1] &&
+            cgiOutput[i + 2] == delimiter[2] &&
+            cgiOutput[i + 3] == delimiter[3])
+        {
+            size_t headerEnd = i + delimiterLength;
+            headers.assign(cgiOutput.begin(), cgiOutput.begin() + headerEnd);
+            if (headerEnd < cgiOutput.size())
+                body.assign(cgiOutput.begin() + headerEnd, cgiOutput.end());
+            else
+                body.clear();
+            std::cout << "exist delimiter ********** headerEnd: "<<headerEnd<< " cgiOutput.size(): "<<cgiOutput.size()<<"\n";
+            std::cout << "__________ cgi body output________\n";
+            for(size_t i =0;i < body.size();i++)
+            {
+                std::cout << body[i];
+            }
+            std::cout << "____________ end of body output __________\n";
+            return true;
+        }
+    }
+    std::cout << "_______ no delimiter!!!!!!!!!!!!!! ______\n";
+    body.assign(cgiOutput.begin(), cgiOutput.end());
+    return false;
+}
+
+std::string trim(const std::string& str)
+{
+    size_t start = 0;
+    while (start < str.size() && std::isspace(static_cast<unsigned char>(str[start])))
+        ++start;
+
+    size_t end = str.size();
+    while (end > start && std::isspace(static_cast<unsigned char>(str[end - 1])))
+        --end;
+    return str.substr(start, end - start);
+}
+
+void HttpResponse::ExtractHeaders()
+{
+    std::vector<uint8_t> heads;
+    std::cout << "____ we are in extract headers . size cgi: "<<cgiOutput.size()<<"\n";
+    if (parseCGIOutput(cgiOutput,heads,body))
+    {
+        std::string headerStr(heads.begin(), heads.end());
+        size_t startPos = 0;
+        size_t endPos = 0;
+        while ((endPos = headerStr.find("\r\n", startPos)) != std::string::npos)
+        {
+            std::string line = headerStr.substr(startPos, endPos - startPos); 
+            startPos = endPos + 2;
+            if (line.empty())
+                continue; 
+            size_t delimiterPos = line.find(":");  
+            if (delimiterPos != std::string::npos)
+            {
+                std::string key = trim(line.substr(0, delimiterPos));
+                std::string value = trim(line.substr(delimiterPos + 1));
+                headers[key] = value;
+                std::cout << "+++++++++++++ key :"<<key<<" ++++++  value : "<<value<<"\n";
+            }                 
+        }        
+    }
+
+     std::cout << "____ end extract headers . size body: "<<body.size()<<"\n";
+    headers["Content-Length"] =  intToString(body.size());
+    totaSize = body.size();
+}
+
+int HttpResponse::parentProcess()
 {
     int status;
     char buffer[1024];
     ssize_t bytesRead;
-    close(pipefd[1]);
-    while(true)
-    {
-        pid_t res = waitpid(pid, &status, WNOHANG);
-        if (res == -1)
-            return(std::cout << "Error: "<<strerror(errno)<<std::endl,close(pipefd[0]),500);
-        
-        if (res > 0) 
-        {
-            if (WIFEXITED(status))
-            {   
-                if (WEXITSTATUS(status) != 0)
-                    return(std::cerr << "CGI exited with error code: " << WEXITSTATUS(status) << std::endl,close(pipefd[0]),500);
-            }
-            else
-                return(std::cerr << "CGI did not terminate normally.\n",close(pipefd[0]),500);
-            break;
-        }
-         fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
-        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
-            cgiOutput.append(buffer, buffer + bytesRead);
-        if (static_cast<time_t>(time(NULL)) - currenttime > TIMEOUT)
-            return (kill(pid, SIGKILL),close(pipefd[0]), 500); // need update it to timeout page !!
-    }
+    fcntl(pipefd[0], F_SETFL, O_NONBLOCK);
+    pid_t res = waitpid(pid, &status, WNOHANG);
     
-    close(pipefd[0]);
-    totaSize = cgiOutput.size();
-    return 200;
+    // if (res == -1)
+    //     return(std::cout << "Error pipe no: "<<strerror(errno)<<std::endl,close(pipefd[0]),2);
+    while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
+    {
+        cgiOutput.insert(cgiOutput.end(), buffer, buffer + bytesRead);
+        std::cout << "___________parent read bytes: "<<bytesRead<<" ____________\n";
+    }
+    if (res > 0) 
+    {
+        std::cout << "finish child\n";
+
+        if (WIFEXITED(status))
+        {   
+            if (WEXITSTATUS(status) != 0)
+                return(std::cerr << "CGI exited with error code: " << WEXITSTATUS(status) << std::endl,close(pipefd[0]),2);
+        }
+        else
+            return(std::cerr << "CGI did not terminate normally.\n",close(pipefd[0]),2);
+        close(pipefd[0]);
+        ExtractHeaders();
+        ChildFInish =  true;
+        return 0;
+    }
+    if (static_cast<time_t>(time(NULL)) - currenttime > TIMEOUT)
+        return 1;
+    return -1;
 }
 
-int HttpResponse::executeCGI(time_t currenttime)
+int HttpResponse::executeCGI()
 {
-    int pipefd[2];
-    pid_t pid;
+    
     if (pipe(pipefd) == -1)
-        return(std::cout << "Error: "<<strerror(errno)<<std::endl,500);
+        return(std::cout << "Error: "<<strerror(errno)<<std::endl,1);
     pid = fork();
     if (pid == -1)
-        return(std::cout << "Error: "<<strerror(errno)<<std::endl,500);
+        return(std::cout << "Error: "<<strerror(errno)<<std::endl,1);
     if (pid == 0)
     {
-        std::cout << "path: "<<PathCmd<<"\n";
-        std::cout << "path: "<<Page<<"\n";
+        //std::cout << "path: "<<PathCmd<<"\n";
+        //std::cout << "path: "<<Page<<"\n";
         close(pipefd[0]);
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]); 
         char* argv[] = {const_cast<char*>(PathCmd.c_str()), const_cast<char*>(Page.c_str()), NULL};
-        execve(PathCmd.c_str(), argv, &envVars[0]);
-        std::cout << "Error: "<<strerror(errno)<<std::endl;
-        exit(1);
+        if (execve(PathCmd.c_str(), argv, &envVars[0]) == -1)
+        {
+            std::cout << "Error: "<<strerror(errno)<<std::endl;
+            close(pipefd[1]);
+            exit(1);
+        }
     }
-    else
-        return (parentProcess(pipefd, pid, currenttime));
+    else{ // Parent process
+        close(pipefd[1]); // Close the write end of the pipe
+        // The parent will read from the pipe in the senddata function
+    }
+    return 0;
 }
 
 
@@ -153,7 +232,8 @@ void HttpResponse::sendCgi(int clientSocketId, Status& status)
     size_t chunkSize = (totaSize - offset < Connection::CHUNK_SIZE) 
                    ? (totaSize - offset) 
                    : Connection::CHUNK_SIZE;
-    SentedBytes = send(clientSocketId, &cgiOutput[offset], chunkSize, MSG_NOSIGNAL);
+    SentedBytes = send(clientSocketId, &body[offset], chunkSize, MSG_NOSIGNAL);
+    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^ sending data :"<<SentedBytes<< " cgi :"<<cgi<<"\n";
     if (SentedBytes < 0)
     { 
          std::cerr << "Send failed to client " << clientSocketId 
@@ -168,9 +248,11 @@ void HttpResponse::sendCgi(int clientSocketId, Status& status)
         status = DONE;
         return;
     }
+    
     offset += SentedBytes;
     if (offset >= static_cast<size_t>(totaSize))
     {
+        std::cout << "############ we finish offset :"<<totaSize<<"\n";
         status = DONE;
         return;
     }
