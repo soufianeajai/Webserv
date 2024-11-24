@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Visit Count</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f0f8ff;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #28a745;
+        }
+        p {
+            font-size: 1.2rem;
+        }
+    </style>
+    <script>
+        // Function to get the value of a cookie by its name
+        function getCookie(name) {
+            const cookies = document.cookie.split('; ');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].split('=');
+                if (cookie[0] === name) {
+                    return cookie[1];
+                }
+            }
+            return null;
+        }
+
+        // Manage session and visit count
+        window.onload = function () {
+            const sessionId = getCookie('session_id');
+            const visitCountElement = document.getElementById('visit-count');
+
+            if (sessionId) {
+                // Existing session: Retrieve visit count from localStorage
+                let visitCount = localStorage.getItem(`visitCount_${sessionId}`);
+                if (!visitCount) {
+                    visitCount = 1; // First tracked visit for this session
+                } else {
+                    visitCount = parseInt(visitCount) + 1; // Increment count
+                }
+                localStorage.setItem(`visitCount_${sessionId}`, visitCount);
+
+                // Display visit count
+                visitCountElement.innerText = `This is your visit #${visitCount} during this session.`;
+            } else {
+                // No cookies: Display anonymous message
+                visitCountElement.innerText = `You are anonymous. and no session is tracked.`;
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to the Session Info Page</h1>
+        <p id="visit-count">Loading your session data...</p>
+        <p>
+            <em>Your session is securely tracked using cookies and visit counts.</em>
+        </p>
+    </div>
+</body>
+</html>

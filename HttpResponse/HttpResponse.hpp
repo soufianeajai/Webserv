@@ -9,7 +9,9 @@
 #define DEFAULTERROR "www/html/errorPages/DefaultError.html"
 #define DEFAULTDELETE "www/html/defaultpagedelete.html"
 #define DEFAULTINDEX "www/html/indexing.html"
-extern char **environ; 
+#define TOKENS "www/html/session/Posted_Data"
+extern char **environ;
+
 #define TIMEOUT 5
 class HttpResponse :  public HttpMessage{
 private:
@@ -30,7 +32,8 @@ private:
     int pipefd[2];
     pid_t pid;
     time_t currenttime;
-    bool ChildFInish; 
+    bool ChildFInish;
+    std::string Cookies;
 
     // cgi
     /* example full url possible
@@ -73,5 +76,6 @@ public:
     void sendData(int clientSocketId, Status& status); // this for building and set it in send syscall
     void SendHeaders(int clientSocketId, Status& status,std::vector<uint8_t>& heads);
     void ExtractHeaders();
+    void handleCookie(HttpRequest & request,std::string path);
 };
 std::string intToString(size_t number);

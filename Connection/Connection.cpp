@@ -133,9 +133,16 @@ void Connection::generateResponse(std::map<int, std::string> &errorPages,std::st
     {
         std::cout << "generate data ... "<<currenttime<<"\n";
         response.ResponseGenerating(request, errorPages, status,host,port, currenttime);
-        
-    
-    }else if (status == SENDING_RESPONSE)
+        std::cout << "\n________________ request headers _____________________\n";
+        std::map<std::string, std::string> h = request.getheaders();
+        std::map<std::string, std::string>::iterator it = h.begin();
+        while (it != h.end()) {
+            std::cout << it->first<< ":" << it->second <<"\n";
+            ++it;
+        }
+        std::cout << "_______________________________________________________\n";
+    }
+    else if (status == SENDING_RESPONSE)
     {
         response.sendData(clientSocketId, status);
        // std::cout << "data sended..."<< status<<"\n";

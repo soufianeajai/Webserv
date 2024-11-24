@@ -55,10 +55,5 @@ when we send a request with method not allow set 405 , see also other status cod
 
 
 
-
-
-
-split header and body from cgi using "\r\n\r\n" ,,, 
-std::getenv for cmd and also full_PATH (or we use global variabl env to add it to my env) ... ,,, post in cgi and cookies in env !!
-convert string to char * in buffer from pipe , cgi !!
-
+// post in cgi .. i get data from file !! not need variable env for post !!
+need fix problem posted data restore data dont save all cookies 

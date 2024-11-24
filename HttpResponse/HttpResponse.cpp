@@ -40,6 +40,7 @@ std::string getPWDVariable()
 
 HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable()),pid(-1),currenttime(0)
 {
+    Cookies = "";
     ChildFInish = false;
     cgiOutput.clear();
     envVars.clear();
@@ -189,6 +190,7 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
 {
     UpdateStatueCode(request.GetStatusCode());
     std::string uri = request.getUri();
+    handleCookie(request,request.getCurrentRoute().getPath());
     Route& route = request.getCurrentRoute();
     route.setRoot(PWD + route.getRoot());
     if(request.getUri().empty())
@@ -225,10 +227,75 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
     if(route.getIsRedirection())
         handleRedirection(route);
     CheckExistingInServer();
+    
     if (cgi)
         createEnvChar(request, uri, host, intToString(port));
 }
 
+std::string extractToken(const std::vector<uint8_t>& body)
+{
+    std::string formData(body.begin(), body.end());
+    std::string key = "session_id=";
+    size_t start = formData.find(key);
+    if (start == std::string::npos)
+        return "";
+    start += key.length();
+
+    // Find the next '&' or the end of the string
+    size_t end = formData.find('&', start);
+    if (end == std::string::npos) {
+        end = formData.length(); // If '&' is not found, use the string's end
+    }
+
+    // Extract the token
+    return formData.substr(start, end - start);
+}
+
+void HttpResponse::handleCookie(HttpRequest & request,std::string path)
+{
+    std::map<std::string, std::string>::iterator it = request.getheaders().find("Cookie");
+    if (path == "/session" && it ==  request.getheaders().end())
+    {
+        Cookies = extractToken(request.GetBody());
+        if (!Cookies.empty())
+            headers["Set-Cookie"] = "session_id=" + Cookies + ";" + " Path="+path;
+        return ;
+    }
+    if (it !=  request.getheaders().end())
+    {
+        std::ifstream file(TOKENS);
+        if (!file.is_open())
+            return;
+        
+        size_t start_pos = it->second.find("session_id=");
+        if (start_pos != std::string::npos)
+        {
+            start_pos += 11;
+            size_t end_pos = it->second.find(";", start_pos);
+            if (end_pos == std::string::npos)
+                end_pos = it->second.length();
+            std::string token  = it->second.substr(start_pos, end_pos - start_pos);
+            std::string line;
+            headers["Set-Cookie"] = "session_id=";
+            while (std::getline(file, line))
+            {
+                size_t start_pos = line.find("session_id=");
+                if (start_pos != std::string::npos)
+                {
+                    start_pos += 11;
+                    if (token == line.substr(start_pos,line.length()))
+                    {  
+                        Cookies = it->second;
+                        headers["Set-Cookie"] = it->second + ";" + " Path="+path;
+                        break;
+                    }
+                }
+            }
+        
+        }
+        file.close();
+    }
+}
 
 void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages
                     , Status& status,std::string& host, uint16_t port, time_t currenttime)
@@ -250,6 +317,7 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
         headers["Content-Length"] = intToString(totaSize);
     }
     headers["Date"] =  getCurrentTimeFormatted();
+    
     headers["Server"] =  "WebServ 1337";  
     headers["Connection"] = "close";
     status = SENDING_RESPONSE;

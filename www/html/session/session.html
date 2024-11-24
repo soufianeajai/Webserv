@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Our Website</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f8f9fa;
+            color: #333;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: #28a745;
+            color: white;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        em {
+            font-size: 1rem;
+            color: #6c757d;
+        }
+    </style>
+    <script>
+        // Function to send the session token to the server using key=value& format
+        async function sendSessionToken(username) {
+            // Generate a unique session token
+            const token = Math.random().toString(36).substr(2) + Date.now().toString(36);
+
+            // Prepare the data as key=value& format
+            const formData = `username=${username}&session_id=${token}`;
+
+            // Send the session token to the server (replace with your server URL)
+            const response = await fetch('/session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData,
+            });
+
+            // If the server successfully stores the session, show a welcome message
+            if (response.ok) {
+                const data = await response.text(); // Assuming the server sends a simple response text
+                document.getElementById("welcome-message").innerHTML = `Welcome, ${username}! Your session has been created.`;
+                document.getElementById("input-section").style.display = "none"; // Hide input section after submission
+            } else {
+                alert('Failed to create session. Please try again.');
+            }
+        }
+
+        function handleSubmit(event) {
+            event.preventDefault();
+            let username = document.getElementById("username").value.trim().replace(/\s+/g, '');
+            if (username) {
+                sendSessionToken(username); // Send the token to the server
+            } else {
+                alert("Please enter your username.");
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Our Website!</h1>
+        <p>
+            If you’re a new visitor, we’ve created a session for you. If you’re a returning visitor, welcome back!
+        </p>
+        <p>
+            <em>Your session is managed securely through cookies.</em>
+        </p>
+        
+        <div id="input-section">
+            <p>Please enter your username to generate a session:</p>
+            <form onsubmit="handleSubmit(event)">
+                <input type="text" id="username" placeholder="Username (no spaces)" required>
+                <button type="submit">Generate Session Token</button>
+            </form>
+        </div>
+
+        <p id="welcome-message"></p>
+    </div>
+</body>
+</html>

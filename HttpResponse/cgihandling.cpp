@@ -65,12 +65,12 @@ bool parseCGIOutput(const std::vector<uint8_t>& cgiOutput, std::vector<uint8_t>&
                 body.assign(cgiOutput.begin() + headerEnd, cgiOutput.end());
             else
                 body.clear();
-            std::cout << "exist delimiter ********** headerEnd: "<<headerEnd<< " cgiOutput.size(): "<<cgiOutput.size()<<"\n";
-            std::cout << "__________ cgi body output________\n";
-            for(size_t i =0;i < body.size();i++)
-            {
-                std::cout << body[i];
-            }
+            // std::cout << "exist delimiter ********** headerEnd: "<<headerEnd<< " cgiOutput.size(): "<<cgiOutput.size()<<"\n";
+            // std::cout << "__________ cgi body output________\n";
+            // for(size_t i =0;i < body.size();i++)
+            // {
+            //     std::cout << body[i];
+            // }
             std::cout << "____________ end of body output __________\n";
             return true;
         }
@@ -161,7 +161,7 @@ int HttpResponse::parentProcess()
 
 int HttpResponse::executeCGI()
 {
-    
+    std::cout << "execute CGI funciton _____\n";
     if (pipe(pipefd) == -1)
         return(std::cout << "Error: "<<strerror(errno)<<std::endl,1);
     pid = fork();
@@ -182,10 +182,8 @@ int HttpResponse::executeCGI()
             exit(1);
         }
     }
-    else{ // Parent process
-        close(pipefd[1]); // Close the write end of the pipe
-        // The parent will read from the pipe in the senddata function
-    }
+    else
+        close(pipefd[1]); 
     return 0;
 }
 
@@ -205,24 +203,30 @@ void HttpResponse::createEnvChar(HttpRequest& request, std::string& uri,const st
 
     //SCRIPT_FILENAME
     envVars.push_back(strdup(("SCRIPT_FILENAME=" + Page).c_str()));
-    //DOCUMENT_ROOT
-    //envVars.push_back(strdup(("DOCUMENT_ROOT=" + environ["PATH"])));
-    //PHP_SELF
+    //cookies:
+    envVars.push_back(strdup(("HTTP_COOKIE=" + Cookies).c_str()));
+    //PHP_SELF:
     envVars.push_back(strdup(("PHP_SELF=" + uri).c_str()));
-    
     envVars.push_back(strdup(("PATH_TRANSLATED=" + Page).c_str()));
     envVars.push_back(strdup(("SERVER_NAME=" + host).c_str()));
     envVars.push_back(strdup(("SERVER_PORT=" + port).c_str()));
     envVars.push_back(strdup(("SERVER_PROTOCOL=" + version).c_str()));
     envVars.push_back(strdup("SERVER_SOFTWARE=MyWebServer/1.0"));
     envVars.push_back(strdup("REDIRECT_STATUS=200"));
-    // get
+    //get
     envVars.push_back(strdup(("QUERY_STRING=" + request.getQuery()).c_str()));
-    envVars.push_back(strdup(("CONTENT_TYPE=" + request.getHeader("CONTENT_TYPE")).c_str()));
-    envVars.push_back(strdup(("CONTENT_LENGTH=" + request.getHeader("CONTENT_LENGTH")).c_str()));
-   for (int i = 0; environ[i] != NULL; ++i)
+
+    //post
+    envVars.push_back(strdup("DB_PATH=Posted_Data"));
+    // envVars.push_back(strdup(("CONTENT_TYPE=" + request.getHeader("Content-Type")).c_str()));
+    // envVars.push_back(strdup(("CONTENT_LENGTH=" + intToString(request.GetBody().size())).c_str()));
+    std::cout << "..................... env ................\n";
+    for(size_t i = 0; i < envVars.size();i++)
+        std::cout << envVars[i]<<"\n";
+    std::cout << "\n............... end env ....................\n";
+    for (int i = 0; environ[i] != NULL; ++i)
        envVars.push_back(strdup(environ[i])); 
-    envVars.push_back(NULL);
+    envVars.push_back(NULL);   
 }
 
 
