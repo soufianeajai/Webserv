@@ -40,6 +40,11 @@ std::string getPWDVariable()
 
 HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable()),pid(-1),currenttime(0)
 {
+    ChildFInish = false;
+    cgiOutput.clear();
+    envVars.clear();
+    body.clear();
+    headers.clear();
     mimeTypes["html"] = "text/html";
     mimeTypes["css"] = "text/css";
     mimeTypes["js"] = "application/javascript";
@@ -224,14 +229,6 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
         createEnvChar(request, uri, host, intToString(port));
 }
 
-void HttpResponse::addHeaders(std::string size, std::string mime)
-{
-    headers["Content-Length"] =  size;
-    headers["Content-Type"] = mime;
-    headers["Date"] =  getCurrentTimeFormatted();
-    headers["Server"] =  "WebServ 1337";  
-    headers["Connection"] = "close";
-}
 
 void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages
                     , Status& status,std::string& host, uint16_t port, time_t currenttime)
@@ -246,25 +243,15 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
         int res = executeCGI();
         if (res == 1)
             UpdateStatueCode(500);
-        
-    }  
-    // if (!route.getCgiExtensions().empty() && statusCode < 202)
-    // {
-    //     if (cgi)
-    //     {
-    //         int res = executeCGI();
-    //         if (res == 1)
-    //             UpdateStatueCode(500);
-    //         else
-    //         {
-    //             status = SENDING_RESPONSE;
-    //             return ;
-    //         }
-    //     }
-    //     else
-    //         std::cout << "no exist\n";
-    // }
-    addHeaders(intToString(totaSize),getMimeType(Page));
+    }
+    else
+    {
+        headers["Content-Type"] = getMimeType(Page);
+        headers["Content-Length"] = intToString(totaSize);
+    }
+    headers["Date"] =  getCurrentTimeFormatted();
+    headers["Server"] =  "WebServ 1337";  
+    headers["Connection"] = "close";
     status = SENDING_RESPONSE;
 }
 

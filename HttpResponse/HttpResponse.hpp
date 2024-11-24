@@ -10,7 +10,7 @@
 #define DEFAULTDELETE "www/html/defaultpagedelete.html"
 #define DEFAULTINDEX "www/html/indexing.html"
 extern char **environ; 
-#define TIMEOUT 2
+#define TIMEOUT 5
 class HttpResponse :  public HttpMessage{
 private:
     int statusCode;
@@ -23,13 +23,14 @@ private:
     bool   headerSended;
     bool cgi;
     std::vector<char*> envVars;
-    std::string cgiOutput; // delete
+    std::vector<uint8_t> cgiOutput; // delete
     std::string PathCmd;
     std::string PATH_INFO;
     std::string PWD;
     int pipefd[2];
     pid_t pid;
-    time_t currenttime; 
+    time_t currenttime;
+    bool ChildFInish; 
 
     // cgi
     /* example full url possible
@@ -57,7 +58,6 @@ public:
     void handleRequest(std::string& host, uint16_t port,HttpRequest & request);
     //void HttpResponse::resolveRequestPath(HttpRequest& request, Route& route, std::string& uri, std::string& host, uint16_t port)
     std::string getMimeType(const std::string& filePath) const;
-    void addHeaders(std::string size, std::string mime);
     void UpdateStatueCode(int code);
     void handleRedirection(const Route &route);
     //void handleError(std::map<int, std::string>& errorPages);
@@ -70,8 +70,8 @@ public:
     void sendCgi(int clientSocketId, Status& status);
     void createEnvChar(HttpRequest& request, std::string& uri,const std::string& host,const std::string& port);
     void CheckExistingInServer();
-    void GetFullPathCmd(const std::string& ext);
     void sendData(int clientSocketId, Status& status); // this for building and set it in send syscall
-    void SendHeaders(int clientSocketId, Status& status);
+    void SendHeaders(int clientSocketId, Status& status,std::vector<uint8_t>& heads);
+    void ExtractHeaders();
 };
-
+std::string intToString(size_t number);

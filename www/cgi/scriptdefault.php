@@ -1,6 +1,5 @@
 <?php
 // Set the Content-Type header
-header("Content-Type: text/html");
 
 // End of headers, now separate headers and body with "\r\n\r\n"
 echo "\r\n\r\n";

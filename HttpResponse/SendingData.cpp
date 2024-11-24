@@ -1,19 +1,18 @@
 #include "HttpResponse.hpp"
 #include "../Connection/Connection.hpp"
 
-void HttpResponse::SendHeaders(int clientSocketId, Status& status)
+void HttpResponse::SendHeaders(int clientSocketId, Status& status, std::vector<uint8_t>& heads)
 {
     ssize_t SentedBytes = 0;
-    std::vector<uint8_t> heads;
     if(!headerSended)
     {
-        headers["Content-Type"] ="text/html";
+        //headers["Content-Type"] ="text/html";
         std::ostringstream oss;
         //std::cout <<"\nbuildResponseBuffer : (status : "<<status<<") "<<clientSocketId<<" "<< version << " " << statusCode << " " << reasonPhrase <<"\n";
         oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
         for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
             oss << it->first << ": " << it->second << "\r\n";
-            oss << "\r\n";
+        oss << "\r\n";
         std::string headsStr = oss.str();
         heads.insert(heads.end(), headsStr.begin(), headsStr.end());
         std::cout << "headers added\n";
@@ -31,32 +30,33 @@ void HttpResponse::SendHeaders(int clientSocketId, Status& status)
         heads.clear();
     }
 }
+
 void HttpResponse::sendData(int clientSocketId, Status& status)
 {
     ssize_t SentedBytes = 0;
+    std::vector<uint8_t> heads;
     std::vector<uint8_t> body;
-    int statusChild;
+    int statusParent;
     try{
         
         if (cgi)
         {
-            statusChild = parentProcess();
-            std::cout << "we are in cgi status: "<<statusChild<<"\n";
-            if (statusChild == -1)
-                return;
-            else if (statusChild == 1)
+            statusParent = parentProcess();
+            if (ChildFInish)
             {
-                std::cout << "timeeeeeeeeeeeeeeeee out \n";
-                UpdateStatueCode(504);
-                //sendData(clientSocketId,status);
-            }
-            else if (!statusChild)
-            {
+                SendHeaders(clientSocketId, status, heads);
                 sendCgi(clientSocketId, status);
                 return ;
             }
+            if (statusParent == -1)
+                return;
+            else if (statusParent == 1)
+            {
+                std::cout << "timeeeeeeeeeeeeeeeee out \n";
+                UpdateStatueCode(504);
+            }
         }
-        SendHeaders(clientSocketId, status);
+        SendHeaders(clientSocketId, status, heads);
         size_t chunkSize = (totaSize < Connection::CHUNK_SIZE) ? totaSize : Connection::CHUNK_SIZE;
         std::ifstream file(Page.c_str(), std::ios::binary);
         if (!file.is_open() || totaSize == -1)
@@ -72,11 +72,10 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
         offset += chunkSize;
         if (chunkSize > 0)
         {
-            
-            for(size_t i= 0;i < body.size();i++)
-                std::cout << body[i];
+            // for(size_t i= 0;i < body.size();i++)
+            //     std::cout << body[i];
             SentedBytes = send(clientSocketId, reinterpret_cast<char*>(body.data()), chunkSize, MSG_NOSIGNAL);
-            std::cout << "___________________________________________ body added : "<<SentedBytes<<" rsponos: "<<body.size()<<"\n";
+            ///std::cout << "___________________________________________ body added : "<<SentedBytes<<" rsponos: "<<body.size()<<"\n";
             if (SentedBytes < 0)
             { 
                 std::cerr << "1 Send failed to client "<<clientSocketId << std::endl;
@@ -84,7 +83,6 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
                 status = DONE;  // handle error as needed
                 return;
             }
-            
         }
         if (chunkSize == 0 || offset >= static_cast<size_t>(totaSize))
         {

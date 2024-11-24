@@ -3,10 +3,6 @@
 import cgi
 import os
 
-# Set HTTP headers
-# print("Content-Type: text/html")
-# print()  # Blank line to indicate the end of the headers
-
 # Start of the HTML body
 print("""
 <!DOCTYPE html>
