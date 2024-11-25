@@ -223,7 +223,7 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
         checkIfCGI(Page, route.getCgiExtensions());
     }
     else if (statusCode ==  204)
-        std::cout << "[DELETE data]\n";
+        std::cout << "[DELETE data] ... "<<Page<<"\n";
     if(route.getIsRedirection())
         handleRedirection(route);
     CheckExistingInServer();
@@ -255,7 +255,7 @@ void HttpResponse::handleCookie(HttpRequest & request)
     std::string token = generateToken();
     if (it ==  request.getheaders().end() &&  request.getUri() ==  SESSION)
     {
-        std::cout << "[INFO] .... token created !\n"
+        std::cout << "[INFO] .... token created !\n";
         headers["Set-Cookie"] = "session_id="+token + ";" + "path=" + SESSION;
         Cookies = "session_id="+token;
     }
@@ -270,7 +270,6 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
     defaultErrors = errorPages;
     version = request.getVersion();
     handleRequest(host,port, request);
-    std::cout << "page : "<<Page<<" , cgi detected : "<<cgi<<"\n";
     if (cgi)
     {
         int res = executeCGI();
@@ -298,14 +297,10 @@ void HttpResponse::CheckExistingInServer()
         file.seekg(0, std::ios::end);
         totaSize = file.tellg();
         file.seekg(0, std::ios::beg);
-        //std::cout <<"\n!!!!!!!!!!!!!!!! file open is in my server : "<<Page.c_str()<<"\n";
         file.close();
     }
     else
-    {
         UpdateStatueCode(404);
-        //std::cout <<"\n!!!!!!!!!!!!!!!! file not exist in my server : "<<Page.c_str()<<"\n";  
-    }
 }
 
 

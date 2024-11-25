@@ -6,23 +6,17 @@ void HttpResponse::SendHeaders(int clientSocketId, Status& status, std::vector<u
     ssize_t SentedBytes = 0;
     if(!headerSended)
     {
-        //headers["Content-Type"] ="text/html";
         std::ostringstream oss;
-        //std::cout <<"\nbuildResponseBuffer : (status : "<<status<<") "<<clientSocketId<<" "<< version << " " << statusCode << " " << reasonPhrase <<"\n";
         oss << version << " " << statusCode << " " << reasonPhrase << "\r\n";
         for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
             oss << it->first << ": " << it->second << "\r\n";
         oss << "\r\n";
         std::string headsStr = oss.str();
         heads.insert(heads.end(), headsStr.begin(), headsStr.end());
-        std::cout << "headers added\n";
-        for(size_t i= 0;i < heads.size();i++)
-            std::cout << heads[i];
         SentedBytes = send(clientSocketId, reinterpret_cast<char*>(heads.data()), headsStr.size(), MSG_NOSIGNAL);
         if (SentedBytes < 0)
-        { 
-
-            std::cerr << "2 Send failed to client "<<clientSocketId << std::endl;
+        {
+            std::cerr << "[Error] ... 2 Send failed to client "<<clientSocketId << std::endl;
             status = DONE;
             return;
         }
@@ -52,7 +46,7 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
                 return;
             else if (statusParent == 1)
             {
-                std::cout << "timeeeeeeeeeeeeeeeee out \n";
+                std::cout << "[Timeout] ... \n";
                 UpdateStatueCode(504);
             }
         }
@@ -61,7 +55,7 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
         std::ifstream file(Page.c_str(), std::ios::binary);
         if (!file.is_open() || totaSize == -1)
         {
-            std::cerr << "no body for client :"<<clientSocketId << std::endl;
+            std::cerr << "[info] ... no body for client :"<<clientSocketId << std::endl;
             status = DONE; 
             return;
         }
@@ -72,13 +66,10 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
         offset += chunkSize;
         if (chunkSize > 0)
         {
-            // for(size_t i= 0;i < body.size();i++)
-            //     std::cout << body[i];
             SentedBytes = send(clientSocketId, reinterpret_cast<char*>(body.data()), chunkSize, MSG_NOSIGNAL);
-            ///std::cout << "___________________________________________ body added : "<<SentedBytes<<" rsponos: "<<body.size()<<"\n";
             if (SentedBytes < 0)
             { 
-                std::cerr << "1 Send failed to client "<<clientSocketId << std::endl;
+                std::cerr << "[Error] ... 1 Send failed to client "<<clientSocketId << std::endl;
                 file.close();
                 status = DONE;  // handle error as needed
                 return;
@@ -86,14 +77,13 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
         }
         if (chunkSize == 0 || offset >= static_cast<size_t>(totaSize))
         {
-            std::cout << "finish sendned all chuncking data !!\n";
             file.close();            
             status = DONE;
         }
     }
     catch (const std::exception& e)
     {
-        std::cerr << "Exception in sending data: " << e.what() << std::endl;
+        std::cerr << "[Error] ... Exception in sending data: " << e.what() << std::endl;
         status = DONE;
         // Handle any other standard exceptions that may occur
     }
