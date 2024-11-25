@@ -9,7 +9,7 @@
 #define DEFAULTERROR "www/html/errorPages/DefaultError.html"
 #define DEFAULTDELETE "www/html/defaultpagedelete.html"
 #define DEFAULTINDEX "www/html/indexing.html"
-#define TOKENS "www/html/session/Posted_Data"
+#define TOKENS "www/html/session/dataBase"
 extern char **environ;
 
 #define TIMEOUT 5
