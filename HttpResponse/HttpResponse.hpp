@@ -2,6 +2,7 @@
 #include "../HttpMessage/HttpMessage.hpp"
 #include "../HttpRequest/HttpRequest.hpp"
 #include "../Route/Route.hpp"
+#include <ctime>
 #include <errno.h>
 #include <sys/wait.h> // for waitpid
 #include <cstdio>      // for remove
@@ -9,7 +10,7 @@
 #define DEFAULTERROR "www/html/errorPages/DefaultError.html"
 #define DEFAULTDELETE "www/html/defaultpagedelete.html"
 #define DEFAULTINDEX "www/html/indexing.html"
-#define TOKENS "www/html/session/dataBase"
+#define SESSION "/session"
 extern char **environ;
 
 #define TIMEOUT 5
@@ -76,6 +77,6 @@ public:
     void sendData(int clientSocketId, Status& status); // this for building and set it in send syscall
     void SendHeaders(int clientSocketId, Status& status,std::vector<uint8_t>& heads);
     void ExtractHeaders();
-    void handleCookie(HttpRequest & request,std::string path);
+    void handleCookie(HttpRequest & request);
 };
 std::string intToString(size_t number);

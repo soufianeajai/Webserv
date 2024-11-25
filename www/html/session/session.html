@@ -29,71 +29,11 @@
             font-size: 1.2rem;
             margin-bottom: 20px;
         }
-        input[type="text"] {
-            width: 100%;
-            padding: 12px 15px;
-            margin: 10px 0;
-            border: 2px solid #ccc;
-            border-radius: 6px;
-            font-size: 1rem;
-            box-sizing: border-box;
-        }
-        button {
-            width: 100%;
-            padding: 12px 15px;
-            background-color: #28a745;
-            color: white;
-            font-size: 1.2rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #218838;
-        }
         em {
             font-size: 1rem;
             color: #6c757d;
         }
     </style>
-    <script>
-        // Function to send the session token to the server using multipart/form-data
-        async function sendSessionToken() {
-            // Generate a unique session token
-            const token = Math.random().toString(36).substr(2) + Date.now().toString(36);
-
-            // Create a FormData object and append the data
-            const formData = new FormData();
-            // formData.append('username', username);
-            formData.append('session_id', token);
-
-            // Send the form data to the server (replace with your server URL)
-            const response = await fetch('/session', {
-                method: 'POST',
-                body: formData, // Automatically sets the content type to multipart/form-data
-            });
-
-            // If the server successfully stores the session, show a welcome message
-            if (response.ok) {
-                const data = await response.text(); // Assuming the server sends a simple response text
-                document.getElementById("welcome-message").innerHTML = `Welcome, Your session has been created.`;
-                document.getElementById("input-section").style.display = "none"; // Hide input section after submission
-            } else {
-                alert('Failed to create session. Please try again.');
-            }
-        }
-
-        function handleSubmit(event) {
-            event.preventDefault();
-            // let username = document.getElementById("username").value.trim().replace(/\s+/g, '');
-            // if (username) {
-                sendSessionToken(); // Send the token to the server
-            // } else {
-            //     alert("Please enter your username.");
-            // }
-        }
-    </script>
 </head>
 <body>
     <div class="container">
@@ -104,15 +44,6 @@
         <p>
             <em>Your session is managed securely through cookies.</em>
         </p>
-        
-        <div id="input-section">
-            <p>Please enter your username to generate a session:</p>
-            <form onsubmit="handleSubmit(event)">
-                <!-- <input type="text" id="username" placeholder="Username (no spaces)" required> -->
-                <button type="submit">Generate Session Token</button>
-            </form>
-        </div>
-
         <p id="welcome-message"></p>
     </div>
 </body>

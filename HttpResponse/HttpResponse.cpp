@@ -190,7 +190,7 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
 {
     UpdateStatueCode(request.GetStatusCode());
     std::string uri = request.getUri();
-    handleCookie(request,request.getCurrentRoute().getPath());
+    handleCookie(request);
     Route& route = request.getCurrentRoute();
     route.setRoot(PWD + route.getRoot());
     if(request.getUri().empty())
@@ -232,69 +232,35 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
         createEnvChar(request, uri, host, intToString(port));
 }
 
-std::string extractToken(const std::vector<uint8_t>& body)
+std::string generateToken()
 {
-    std::string formData(body.begin(), body.end());
-    std::string key = "session_id=";
-    size_t start = formData.find(key);
-    if (start == std::string::npos)
-        return "";
-    start += key.length();
+    const std::string charset = 
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz"
+        "0123456789";
+    const size_t tokenLength = 32;
+    std::string token;
 
-    // Find the next '&' or the end of the string
-    size_t end = formData.find('&', start);
-    if (end == std::string::npos) {
-        end = formData.length(); // If '&' is not found, use the string's end
+    std::srand(static_cast<unsigned int>(std::time(0)));
+    for (size_t i = 0; i < tokenLength; ++i) {
+        size_t index = std::rand() % charset.size(); // Random index in charset
+        token += charset[index];
     }
-
-    // Extract the token
-    return formData.substr(start, end - start);
+    return token;
 }
 
-void HttpResponse::handleCookie(HttpRequest & request,std::string path)
+void HttpResponse::handleCookie(HttpRequest & request)
 {
     std::map<std::string, std::string>::iterator it = request.getheaders().find("Cookie");
-    if (path == "/session" && it ==  request.getheaders().end())
+    std::string token = generateToken();
+    if (it ==  request.getheaders().end() &&  request.getUri() ==  SESSION)
     {
-        Cookies = extractToken(request.GetBody());
-        if (!Cookies.empty())
-            headers["Set-Cookie"] = "session_id=" + Cookies + ";" + " Path="+path;
-        return ;
+        std::cout << "[INFO] .... token created !\n"
+        headers["Set-Cookie"] = "session_id="+token + ";" + "path=" + SESSION;
+        Cookies = "session_id="+token;
     }
-    if (it !=  request.getheaders().end())
-    {
-        std::ifstream file(TOKENS);
-        if (!file.is_open())
-            return;
-        
-        size_t start_pos = it->second.find("session_id=");
-        if (start_pos != std::string::npos)
-        {
-            start_pos += 11;
-            size_t end_pos = it->second.find(";", start_pos);
-            if (end_pos == std::string::npos)
-                end_pos = it->second.length();
-            std::string token  = it->second.substr(start_pos, end_pos - start_pos);
-            std::string line;
-            headers["Set-Cookie"] = "session_id=";
-            while (std::getline(file, line))
-            {
-                size_t start_pos = line.find("session_id=");
-                if (start_pos != std::string::npos)
-                {
-                    start_pos += 11;
-                    if (token == line.substr(start_pos,line.length()))
-                    {  
-                        Cookies = it->second;
-                        headers["Set-Cookie"] = it->second + ";" + " Path="+path;
-                        break;
-                    }
-                }
-            }
-        
-        }
-        file.close();
-    }
+    else if (it != request.getheaders().end())
+        Cookies = it->second;
 }
 
 void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages
