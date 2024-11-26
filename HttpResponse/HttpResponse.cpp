@@ -138,14 +138,14 @@ void HttpResponse::UpdateStatueCode(int code)
     headers["Content-Length"] =  intToString(totaSize);
     headers["Content-Type"] = "text/html";
 }
-
-void HttpResponse::GeneratePageIndexing(std::string& fullpath,std::string& uri, std::vector<std::string>& files)
+//((path == "/") ?  "" : path ) + ((files[i][0] == '/') ? files[i] : "/" + files[i]) 
+void HttpResponse::GeneratePageIndexing(std::string& fullpath,std::string& path, std::vector<std::string>& files)
 {
     Page = DEFAULTINDEX;
     std::ofstream file(DEFAULTINDEX, std::ios::out | std::ios::trunc);
     if (!file)
     {
-        std::cerr << "Error: Could not open file for writing: " << uri << std::endl;
+        std::cerr << "[Error] ... Could not open file for writing: " << path << std::endl;
         UpdateStatueCode(404);
         return;
     }
@@ -153,14 +153,14 @@ void HttpResponse::GeneratePageIndexing(std::string& fullpath,std::string& uri, 
     html << "<html><head><title>Index of " << fullpath << "</title></head><body>";
     html << "<h1>Index of " << fullpath << "</h1><ul>";
     for (size_t i = 0; i < files.size(); ++i)
-        html << "<li><a href=\"" << files[i] << "\">" << files[i] << "</a></li>";
+        html << "<li><a href=\"" << ((path == "/") ?  "" : path ) + "/" + files[i] << "\">" << files[i] << "</a></li>";
     html << "</ul></body></html>";
 
     file << html.str();
     file.close();
 }
 
-void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
+void HttpResponse::HandleIndexing(std::string fullpath, std::string& path)
 {
     struct stat pathStat;
     if (stat(fullpath.c_str(), &pathStat) != 0 || !S_ISDIR(pathStat.st_mode))
@@ -185,7 +185,7 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
             files.push_back(name);
     }
     closedir(dir);
-    GeneratePageIndexing(fullpath,uri, files);
+    GeneratePageIndexing(fullpath,path, files);
 }
 
 void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & request)
@@ -207,8 +207,8 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
             }
             else if(route.getAutoindex())
             {
-                std::cout << "\n indexing ... \n";
-                HandleIndexing(route.getRoot(),request.getUri());
+                std::cout << "\n indexing ... uri:"<<route.getPath()<<"\n";
+                HandleIndexing(route.getRoot(),route.getPath());
             }
             else
                 UpdateStatueCode(404);
@@ -270,12 +270,11 @@ void HttpResponse::handleCookie(HttpRequest & request)
 void HttpResponse::handleServerName(std::set<std::string>& serverNamesGetter, std::string hostrequest,std::string host)
 {
     hostrequest = hostrequest.substr(0,hostrequest.find(":"));
-    if (hostrequest == host || hostrequest == "localhost")
+    if (hostrequest == host)
         return;
     for (std::set<std::string>::iterator it = serverNamesGetter.begin(); it != serverNamesGetter.end(); ++it)
         if (*it == hostrequest)
             return ;
-
     UpdateStatueCode(400);
 }
 
@@ -283,11 +282,13 @@ void HttpResponse::ResponseGenerating(HttpRequest & request,std::set<std::string
                     std::map<int, std::string> &errorPages, Status& status,std::string& host, uint16_t port, time_t currenttime)
 {
     defaultErrors = errorPages;
+    this->currenttime = currenttime;
     UpdateStatueCode(request.GetStatusCode());
+
     std::map<std::string, std::string>::iterator it = request.getheaders().find("Host");
     if  (it != request.getheaders().end())
         handleServerName(serverNamesGetter, it->second, host);
-    this->currenttime = currenttime;
+    
     handleRequest(host,port, request);
     if (cgi)
     {

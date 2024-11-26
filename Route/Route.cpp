@@ -9,7 +9,7 @@ int Route::getstatusCodeRedirection() const
 void Route::setPath(std::string _path) {
     this->pathLocation = _path;
 }
-std::string Route::getPath() const{
+std::string& Route::getPath(){
     return this->pathLocation;
 }
 void Route::addAllowedMethod(std::string method) {
