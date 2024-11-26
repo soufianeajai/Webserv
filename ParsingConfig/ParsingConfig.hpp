@@ -11,10 +11,10 @@ public:
     ParsingConfig() {}
     bool hostCheck(std::string host);
     bool checkClientBodySize(std::string &str);
-    bool containsOnlySpaces(std::string &str);
     void checkDefaultServer();
     void checkNecessary(std::ifstream& FILE);
 };
 
 ParsingConfig parsingConfig(const char *configFile);
+bool containsOnlySpaces(std::string &str);
 int numberConversion(std::string &string);
