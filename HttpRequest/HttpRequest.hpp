@@ -103,7 +103,7 @@ typedef struct s_boundaryPart{
 
 class HttpRequest :  public HttpMessage{
 private:
-    Route CurrentRoute;
+    Route             CurrentRoute;
     static const int  MAX_URI_LENGTH = 2048;
     typedef void (HttpRequest::*StateHandler)(uint8_t);
     State           currentState;
@@ -125,9 +125,7 @@ private:
     std::string     query;
     std::map<State, StateHandler> stateHandlers;
     std::map<State, int> errorState;
-    std::map<std::string, std::string> formFields;
     std::vector<boundaryPart> parts;
-        std::string test;
 
 public:
     HttpRequest();
@@ -142,14 +140,11 @@ public:
     std::string& getMethod() ;
     std::string& getUri()  ;
     int GetStatusCode() const;
+    void SetStatusCode(int status);
     std::string getQuery() const;
     State getcurrentState() const;
-        void setTest(std::string ff){
-        test = ff;
-    }
-    std::string getTest(){
-        return test;
-    }
+    std::string& getHeader(std::string key);
+    std::map<State, int>& getErrorState() ;
 private:
 // STATE HANDLERS
     void    handleMethodStart(uint8_t byte);
@@ -193,7 +188,7 @@ private:
     void    handleProcessChunkedBody(std::string root);
     void    handleProcessPost();
     void    handleProcessPostData();
-    void    handleProcessMultipart(std::string root);
+    void    handleProcessMultipart();
     void    saveDataToFile(std::string name, std::vector<uint8_t>& body);
 // PARSER UTILS 
     bool    isValidPathChar(uint8_t byte);

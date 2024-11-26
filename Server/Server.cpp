@@ -28,6 +28,11 @@ Connection* Server::GetConnection(int socket)
         return NULL;
 }
 
+std::map<int, Connection*>& Server::GetCoonections() 
+{
+    return (connections);
+}
+
 bool Server::removeConnection(int socket)
 {
     if (connections.count(socket) > 0) 
@@ -39,16 +44,30 @@ bool Server::removeConnection(int socket)
         return false; 
 }
 
-void Server::addConnection(int socket, const Connection& connection)
+void Server::addConnection(int socket, Connection* connection)
 {
-    Connection* newConnection = new Connection(connection);
-    connections[socket] = newConnection;
+    connections[socket] = connection;
+}
+
+
+int Server::GetPort(int socketserver) const
+{
+    int port = ports[0];
+    for(size_t i = 0;i < sockets.size();i++)
+        if (sockets[i] == socketserver)
+            port = ports[i];
+    return (port);
+}
+
+std::vector<int> Server::getSockets() const
+{
+    return sockets;
 }
 
 void Server::hostSetter(std::string _host) {
     this->host = _host;
 }
-std::string Server::hostGetter() {
+std::string& Server::hostGetter() {
     return this->host;
 }
 void Server::portSetter(int _port) {
@@ -120,3 +139,12 @@ void Server::setIpaddress(std::string host) {
 in_addr_t Server::getIpaddress() {
     return this->ip_addr;
 }
+void Server::closeConnection(int fd){
+    std::map<int, Connection*>::iterator it =  connections.find(fd);
+    if (it != connections.end()){
+        delete connections[fd];
+        connections.erase(fd);
+        close(fd);
+    }
+}
+
