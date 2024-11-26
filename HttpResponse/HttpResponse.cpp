@@ -38,8 +38,9 @@ std::string getPWDVariable()
     return ""; // Return an empty string if PATH is not found
 }
 
-HttpResponse::HttpResponse():totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable()),pid(-1),currenttime(0)
+HttpResponse::HttpResponse():statusCode(-1),totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable()),pid(-1),currenttime(0)
 {
+    version = "HTTP/1.1" ;
     Cookies = "";
     ChildFInish = false;
     cgiOutput.clear();
@@ -95,7 +96,9 @@ void HttpResponse::handleRedirection(const Route &route)
 
 void HttpResponse::UpdateStatueCode(int code)
 {
+    
     statusCode = code;
+    std::cout << "status :"<<statusCode<<"\n";
     cgi = false;
     switch (statusCode)
     {  
@@ -117,7 +120,6 @@ void HttpResponse::UpdateStatueCode(int code)
         case 204: reasonPhrase = "No Content"; break;
         default:  reasonPhrase = "OK"; break;
     }
-
     std::map<int, std::string>::iterator it = defaultErrors.find(statusCode);
     if (it != defaultErrors.end())
         Page = it->second;
@@ -126,7 +128,7 @@ void HttpResponse::UpdateStatueCode(int code)
     std::ifstream file(Page.c_str());
     if (!file.is_open())
     {
-        totaSize = -1; // this is last part we can do after check for error response , set it to -1 , then we check it in send response if equal to -1 so close connection no body for client !!
+        totaSize = 0; // this is last part we can do after check for error response , set it to -1 , then we check it in send response if equal to -1 so close connection no body for client !!
         return ;
     }
     file.seekg(0, std::ios::end);
@@ -188,15 +190,14 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
 
 void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & request)
 {
-    UpdateStatueCode(request.GetStatusCode());
     std::string uri = request.getUri();
-    handleCookie(request);
     Route& route = request.getCurrentRoute();
     route.setRoot(PWD + route.getRoot());
     if(request.getUri().empty())
         uri = request.getUri() + "/";
     if (statusCode ==  200 || statusCode ==  201)
     {
+        handleCookie(request);
         if (route.getPath() == uri)
         {
             if(!route.getDefaultFile().empty())
@@ -205,7 +206,10 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
                 uri += (uri[uri.size() - 1] != '/') ? "/" +  route.getDefaultFile() : route.getDefaultFile(); // need delete this
             }
             else if(route.getAutoindex())
+            {
+                std::cout << "\n indexing ... \n";
                 HandleIndexing(route.getRoot(),request.getUri());
+            }
             else
                 UpdateStatueCode(404);
         }
@@ -221,12 +225,12 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
                 UpdateStatueCode(404);
         }
         checkIfCGI(Page, route.getCgiExtensions());
+        CheckExistingInServer();
     }
     else if (statusCode ==  204)
         std::cout << "[DELETE data] ... "<<Page<<"\n";
     if(route.getIsRedirection())
         handleRedirection(route);
-    CheckExistingInServer();
     
     if (cgi)
         createEnvChar(request, uri, host, intToString(port));
@@ -263,12 +267,27 @@ void HttpResponse::handleCookie(HttpRequest & request)
         Cookies = it->second;
 }
 
-void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages
-                    , Status& status,std::string& host, uint16_t port, time_t currenttime)
+void HttpResponse::handleServerName(std::set<std::string>& serverNamesGetter, std::string hostrequest,std::string host)
 {
-    this->currenttime = currenttime;
+    hostrequest = hostrequest.substr(0,hostrequest.find(":"));
+    if (hostrequest == host || hostrequest == "localhost")
+        return;
+    for (std::set<std::string>::iterator it = serverNamesGetter.begin(); it != serverNamesGetter.end(); ++it)
+        if (*it == hostrequest)
+            return ;
+
+    UpdateStatueCode(400);
+}
+
+void HttpResponse::ResponseGenerating(HttpRequest & request,std::set<std::string>& serverNamesGetter, 
+                    std::map<int, std::string> &errorPages, Status& status,std::string& host, uint16_t port, time_t currenttime)
+{
     defaultErrors = errorPages;
-    version = request.getVersion();
+    UpdateStatueCode(request.GetStatusCode());
+    std::map<std::string, std::string>::iterator it = request.getheaders().find("Host");
+    if  (it != request.getheaders().end())
+        handleServerName(serverNamesGetter, it->second, host);
+    this->currenttime = currenttime;
     handleRequest(host,port, request);
     if (cgi)
     {
@@ -282,8 +301,7 @@ void HttpResponse::ResponseGenerating(HttpRequest & request, std::map<int, std::
         headers["Content-Length"] = intToString(totaSize);
     }
     headers["Date"] =  getCurrentTimeFormatted();
-    
-    headers["Server"] =  "WebServ 1337";  
+    headers["Server"] =  "WebServ1337";  
     headers["Connection"] = "close";
     status = SENDING_RESPONSE;
 }

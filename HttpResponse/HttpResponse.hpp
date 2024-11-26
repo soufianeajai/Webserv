@@ -57,7 +57,7 @@ public:
     pid_t getPid() const;
     //int getpipe() const;
     //size_t getOffset();
-    void ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, 
+    void ResponseGenerating(HttpRequest & request,std::set<std::string>& serverNamesGetter, std::map<int, std::string> &errorPages, 
                  Status& status,std::string& host, uint16_t port, time_t currenttime);
     void handleRequest(std::string& host, uint16_t port,HttpRequest & request);
     //void HttpResponse::resolveRequestPath(HttpRequest& request, Route& route, std::string& uri, std::string& host, uint16_t port)
@@ -78,5 +78,6 @@ public:
     void SendHeaders(int clientSocketId, Status& status,std::vector<uint8_t>& heads);
     void ExtractHeaders();
     void handleCookie(HttpRequest & request);
+    void handleServerName(std::set<std::string>& serverNamesGetter, std::string hostrequest,std::string host);
 };
 std::string intToString(size_t number);

@@ -74,10 +74,10 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
 }
 
 
-void Connection::generateResponse(std::map<int, std::string> &errorPages,std::string& host, uint16_t port,time_t currenttime)
+void Connection::generateResponse(std::set<std::string>& serverNamesGetter,std::map<int, std::string> &errorPages,std::string& host, uint16_t port,time_t currenttime)
 {
     if (status == GENARATE_RESPONSE)
-        response.ResponseGenerating(request, errorPages, status,host,port, currenttime);
+        response.ResponseGenerating(request,serverNamesGetter , errorPages, status,host,port, currenttime);
     else if (status == SENDING_RESPONSE)
         response.sendData(clientSocketId, status);
 }

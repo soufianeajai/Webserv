@@ -46,6 +46,7 @@ bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&Http
 // ERRORS STATE CODES
     errorState.insert(std::make_pair(ERROR_BAD_REQUEST, 400));
     errorState.insert(std::make_pair(ERROR_INVALID_METHOD, 501));
+    errorState.insert(std::make_pair(ERROR_METHOD_NOT_ALLOWED, 405));
     errorState.insert(std::make_pair(ERROR_INVALID_URI, 400));
     errorState.insert(std::make_pair(REQUEST_URI_TOO_LONG, 414));
     errorState.insert(std::make_pair(ERROR_INVALID_VERSION, 505));

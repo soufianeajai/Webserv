@@ -107,7 +107,6 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
             }
             else
             {
-                route.setAutoindex(false);
                 if (arr[0] == "methods:")
                 {
                     if (arr.size() < 2)

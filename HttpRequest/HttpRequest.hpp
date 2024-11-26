@@ -80,6 +80,7 @@ enum State {
     ERROR_INCOMPLETE,           // Unexpected end of input
     ERROR_BUFFER_OVERFLOW,      // Input exceeds buffer capacity
     ERROR_BINARY_DATA,           // Error processing binary data
+    ERROR_METHOD_NOT_ALLOWED,
 // PROCESS REQUEST
     PROCESS_URI,
     PROCESS_GET,

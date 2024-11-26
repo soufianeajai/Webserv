@@ -1,18 +1,57 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        <title>404</title>
-        <link href="main.css" rel="stylesheet" type="text/css">
-    </head>
-
-    <body>
-        <div id="app">
-            <div>404</div>
-            <div class="txt">
-				Bad news. The Page
-                Not Found<span class="blink">_</span>
-            </div>
-        </div>
-    </body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 Not Found</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fdf6e4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            line-height: 1.6;
+        }
+        .error-container {
+            text-align: center;
+            max-width: 600px;
+            padding: 20px;
+        }
+        .error-container h1 {
+            font-size: 120px;
+            margin: 0;
+            color: #ff6f61;
+            line-height: 1;
+        }
+        .error-container h2 {
+            font-size: 32px;
+            color: #ff6f61;
+            margin: 10px 0;
+        }
+        .error-container p {
+            font-size: 18px;
+            color: #555;
+            margin: 15px 0 0;
+        }
+        .error-container hr {
+            border: 0;
+            border-top: 2px solid #ff6f61;
+            margin: 20px 0;
+            width: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h1>404</h1>
+        <h2>Not Found</h2>
+        <hr>
+        <p>The page you are looking for does not exist or has been moved.</p>
+    </div>
+</body>
 </html>

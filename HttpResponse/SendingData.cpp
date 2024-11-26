@@ -21,6 +21,7 @@ void HttpResponse::SendHeaders(int clientSocketId, Status& status, std::vector<u
             return;
         }
         headerSended = true;
+
         heads.clear();
     }
 }
@@ -32,7 +33,6 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
     std::vector<uint8_t> body;
     int statusParent;
     try{
-        
         if (cgi)
         {
             statusParent = parentProcess();
@@ -53,7 +53,7 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
         SendHeaders(clientSocketId, status, heads);
         size_t chunkSize = (totaSize < Connection::CHUNK_SIZE) ? totaSize : Connection::CHUNK_SIZE;
         std::ifstream file(Page.c_str(), std::ios::binary);
-        if (!file.is_open() || totaSize == -1)
+        if (!file.is_open() || totaSize == 0)
         {
             std::cerr << "[info] ... no body for client :"<<clientSocketId << std::endl;
             status = DONE; 

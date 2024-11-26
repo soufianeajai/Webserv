@@ -5,12 +5,12 @@ State processMethod(std::string& myMethod, Route& route){
     allowedmethods = route.getAllowedMethods();
     std::set<std::string>::iterator Methodit = allowedmethods.find(myMethod);
     //for(std::set<std::string>::iterator itt = allowedmethods.begin(); itt != allowedmethods.end(); itt++)
-     //   std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++ " << *itt << std::endl;
+    //   std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++ " << *itt << std::endl;
 
     if (Methodit == allowedmethods.end()){
        // std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++---- " << std::endl;
 
-        return ERROR_INVALID_METHOD;
+        return ERROR_METHOD_NOT_ALLOWED;
     }
     else
     {

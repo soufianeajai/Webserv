@@ -156,7 +156,6 @@ int HttpResponse::executeCGI()
 
 void HttpResponse::createEnvChar(HttpRequest& request, std::string& uri,const std::string& host,const std::string& port)
 {
-    
     envVars.push_back(strdup("GATEWAY_INTERFACE=CGI/1.1"));
     envVars.push_back(strdup(("REQUEST_METHOD=" + request.getMethod()).c_str()));
     envVars.push_back(strdup(("SCRIPT_NAME=" + uri).c_str()));

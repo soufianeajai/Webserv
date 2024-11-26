@@ -83,6 +83,7 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
             {
                 if(check_fd_timeout(conn_it->second->get_last_access_time()))
                 {
+                    std::cout << "time out \n";
                     if(conn_it->second->getResponse().getPid() != -1)
                         kill(conn_it->second->getResponse().getPid() , SIGKILL);
                     it->closeConnection(conn_it->first);
@@ -170,7 +171,7 @@ void ServerSetup(ParsingConfig &Config)
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
                 CurrentConnection->set_last_access_time(current_time());
-                CurrentConnection->generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.hostGetter() 
+                CurrentConnection->generateResponse(CurrentServer.serverNamesGetter(),CurrentServer.errorPagesGetter(), CurrentServer.hostGetter() 
                     ,CurrentServer.GetPort(CurrentConnection->getsocketserver()),CurrentConnection->get_last_access_time());
                     
                 if(CurrentConnection->getStatus() == SENDING_RESPONSE)

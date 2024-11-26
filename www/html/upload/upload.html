@@ -25,7 +25,7 @@
                 method: "POST",
                 headers: {
                     "Content-Type": "application/octet-stream",
-                    "Content-Disposition": `attachment; filename="${encodeURIComponent(file.name)}"`
+                    "Content-Disposition": `attachment; filename="${(file.name)}"`
                 },
                 body: file
             })
