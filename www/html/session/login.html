@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Form</title>
+    <title>Login</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -57,7 +57,7 @@
             transition: background-color 0.3s;
         }
         .submit-btn:hover {
-            background-color: #0056b3;
+            background-color: #b30000;
         }
     </style>
     <script>
@@ -76,8 +76,8 @@
 </head>
 <body>
     <div class="form-container">
-        <h2>Submit Data</h2>
-        <form action="/form" method="POST" enctype="multipart/form-data" onsubmit="validateForm(event)">
+        <h2>Login</h2>
+        <form action="/session" method="POST" enctype="multipart/form-data" onsubmit="validateForm(event)">
             <label for="firstname">Username</label>
             <input type="text" id="username" name="username" required pattern="^\S+$" title="No whitespace allowed">
 

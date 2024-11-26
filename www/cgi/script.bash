@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Send the HTTP header to the browser
-echo "Content-type: text/html"
-echo # Blank line to separate the header from the body
-
 # Output HTML content
 echo "<html>"
 echo "<head><title>Bash CGI Script</title></head>"

@@ -13,7 +13,7 @@ void Connection::set_last_access_time(time_t last)
 }
 Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize, struct epoll_event& epoll, int serversocket,time_t last):clientSocketId(fd), bodySize(maxSize), status(READING_PARSING),epollfd(epoll),last_access_time(last)
 {
-    std::cout << "conneciton: "<<serversocket<<"\n";
+    std::cout << "____________________________________________________________________\nconneciton: "<<serversocket<<"\n";
     this->socketServer = serversocket;
     CLientAddress.sin_family = acceptedAddr.sin_family;
     CLientAddress.sin_port = acceptedAddr.sin_port;
@@ -128,7 +128,18 @@ void    Connection::readIncomingData(std::map<std::string, Route>& routes)
 // }
 void Connection::generateResponse(std::map<int, std::string> &errorPages,std::string& host, uint16_t port,time_t currenttime)
 {
-    response.ResponseGenerating(request, errorPages, clientSocketId, status,host,port,currenttime);
+    // std::cout << "status :  "<< status<< ".\n";
+    if (status == GENARATE_RESPONSE)
+    {
+        std::cout << "generate data ... "<<currenttime<<"\n";
+        response.ResponseGenerating(request, errorPages, status,host,port, currenttime);
+        
+    
+    }else if (status == SENDING_RESPONSE)
+    {
+        response.sendData(clientSocketId, status);
+       // std::cout << "data sended..."<< status<<"\n";
+    }
 }
 
 Status Connection::getStatus() const{
