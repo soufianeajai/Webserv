@@ -1,6 +1,9 @@
 #include "Server.hpp"
 #include "../ParsingConfig/ParsingConfig.hpp"
 
+Server::Server() : host("")  {
+    serverNames.insert("localhost");
+}
 int Server::SearchSockets(int id)
 {
     for (size_t i = 0; i < sockets.size(); ++i)
@@ -82,12 +85,7 @@ void Server::serverNamesSetter(std::string _serverName) {
 std::set<std::string>& Server::serverNamesGetter() {
     return serverNames;
 }
-void Server::serverRootSetter(std::string _serverRoot) {
-    this->serverRoot = _serverRoot;
-}
-std::string Server::serverRootGetter() {
-    return this->serverRoot;
-}
+
 void Server::errorPagesSetter(int _errorCode, std::string _errorPage) {
     this->errorPages[_errorCode] = _errorPage;
 }

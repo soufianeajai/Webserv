@@ -30,7 +30,7 @@ void ft_error(std::string err, std::ifstream& fd)
     exit (EXIT_FAILURE);
 }
 
-bool ParsingConfig::containsOnlySpaces(std::string &str)
+bool containsOnlySpaces(std::string &str)
 {
     for (size_t i = 0; i < str.length(); i++)
     {
@@ -56,7 +56,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
 
     while (getline(FILE, str))
     {
-        if (!str.empty())
+        if (!str.empty() && !containsOnlySpaces(str))
         {
             std::stringstream ss(str);
             std::string to;
@@ -94,7 +94,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                 return true;  // Indicate that "server" was found to all recursive calls
             }
             else if (arr[0] == "host:" || arr[0] == "port:"
-                || arr[0] == "server_names:" || arr[0] == "server_root:"
+                || arr[0] == "server_names:"
                 || arr[0] == "error_page:" || arr[0] == "client_body_size:")
             {
                 FILE.seekg(-str.length() - 1, std::ios_base::cur); // Go back one line
@@ -151,7 +151,7 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                 }
                 else if (arr[0] == "cgi_extension:")
                 {
-                    if (arr.size() != 3 || arr[1][0] != '.')
+                    if (arr.size() != 3 && arr[1][0] != '.')
                         ft_error("Error: Invalid cgi_extension", FILE);
                     route.addCgiExtension(arr[1], arr[2]);
                 }
@@ -327,7 +327,7 @@ ParsingConfig parsingConfig(const char *configFile)
             Server server;
             while (getline(FILE, str) && str != "server")
             {
-                if (!str.empty() && !parsingConfig.containsOnlySpaces(str))
+                if (!str.empty() && !containsOnlySpaces(str))
                 {
                     std::stringstream ss(str);
                     std::string to;
@@ -373,11 +373,6 @@ ParsingConfig parsingConfig(const char *configFile)
                             server.serverNamesSetter(arr[i]);
                         }
                         std::set<std::string> serverNames = server.serverNamesGetter();
-                    }
-                    else if (arr[0] == "server_root:")
-                    {
-                        if (server.serverRootGetter().empty())
-                            server.serverRootSetter(arr[1]);
                     }
                     else if (arr[0] == "error_page:")
                     {
