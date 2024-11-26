@@ -27,7 +27,9 @@ public:
     std::vector<int> &portGetter();
     int GetPort(int socketserver) const;
     void serverNamesSetter(std::string serverName);
-    std::set<std::string> serverNamesGetter();
+    std::set<std::string>& serverNamesGetter();
+    void serverRootSetter(std::string serverRoot);
+    std::string serverRootGetter();
     void errorPagesSetter(int errorCode, std::string errorPage);
     std::map<int, std::string>& errorPagesGetter();
     void clientMaxBodySizeSetter(size_t clientMaxBodySize);

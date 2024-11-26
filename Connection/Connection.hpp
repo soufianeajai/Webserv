@@ -29,7 +29,7 @@ public:
     void SendData(const std::vector<uint8_t>& buffer);
     // void writedata();
     int getClientSocketId() const;
-    void generateResponse(std::map<int, std::string> &errorPages, std::string& host, uint16_t port,time_t currenttime);
+    void generateResponse(std::set<std::string>& serverNamesGetter,std::map<int, std::string> &errorPages, std::string& host, uint16_t port,time_t currenttime);
     HttpRequest getRequest();
     HttpResponse getResponse();
     Status getStatus() const;

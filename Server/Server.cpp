@@ -82,8 +82,8 @@ std::vector<int> &Server::portGetter() {
 void Server::serverNamesSetter(std::string _serverName) {
     this->serverNames.insert(_serverName);
 }
-std::set<std::string> Server::serverNamesGetter() {
-    return this->serverNames;
+std::set<std::string>& Server::serverNamesGetter() {
+    return serverNames;
 }
 
 void Server::errorPagesSetter(int _errorCode, std::string _errorPage) {

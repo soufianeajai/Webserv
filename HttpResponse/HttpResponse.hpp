@@ -2,6 +2,7 @@
 #include "../HttpMessage/HttpMessage.hpp"
 #include "../HttpRequest/HttpRequest.hpp"
 #include "../Route/Route.hpp"
+#include <ctime>
 #include <errno.h>
 #include <sys/wait.h> // for waitpid
 #include <cstdio>      // for remove
@@ -9,7 +10,9 @@
 #define DEFAULTERROR "www/html/errorPages/DefaultError.html"
 #define DEFAULTDELETE "www/html/defaultpagedelete.html"
 #define DEFAULTINDEX "www/html/indexing.html"
-extern char **environ; 
+#define SESSION "/session"
+extern char **environ;
+
 #define TIMEOUT 5
 class HttpResponse :  public HttpMessage{
 private:
@@ -30,7 +33,8 @@ private:
     int pipefd[2];
     pid_t pid;
     time_t currenttime;
-    bool ChildFInish; 
+    bool ChildFInish;
+    std::string Cookies;
 
     // cgi
     /* example full url possible
@@ -53,7 +57,7 @@ public:
     pid_t getPid() const;
     //int getpipe() const;
     //size_t getOffset();
-    void ResponseGenerating(HttpRequest & request, std::map<int, std::string> &errorPages, 
+    void ResponseGenerating(HttpRequest & request,std::set<std::string>& serverNamesGetter, std::map<int, std::string> &errorPages, 
                  Status& status,std::string& host, uint16_t port, time_t currenttime);
     void handleRequest(std::string& host, uint16_t port,HttpRequest & request);
     //void HttpResponse::resolveRequestPath(HttpRequest& request, Route& route, std::string& uri, std::string& host, uint16_t port)
@@ -73,5 +77,7 @@ public:
     void sendData(int clientSocketId, Status& status); // this for building and set it in send syscall
     void SendHeaders(int clientSocketId, Status& status,std::vector<uint8_t>& heads);
     void ExtractHeaders();
+    void handleCookie(HttpRequest & request);
+    void handleServerName(std::set<std::string>& serverNamesGetter, std::string hostrequest,std::string host);
 };
 std::string intToString(size_t number);

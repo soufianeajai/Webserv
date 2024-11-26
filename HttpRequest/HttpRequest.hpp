@@ -80,6 +80,7 @@ enum State {
     ERROR_INCOMPLETE,           // Unexpected end of input
     ERROR_BUFFER_OVERFLOW,      // Input exceeds buffer capacity
     ERROR_BINARY_DATA,           // Error processing binary data
+    ERROR_METHOD_NOT_ALLOWED,
 // PROCESS REQUEST
     PROCESS_URI,
     PROCESS_GET,
@@ -92,7 +93,8 @@ enum State {
 };
 
 
-typedef struct s_boundaryPart{
+typedef struct s_boundaryPart
+{
     std::string name;
     std::string value;
     std::string fileName;
@@ -130,6 +132,8 @@ private:
 public:
     HttpRequest();
     Route& getCurrentRoute();
+    std::vector<uint8_t>& GetBody();
+    std::map<std::string, std::string>& getheaders();
     void    parse(uint8_t *buffer, int readSize);
     void    process(std::map<std::string, Route>& routes);
     void    setMethod(const std::string methodStr);

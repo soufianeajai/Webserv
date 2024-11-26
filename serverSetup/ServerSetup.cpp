@@ -7,7 +7,7 @@ void ft_error(std::string err, int fd)
 {
     if  (fd != -1)
         close(fd);
-    std::cerr << err << std::endl;
+    std::cerr << "[Error] ... "<<err << std::endl;
     exit (EXIT_FAILURE);
 }
 
@@ -20,12 +20,8 @@ time_t current_time()
 bool check_fd_timeout(time_t last_access_time)
 {
     time_t current_time_val = current_time();
-    //std::cout << "___________connection time: "<<last_access_time<< ", def: "<<current_time_val - last_access_time<<"_______\n";
     if (current_time_val - last_access_time > TIMEOUT)
-    {
-        std::cout << "timeout\n";
         return true;
-    }
     return false;
 }
 
@@ -87,11 +83,9 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
             {
                 if(check_fd_timeout(conn_it->second->get_last_access_time()))
                 {
+                    std::cout << "time out \n";
                     if(conn_it->second->getResponse().getPid() != -1)
-                    {
-                        std::cout <<"ps killed\n";
                         kill(conn_it->second->getResponse().getPid() , SIGKILL);
-                    }
                     it->closeConnection(conn_it->first);
                 }
             }
@@ -146,7 +140,6 @@ void ServerSetup(ParsingConfig &Config)
 
         for (int index = 0; index < epollEventsNumber; index++)
         {
-            //std::cout<< " index: "<<index <<" epoolevents: "<<epollEventsNumber<<".\n";
             Server CurrentServer;
             Connection *CurrentConnection;
             if (evenBuffer[index].events & EPOLLIN)
@@ -178,7 +171,7 @@ void ServerSetup(ParsingConfig &Config)
                 CurrentServer = getServerSocketCLient(evenBuffer[index].data.fd,Servers);
                 CurrentConnection = CurrentServer.GetConnection(evenBuffer[index].data.fd);
                 CurrentConnection->set_last_access_time(current_time());
-                CurrentConnection->generateResponse(CurrentServer.errorPagesGetter(), CurrentServer.hostGetter() 
+                CurrentConnection->generateResponse(CurrentServer.serverNamesGetter(),CurrentServer.errorPagesGetter(), CurrentServer.hostGetter() 
                     ,CurrentServer.GetPort(CurrentConnection->getsocketserver()),CurrentConnection->get_last_access_time());
                     
                 if(CurrentConnection->getStatus() == SENDING_RESPONSE)
@@ -186,14 +179,14 @@ void ServerSetup(ParsingConfig &Config)
                     
                     CurrentConnection->getEpollFd().events = EPOLLOUT;
                     if (epoll_ctl(epollInstance, EPOLL_CTL_MOD, evenBuffer[index].data.fd, &CurrentConnection->getEpollFd()) == -1) {
-                        std::cerr << "Failed to register for EPOLLOUT: " << strerror(errno) << std::endl;
+                        std::cerr << "[Error] ... Failed to register for EPOLLOUT: " << strerror(errno) << std::endl;
                         
                     }
                 }
                 if (CurrentConnection->getStatus() == DONE)
                 {
                     if(epoll_ctl(epollInstance, EPOLL_CTL_DEL, evenBuffer[index].data.fd, NULL) == -1)
-                        std::cout << "Error: "<<strerror(errno)<<std::endl;
+                        std::cout << "[Error] ... "<<strerror(errno)<<std::endl;
                 }
             }
             

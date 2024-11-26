@@ -21,7 +21,6 @@
 #include <sys/stat.h>  
 #include <dirent.h>
 
-
 typedef unsigned char uint8_t;
 
 class HttpMessage {

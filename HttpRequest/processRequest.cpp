@@ -5,12 +5,12 @@ State processMethod(std::string& myMethod, Route& route){
     allowedmethods = route.getAllowedMethods();
     std::set<std::string>::iterator Methodit = allowedmethods.find(myMethod);
     //for(std::set<std::string>::iterator itt = allowedmethods.begin(); itt != allowedmethods.end(); itt++)
-     //   std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++ " << *itt << std::endl;
+    //   std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++ " << *itt << std::endl;
 
     if (Methodit == allowedmethods.end()){
        // std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++---- " << std::endl;
 
-        return ERROR_INVALID_METHOD;
+        return ERROR_METHOD_NOT_ALLOWED;
     }
     else
     {
@@ -145,68 +145,6 @@ void    HttpRequest::handleProcessPostData(){
     currentState = PROCESS_DONE;
 }
 
-
-std::string generateToken()
-{
-    const std::string charset = 
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz"
-        "0123456789";
-    const size_t tokenLength = 32;
-    std::string token;
-
-    std::srand(static_cast<unsigned int>(std::time(0)));
-    for (size_t i = 0; i < tokenLength; ++i) {
-        size_t index = std::rand() % charset.size(); // Random index in charset
-        token += charset[index];
-    }
-    return token;
-}
-
-bool lineExists(const std::string &filePath, const std::string &line) {
-    std::ifstream file(filePath.c_str());
-    std::string existingLine;
-
-    if (!file.is_open())
-        return false;
-
-    while (std::getline(file, existingLine)) {
-        std::string cut = existingLine.substr(0,line.size());
-        if (cut == line) {
-            file.close();
-            return true;
-        }
-    }
-
-    file.close();
-    return false;
-}
-
-void SaveNewUsers(std::string name)
-{
-    std::ifstream input(name.c_str());
-    std::ofstream output((name + "_users").c_str(), std::ios::app);
-    std::string line;
-    if (!input.is_open() || !output.is_open())
-    {
-        std::cerr << "Error: Could not open file(s)." << std::endl;
-        return;
-    }
-    while (std::getline(input,line))
-    {
-        size_t usernamePos = line.find("username:");
-        size_t passwordPos = line.find("password:");
-        size_t endPos = line.find(' ', passwordPos);
-        if (usernamePos != std::string::npos && passwordPos != std::string::npos && !lineExists((name + "_users"),line.substr(usernamePos, endPos - usernamePos)))
-        {
-            line += generateToken() + "\n";
-            output.write(line.c_str(), line.size());
-        }
-    }
-    input.close();
-    output.close();
-}
-
 void    HttpRequest::handleProcessMultipart(){
     std::string name = "." + this->getCurrentRoute().getRoot() + '/' + "dataBase";
     std::ofstream file(name.c_str(), std::ios::app);
@@ -223,7 +161,6 @@ void    HttpRequest::handleProcessMultipart(){
     }
     file.write("\n", 1);
     file.close();
-    SaveNewUsers(name);
     currentState = PROCESS_DONE;
 }
 
