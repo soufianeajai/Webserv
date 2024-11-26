@@ -11,13 +11,13 @@ private:
     std::vector<int> sockets;
     std::map<int, Connection*> connections;
     std::set<std::string> serverNames; 
-    std::string serverRoot;
     std::map<std::string, Route> routes;
     std::map<int, std::string> errorPages;
     size_t clientMaxBodySize;
 
 
 public:
+    Server();
     void serverSocketSetter(int Port, int Socket);
     std::vector<int> getSockets() const;
     //std::map<int ,int> &serverSocketGetter();
@@ -28,8 +28,6 @@ public:
     int GetPort(int socketserver) const;
     void serverNamesSetter(std::string serverName);
     std::set<std::string> serverNamesGetter();
-    void serverRootSetter(std::string serverRoot);
-    std::string serverRootGetter();
     void errorPagesSetter(int errorCode, std::string errorPage);
     std::map<int, std::string>& errorPagesGetter();
     void clientMaxBodySizeSetter(size_t clientMaxBodySize);
