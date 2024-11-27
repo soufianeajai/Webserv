@@ -96,7 +96,6 @@ void HttpResponse::handleRedirection(const Route &route)
 
 void HttpResponse::UpdateStatueCode(int code)
 {
-    
     statusCode = code;
     std::cout << "status :"<<statusCode<<"\n";
     cgi = false;
@@ -111,6 +110,7 @@ void HttpResponse::UpdateStatueCode(int code)
         case 400: reasonPhrase = "Bad Request"; break;
         case 403: reasonPhrase = "Forbidden"; break;
         case 404: reasonPhrase = "Not Found"; break;
+        case 413: reasonPhrase = "File Too Large"; break;
         case 405: reasonPhrase = "Method Not Allowed"; break;
         case 500: reasonPhrase = "Internal Server Error"; break;
         case 501: reasonPhrase = "Not Implemented"; break; // for Unsupported CGI Extension
@@ -128,7 +128,7 @@ void HttpResponse::UpdateStatueCode(int code)
     std::ifstream file(Page.c_str());
     if (!file.is_open())
     {
-        totaSize = 0; // this is last part we can do after check for error response , set it to -1 , then we check it in send response if equal to -1 so close connection no body for client !!
+        totaSize = 0;
         return ;
     }
     file.seekg(0, std::ios::end);
@@ -138,7 +138,7 @@ void HttpResponse::UpdateStatueCode(int code)
     headers["Content-Length"] =  intToString(totaSize);
     headers["Content-Type"] = "text/html";
 }
-//((path == "/") ?  "" : path ) + ((files[i][0] == '/') ? files[i] : "/" + files[i]) 
+
 void HttpResponse::GeneratePageIndexing(std::string& fullpath,std::string& path, std::vector<std::string>& files)
 {
     Page = DEFAULTINDEX;
@@ -228,7 +228,11 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
         CheckExistingInServer();
     }
     else if (statusCode ==  204)
+    {
         std::cout << "[DELETE data] ... "<<Page<<"\n";
+        totaSize = 0;
+        return ;
+    }
     if(route.getIsRedirection())
         handleRedirection(route);
     

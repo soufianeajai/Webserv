@@ -83,6 +83,7 @@ enum State {
     ERROR_METHOD_NOT_ALLOWED,
     ERROR_INTERNAL_ERROR,
     ERROR_NOT_FOUND,
+    ERROR_FILE_TOO_LARGE,
 // PROCESS REQUEST
     PROCESS_URI,
     PROCESS_GET,
@@ -130,13 +131,14 @@ private:
     std::map<State, StateHandler> stateHandlers;
     std::map<State, int> errorState;
     std::vector<boundaryPart> parts;
+    size_t currentBodySize;
 
 public:
     HttpRequest();
     Route& getCurrentRoute();
     std::vector<uint8_t>& GetBody();
     std::map<std::string, std::string>& getheaders();
-    void    parse(uint8_t *buffer, int readSize);
+    void    parse(uint8_t *buffer, int readSize, size_t limitBodySize);
     void    process(std::map<std::string, Route>& routes);
     void    setMethod(const std::string methodStr);
     void    setUri(const std::string uri);

@@ -2,7 +2,7 @@
 
 HttpRequest::HttpRequest():HttpMessage(), currentState(METHOD_START), method(""), uri(""),  statusCode(200),
 holder(""), currentHeaderName(""), currentHeaderValue(""), isChunked(false), isMultipart(false), contentLength(0),
-bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), fieldName(""), query(""){
+bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), fieldName(""), query(""), currentBodySize(0){
 // FIRST LINE STATE HANDLERS
     stateHandlers.insert(std::make_pair(METHOD_START, &HttpRequest::handleMethodStart));
     stateHandlers.insert(std::make_pair(METHOD_PARSING, &HttpRequest::handleMethodParsing));
@@ -59,6 +59,7 @@ bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&Http
     errorState.insert(std::make_pair(ERROR_INCOMPLETE, 400));
     errorState.insert(std::make_pair(ERROR_BUFFER_OVERFLOW, 400));
     errorState.insert(std::make_pair(ERROR_BINARY_DATA, 415));
+    errorState.insert(std::make_pair(ERROR_FILE_TOO_LARGE, 413));
 };
 
 std::vector<uint8_t>& HttpRequest::GetBody()
@@ -70,7 +71,7 @@ std::map<std::string, std::string>& HttpRequest::getheaders()
 {
     return headers;
 }
-void HttpRequest::parse(uint8_t *buffer, int readSize)
+void HttpRequest::parse(uint8_t *buffer, int readSize, size_t limitBodySize)
 {
 //    std::cout << "state in state machine parser  " << std::endl;
     //     for(int i = 0; i < readSize && !errorOccured(); i++)
@@ -89,13 +90,14 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
         else
             break;
     }
-
+    if (currentBodySize > limitBodySize)
+        currentState = ERROR_FILE_TOO_LARGE;
     if (errorOccured())
     {
         std::map<State, int>::const_iterator it = errorState.find(currentState);
         statusCode = it->second;
     }
-         std::cout << "state in state machine parser  " << statusCode << std::endl;
+        //  std::cout << "state in state machine parser  " << currentBodySize << " " << limitBodySize << std::endl;
         // std::cout << "chunked body read  " << chunkbytesread << std::endl;
         // std::cout << "chunk size  " << chunkSize << std::endl;
     //  std::cout <<" method is : " << method << std::endl;

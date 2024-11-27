@@ -12,7 +12,7 @@ private:
     int clientSocketId;
     HttpRequest  request;
     HttpResponse response;
-    size_t bodySize;
+    size_t limitBodySize;
     Status status;
     struct epoll_event epollfd;
     int socketServer;
