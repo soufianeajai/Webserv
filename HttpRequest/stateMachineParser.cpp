@@ -228,7 +228,6 @@ void HttpRequest::handleChunkSizeLF(uint8_t byte) {
     if (byte == '\n')
     {
         chunkSize = std::strtol(holder.c_str(), NULL, 16);
-        currentBodySize += chunkSize;
         if (chunkSize == 0)
             currentState = CHUNK_TRAILER_CR;
         else
@@ -276,9 +275,9 @@ void    HttpRequest::handleBodyContentLength(uint8_t byte) {
     if (contentLength < 0  || currentState == MESSAGE_COMPLETE)
         currentState = ERROR_CONTENT_LENGTH;
     body.push_back(byte);
-    bytesread++;
-    currentBodySize++;
-    if (bytesread == contentLength)
+    // bytesread++;
+//    currentBodySize++;
+    if (body.size() == contentLength)
         currentState = MESSAGE_COMPLETE;
 }
 // MULTIPART/FORM-DATA BODY STATE HANDLERS

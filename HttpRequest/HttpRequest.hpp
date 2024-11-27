@@ -120,8 +120,8 @@ private:
     std::string     currentHeaderValue;
     bool            isChunked;
     bool            isMultipart;
-    int             contentLength;
-    int             bytesread;
+    size_t             contentLength;
+//    int             bytesread;
     std::string     boundary;
     int             chunkSize;
     int             chunkbytesread;
@@ -131,7 +131,7 @@ private:
     std::map<State, StateHandler> stateHandlers;
     std::map<State, int> errorState;
     std::vector<boundaryPart> parts;
-    size_t currentBodySize;
+//    size_t currentBodySize;
 
 public:
     HttpRequest();
