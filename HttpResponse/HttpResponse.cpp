@@ -87,17 +87,22 @@ void HttpResponse::handleRedirection(const Route &route)
     //Location: https://example.com/new-path ~~!!!
     if (route.getIsRedirection() && !route.getNewPathRedirection().empty())
     {
-        UpdateStatueCode(route.getstatusCodeRedirection());
-        Page = PWD + route.getNewPathRedirection();
+        //if() about path 
+        headers["Location"] = route.getNewPathRedirection();
+         UpdateStatueCode(route.getstatusCodeRedirection());
+         //totaSize = 0;
+        // UpdateStatueCode(route.getstatusCodeRedirection());
+        // Page = PWD + ;
+        // totaSize = Page.size();
     }
-    else
-        UpdateStatueCode(404);
+    // else
+    //     UpdateStatueCode(404);
 }
 
 void HttpResponse::UpdateStatueCode(int code)
 {
     statusCode = code;
-    std::cout << "status :"<<statusCode<<"\n";
+    std::cout << "status response :"<<statusCode<<"\n";
     cgi = false;
     switch (statusCode)
     {  
@@ -120,23 +125,28 @@ void HttpResponse::UpdateStatueCode(int code)
         case 204: reasonPhrase = "No Content"; break;
         default:  reasonPhrase = "OK"; break;
     }
-    std::map<int, std::string>::iterator it = defaultErrors.find(statusCode);
-    if (it != defaultErrors.end())
-        Page = it->second;
-    else
-        Page = DEFAULTERROR;
-    std::ifstream file(Page.c_str());
-    if (!file.is_open())
+
+    if (statusCode >=400)
     {
-        totaSize = 0;
-        return ;
+        std::map<int, std::string>::iterator it = defaultErrors.find(statusCode);
+        if (it != defaultErrors.end())
+            Page = it->second;
+        else
+            Page = DEFAULTERROR;
+    
+        std::ifstream file(Page.c_str());
+        if (!file.is_open())
+        {
+            totaSize = 0;
+            return ;
+        }
+        file.seekg(0, std::ios::end);
+        totaSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+        file.close();
+        headers["Content-Length"] =  intToString(totaSize);
+        headers["Content-Type"] = "text/html";
     }
-    file.seekg(0, std::ios::end);
-    totaSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-    file.close();
-    headers["Content-Length"] =  intToString(totaSize);
-    headers["Content-Type"] = "text/html";
 }
 
 void HttpResponse::GeneratePageIndexing(std::string& fullpath,std::string& path, std::vector<std::string>& files)
@@ -165,14 +175,14 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& path)
     struct stat pathStat;
     if (stat(fullpath.c_str(), &pathStat) != 0 || !S_ISDIR(pathStat.st_mode))
     {
-        std::cerr << "Error: Path does not exist or is not a directory." << std::endl;
-        UpdateStatueCode(404);
+        std::cerr << "[Error] : Path does not exist or is not a directory." << std::endl;
+        UpdateStatueCode(500);
         return;
     }
     DIR* dir = opendir(fullpath.c_str());
     if (!dir) {
-        std::cerr << "Error: Unable to open directory." << std::endl;
-        UpdateStatueCode(404);
+        std::cerr << "[Error] : Unable to open directory." << std::endl;
+        UpdateStatueCode(500);
         return;
     }
 
@@ -195,7 +205,13 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
     route.setRoot(PWD + route.getRoot());
     if(request.getUri().empty())
         uri = request.getUri() + "/";
-    if (statusCode ==  200 || statusCode ==  201)
+    if (statusCode ==  204)
+    {
+        std::cout << "[DELETE] ... "<<uri<<"\n";
+        totaSize = 0;
+        return ;
+    }   
+    else if (statusCode ==  200 || statusCode ==  201)
     {
         handleCookie(request);
         if (route.getPath() == uri)
@@ -227,15 +243,6 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
         checkIfCGI(Page, route.getCgiExtensions());
         CheckExistingInServer();
     }
-    else if (statusCode ==  204)
-    {
-        std::cout << "[DELETE data] ... "<<Page<<"\n";
-        totaSize = 0;
-        return ;
-    }
-    if(route.getIsRedirection())
-        handleRedirection(route);
-    
     if (cgi)
         createEnvChar(request, uri, host, intToString(port));
 }
@@ -288,11 +295,12 @@ void HttpResponse::ResponseGenerating(HttpRequest & request,std::set<std::string
     defaultErrors = errorPages;
     this->currenttime = currenttime;
     UpdateStatueCode(request.GetStatusCode());
-
     std::map<std::string, std::string>::iterator it = request.getheaders().find("Host");
     if  (it != request.getheaders().end())
         handleServerName(serverNamesGetter, it->second, host);
-    
+    if(request.getCurrentRoute().getIsRedirection())
+        handleRedirection(request.getCurrentRoute());
+    else
     handleRequest(host,port, request);
     if (cgi)
     {
@@ -302,7 +310,9 @@ void HttpResponse::ResponseGenerating(HttpRequest & request,std::set<std::string
     }
     else
     {
-        headers["Content-Type"] = getMimeType(Page);
+        std::cout << "size :"<<intToString(totaSize)<<"\n";
+        if(!request.getCurrentRoute().getIsRedirection())
+            headers["Content-Type"] = getMimeType(Page);
         headers["Content-Length"] = intToString(totaSize);
     }
     headers["Date"] =  getCurrentTimeFormatted();
