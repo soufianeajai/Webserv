@@ -81,6 +81,8 @@ enum State {
     ERROR_BUFFER_OVERFLOW,      // Input exceeds buffer capacity
     ERROR_BINARY_DATA,           // Error processing binary data
     ERROR_METHOD_NOT_ALLOWED,
+    ERROR_INTERNAL_ERROR,
+    ERROR_NOT_FOUND,
 // PROCESS REQUEST
     PROCESS_URI,
     PROCESS_GET,
@@ -171,7 +173,7 @@ private:
     void    handleBodyContentLength(uint8_t byte);
     void    handleChunkSizeStart(uint8_t byte);
     void    handleChunkSize(uint8_t byte);
-    void    handleChunkSizeCR(uint8_t byte);
+//    void    handleChunkSizeCR(uint8_t byte);
     void    handleChunkSizeLF(uint8_t byte);
     void    handleChunkData(uint8_t byte);
     void    handleChunkDataLF(uint8_t byte);

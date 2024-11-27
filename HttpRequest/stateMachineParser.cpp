@@ -210,19 +210,19 @@ void HttpRequest::handleChunkSizeStart(uint8_t byte) {
 void HttpRequest::handleChunkSize(uint8_t byte) {
     if (std::isxdigit(byte)) {
         holder += byte;
-        currentState = CHUNK_SIZE_CR;
+        // currentState = CHUNK_SIZE_CR;
     }
     else if (byte == '\r')
         currentState = CHUNK_SIZE_LF;
     else
         currentState = ERROR_CHUNK_SIZE;
 }
-void HttpRequest::handleChunkSizeCR(uint8_t byte) {
-    if (byte == '\r')
-        currentState = CHUNK_SIZE_LF;
-    else
-        currentState = ERROR_CHUNK_SIZE;
-}
+// void HttpRequest::handleChunkSizeCR(uint8_t byte) {
+//     if (byte == '\r')
+//         currentState = CHUNK_SIZE_LF;
+//     else
+//         currentState = ERROR_CHUNK_SIZE;
+// }
 
 void HttpRequest::handleChunkSizeLF(uint8_t byte) {
     if (byte == '\n')
@@ -251,15 +251,15 @@ void HttpRequest::handleChunkTrailerLF(uint8_t byte) {
 }
 
 void HttpRequest::handleChunkData(uint8_t byte) {
-    if (byte == '\r')
-        currentState = CHUNK_DATA_LF;
-    else if (chunkbytesread > chunkSize)
+    if (chunkbytesread > chunkSize)
         currentState = ERROR_CHUNK_SIZE;
-    else
+    else if (chunkbytesread < chunkSize)
     {
         body.push_back(byte);
         chunkbytesread++;
     }
+    else
+        currentState = CHUNK_DATA_LF;
 }
 
 void HttpRequest::handleChunkDataLF(uint8_t byte) {

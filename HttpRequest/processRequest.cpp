@@ -7,6 +7,7 @@ State processMethod(std::string& myMethod, Route& route){
     //for(std::set<std::string>::iterator itt = allowedmethods.begin(); itt != allowedmethods.end(); itt++)
     //   std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++ " << *itt << std::endl;
 
+std::cout << "-------> " << myMethod << std::endl;
     if (Methodit == allowedmethods.end()){
        // std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++---- " << std::endl;
 
@@ -104,12 +105,15 @@ bool ft_rmdir(const char *path)
 
 
 void    HttpRequest::handleProcessDelete(){
-    std::string file_path = CurrentRoute.getRoot() + uri;
+    struct stat buffer;
+    std::string file_path = getPWDVariable() + CurrentRoute.getRoot() +  uri.erase(0, CurrentRoute.getPath().size());
     std::cout << "root " << CurrentRoute.getRoot() <<  std::endl << "uri" << uri << std::endl;
     if (ft_rmdir(file_path.c_str()) == true)
         currentState = PROCESS_DONE;
+    else if (stat(file_path.c_str(), &buffer) != 0)
+        currentState = ERROR_NOT_FOUND;
     else
-        currentState = ERROR_INVALID_METHOD;
+        currentState = ERROR_INTERNAL_ERROR;
 }
 
 void HttpRequest::saveDataToFile(std::string name, std::vector<uint8_t>& body)
@@ -176,7 +180,7 @@ void    HttpRequest::handleProcessPost(){
 }
 
 void HttpRequest::handleProcessChunkedBody(std::string root) {
-
+    (void)root;
     std::map<std::string, std::string>::iterator it = headers.find("Content-Disposition");
     if (it != headers.end())
     {
@@ -187,16 +191,11 @@ void HttpRequest::handleProcessChunkedBody(std::string root) {
             filenamePos += 10;
             std::size_t filenameEndPos = contentDisposition.find("\"", filenamePos);
             std::string filename = contentDisposition.substr(filenamePos, filenameEndPos - filenamePos);
-            std::string filePath = root + uri + "/" + filename;
-            saveDataToFile("filePath", body);
-        } else {
-            currentState = ERROR_BOUNDARY;
-            return;
+            saveDataToFile(filename, body);
         }
-    } else {
-        currentState = ERROR_BOUNDARY;
-        return;
     }
+    else
+        saveDataToFile("Posted_Data", body);
     currentState = PROCESS_DONE;
 }
 

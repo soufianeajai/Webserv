@@ -39,3 +39,4 @@ public :
     std::string getVersion() const;
    
 };
+std::string getPWDVariable();

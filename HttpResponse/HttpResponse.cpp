@@ -28,15 +28,15 @@ pid_t HttpResponse::getPid() const
 //     return -1;
 // }
 
-std::string getPWDVariable()
-{
-    for (char** current = environ; *current != NULL; ++current)
-    {
-        if (std::strncmp(*current, "PWD=", 4) == 0)
-            return std::string(*current + 4);
-    }
-    return ""; // Return an empty string if PATH is not found
-}
+// std::string getPWDVariable()
+// {
+//     for (char** current = environ; *current != NULL; ++current)
+//     {
+//         if (std::strncmp(*current, "PWD=", 4) == 0)
+//             return std::string(*current + 4);
+//     }
+//     return ""; // Return an empty string if PATH is not found
+// }
 
 HttpResponse::HttpResponse():statusCode(-1),totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable()),pid(-1),currenttime(0)
 {

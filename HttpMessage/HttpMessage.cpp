@@ -19,3 +19,12 @@ std::string HttpMessage::getVersion() const
 {
         return version;
 }
+std::string getPWDVariable()
+{
+    for (char** current = environ; *current != NULL; ++current)
+    {
+        if (std::strncmp(*current, "PWD=", 4) == 0)
+            return std::string(*current + 4);
+    }
+    return ""; // Return an empty string if PATH is not found
+}

@@ -27,7 +27,7 @@ bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&Http
 // CHUNKED BODY STATE HANDLERS
     stateHandlers.insert(std::make_pair(CHUNK_SIZE_START, &HttpRequest::handleChunkSizeStart));
     stateHandlers.insert(std::make_pair(CHUNK_SIZE, &HttpRequest::handleChunkSize));
-    stateHandlers.insert(std::make_pair(CHUNK_SIZE_CR, &HttpRequest::handleChunkSizeCR));
+//    stateHandlers.insert(std::make_pair(CHUNK_SIZE_CR, &HttpRequest::handleChunkSizeCR));
     stateHandlers.insert(std::make_pair(CHUNK_SIZE_LF, &HttpRequest::handleChunkSizeLF));
     stateHandlers.insert(std::make_pair(CHUNK_DATA, &HttpRequest::handleChunkData));
     stateHandlers.insert(std::make_pair(CHUNK_DATA_LF, &HttpRequest::handleChunkDataLF));
@@ -46,7 +46,9 @@ bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&Http
 // ERRORS STATE CODES
     errorState.insert(std::make_pair(ERROR_BAD_REQUEST, 400));
     errorState.insert(std::make_pair(ERROR_INVALID_METHOD, 501));
+    errorState.insert(std::make_pair(ERROR_INTERNAL_ERROR, 500));
     errorState.insert(std::make_pair(ERROR_METHOD_NOT_ALLOWED, 405));
+    errorState.insert(std::make_pair(ERROR_NOT_FOUND, 404));
     errorState.insert(std::make_pair(ERROR_INVALID_URI, 400));
     errorState.insert(std::make_pair(REQUEST_URI_TOO_LONG, 414));
     errorState.insert(std::make_pair(ERROR_INVALID_VERSION, 505));
@@ -70,9 +72,16 @@ std::map<std::string, std::string>& HttpRequest::getheaders()
 }
 void HttpRequest::parse(uint8_t *buffer, int readSize)
 {
+//    std::cout << "state in state machine parser  " << std::endl;
+    //     for(int i = 0; i < readSize && !errorOccured(); i++)
+    // {
+    //     std::cout << buffer[i];
+    //     }
+
     for(int i = 0; i < readSize && !errorOccured(); i++)
     {
-//        std::cout << "state in state machine parser  " << currentState << std::endl;
+        //        std::cout << buffer[i];
+
         (this->*currentHandler)(buffer[i]);
         std::map<State, StateHandler>::const_iterator it = stateHandlers.find(currentState);
         if (it != stateHandlers.end())
@@ -80,11 +89,15 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
         else
             break;
     }
+
     if (errorOccured())
     {
         std::map<State, int>::const_iterator it = errorState.find(currentState);
         statusCode = it->second;
     }
+         std::cout << "state in state machine parser  " << statusCode << std::endl;
+        // std::cout << "chunked body read  " << chunkbytesread << std::endl;
+        // std::cout << "chunk size  " << chunkSize << std::endl;
     //  std::cout <<" method is : " << method << std::endl;
     //   std::cout <<" uri is : " << uri << std::endl;
     //  std::cout << "version is " << version << std::endl;
