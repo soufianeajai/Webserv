@@ -341,7 +341,6 @@ void HttpRequest::handleBodyPartHeaderName(uint8_t byte) {
 void HttpRequest::handleBodyPartHeaderValue(uint8_t byte) {
     if (byte == '\r') {
         parts.back().boundaryHeader[currentHeaderName] = holder;        
-        // Parse Content-Disposition header
         if (currentHeaderName == "Content-Disposition") {
             std::size_t namePos = holder.find("name=");
             std::size_t filenamePos = holder.find("filename=");

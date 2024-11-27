@@ -193,7 +193,7 @@ private:
 // PROCESS HANDLERS
     void    handleProcessUri_Method(std::map<std::string, Route>& routes);
     void    handleProcessDelete();
-    void    handleProcessChunkedBody(std::string root);
+    void    handleProcessChunkedBody();
     void    handleProcessPost();
     void    handleProcessPostData();
     void    handleProcessMultipart();
