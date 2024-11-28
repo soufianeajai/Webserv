@@ -99,6 +99,5 @@ void HttpRequest::parse(uint8_t *buffer, int readSize, size_t limitBodySize)
     }
     if (body.size() > limitBodySize)
         currentState = ERROR_FILE_TOO_LARGE;
-  //              std::cout << "--------> "<< contentLength << std::endl;
 
 }
