@@ -2,7 +2,7 @@
 
 HttpRequest::HttpRequest():HttpMessage(), currentState(METHOD_START), method(""), uri(""),  statusCode(200),
 holder(""), currentHeaderName(""), currentHeaderValue(""), isChunked(false), isMultipart(false), contentLength(0),
-bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), fieldName(""), query(""){
+boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), query(""){
 // FIRST LINE STATE HANDLERS
     stateHandlers.insert(std::make_pair(METHOD_START, &HttpRequest::handleMethodStart));
     stateHandlers.insert(std::make_pair(METHOD_PARSING, &HttpRequest::handleMethodParsing));
@@ -27,7 +27,6 @@ bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&Http
 // CHUNKED BODY STATE HANDLERS
     stateHandlers.insert(std::make_pair(CHUNK_SIZE_START, &HttpRequest::handleChunkSizeStart));
     stateHandlers.insert(std::make_pair(CHUNK_SIZE, &HttpRequest::handleChunkSize));
-    stateHandlers.insert(std::make_pair(CHUNK_SIZE_CR, &HttpRequest::handleChunkSizeCR));
     stateHandlers.insert(std::make_pair(CHUNK_SIZE_LF, &HttpRequest::handleChunkSizeLF));
     stateHandlers.insert(std::make_pair(CHUNK_DATA, &HttpRequest::handleChunkData));
     stateHandlers.insert(std::make_pair(CHUNK_DATA_LF, &HttpRequest::handleChunkDataLF));
@@ -46,33 +45,51 @@ bytesread(0),boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&Http
 // ERRORS STATE CODES
     errorState.insert(std::make_pair(ERROR_BAD_REQUEST, 400));
     errorState.insert(std::make_pair(ERROR_INVALID_METHOD, 501));
+    errorState.insert(std::make_pair(ERROR_INTERNAL_ERROR, 500));
     errorState.insert(std::make_pair(ERROR_METHOD_NOT_ALLOWED, 405));
+    errorState.insert(std::make_pair(ERROR_NOT_FOUND, 404));
     errorState.insert(std::make_pair(ERROR_INVALID_URI, 400));
-    errorState.insert(std::make_pair(REQUEST_URI_TOO_LONG, 414));
     errorState.insert(std::make_pair(ERROR_INVALID_VERSION, 505));
     errorState.insert(std::make_pair(ERROR_INVALID_HEADER, 400));
     errorState.insert(std::make_pair(ERROR_CONTENT_LENGTH, 411));
     errorState.insert(std::make_pair(ERROR_CHUNK_SIZE, 400));
     errorState.insert(std::make_pair(ERROR_BOUNDARY, 400));
-    errorState.insert(std::make_pair(ERROR_INCOMPLETE, 400));
-    errorState.insert(std::make_pair(ERROR_BUFFER_OVERFLOW, 400));
-    errorState.insert(std::make_pair(ERROR_BINARY_DATA, 415));
+    errorState.insert(std::make_pair(ERROR_FILE_TOO_LARGE, 413));
+    errorState.insert(std::make_pair(ERROR_FORBIDDEN, 403));
 };
 
-std::vector<uint8_t>& HttpRequest::GetBody()
-{
-    return body;
-}
+std::vector<uint8_t>& HttpRequest::GetBody(){return body;}
 
-std::map<std::string, std::string>& HttpRequest::getheaders()
-{
-    return headers;
-}
-void HttpRequest::parse(uint8_t *buffer, int readSize)
+std::map<std::string, std::string>& HttpRequest::getheaders(){return headers;}
+
+Route& HttpRequest::getCurrentRoute(){return CurrentRoute;}
+
+void HttpRequest::setMethod(const std::string methodStr){method = methodStr;};
+
+std::string& HttpRequest::getMethod() {return method;};
+
+void HttpRequest::setUri(const std::string inputUrl){uri = inputUrl;}
+
+std::string& HttpRequest::getUri() {return uri;}
+
+bool HttpRequest::parsingCompleted() const {return currentState == MESSAGE_COMPLETE;}
+
+int HttpRequest::GetStatusCode() const{return statusCode;}
+
+std::string HttpRequest::getQuery() const{return query;}
+
+State HttpRequest::getcurrentState() const{return currentState;}
+
+std::string& HttpRequest::getHeader(std::string key){return headers[key];}
+
+std::map<State, int>& HttpRequest::getErrorState(){return errorState;}
+
+void HttpRequest::SetStatusCode(int status){statusCode = status;}
+
+void HttpRequest::parse(uint8_t *buffer, int readSize, size_t limitBodySize)
 {
     for(int i = 0; i < readSize && !errorOccured(); i++)
     {
-//        std::cout << "state in state machine parser  " << currentState << std::endl;
         (this->*currentHandler)(buffer[i]);
         std::map<State, StateHandler>::const_iterator it = stateHandlers.find(currentState);
         if (it != stateHandlers.end())
@@ -80,84 +97,8 @@ void HttpRequest::parse(uint8_t *buffer, int readSize)
         else
             break;
     }
-    if (errorOccured())
-    {
-        std::map<State, int>::const_iterator it = errorState.find(currentState);
-        statusCode = it->second;
-    }
-    //  std::cout <<" method is : " << method << std::endl;
-    //   std::cout <<" uri is : " << uri << std::endl;
-    //  std::cout << "version is " << version << std::endl;
-    //  std::cout <<" status code is : " << statusCode << std::endl;
-    // std::cout <<" isChunked are : " << isChunked << std::endl;
-    // std::cout <<" isMultipart are : " << isMultipart << std::endl;
-    //  std::cout <<" contentLength are : " << contentLength << std::endl;
-    // std::cout <<" boundary are :                             " << boundary << std::endl;
+    if (body.size() > limitBodySize)
+        currentState = ERROR_FILE_TOO_LARGE;
+                std::cout << "--------> "<< contentLength << std::endl;
 
-    // for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-    //     std::cout << it->first << ": " << it->second << std::endl;
-    // }
-    // std::cout <<" body is : " << std::endl;
-    // for (std::vector<uint8_t>::const_iterator it = body.begin(); it != body.end(); ++it) {
-    //     std::cout << static_cast<char>(*it);
-    // }
-    // std::cout <<" form fields are : " << std::endl;
-    // for(std::map<std::string, std::string>::const_iterator it = formFields.begin(); it != formFields.end(); it++){
-    //     std::cout << it->first << ": " << it->second << std::endl;
-    // }
-    // std::cout << std::endl;
-}
-
-Route& HttpRequest::getCurrentRoute()
-{
-    return CurrentRoute;
-}
-
-void HttpRequest::setMethod(const std::string methodStr){
-    method = methodStr;
-};
-std::string& HttpRequest::getMethod() {
-    return method;
-};
-void HttpRequest::setUri(const std::string inputUrl){
-    uri = inputUrl;
-};
-std::string& HttpRequest::getUri() {
-    return uri;
-};
-void HttpRequest::reset(){
-    resetMessage();
-    method.clear();
-    uri.clear();
-    currentState = METHOD_START;
-    statusCode = 200;
-};
-
-bool HttpRequest::parsingCompleted() const {
-    return currentState == MESSAGE_COMPLETE;
-}
-
-int HttpRequest::GetStatusCode() const
-{
-    return statusCode;
-}
-
-std::string HttpRequest::getQuery() const
-{
-    return query;
-}
-
-State HttpRequest::getcurrentState() const{
-    return currentState;
-}
-
-std::string& HttpRequest::getHeader(std::string key)
-{
-    return headers[key];
-}
-std::map<State, int>& HttpRequest::getErrorState(){
-    return errorState;
-}
-void HttpRequest::SetStatusCode(int status){
-    statusCode = status;
 }

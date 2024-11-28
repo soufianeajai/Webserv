@@ -4,7 +4,8 @@
 #include "../Server/Server.hpp"
 #include <sys/epoll.h>
 #include <ctime>
-
+#define MB 1024 * 1024
+#define KB 1024
 class Connection {
 private:
     
@@ -12,15 +13,15 @@ private:
     int clientSocketId;
     HttpRequest  request;
     HttpResponse response;
-    size_t bodySize;
+    size_t limitBodySize;
     Status status;
     struct epoll_event epollfd;
     int socketServer;
     time_t last_access_time;
 
 public:
-    static const ssize_t MAX_BODY_SIZE = 10 * 1024 * 1024;
-    static const ssize_t CHUNK_SIZE = 8 * 1024;
+    static const ssize_t MAX_BODY_SIZE = 100 * MB;
+    static const ssize_t CHUNK_SIZE = 8 * KB;
     Connection();
     Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize,struct epoll_event& epollfd, int socketserver, time_t last_access_time);
     struct epoll_event& getEpollFd();
@@ -37,4 +38,5 @@ public:
     int getsocketserver() const;
     time_t get_last_access_time() const ;
     void set_last_access_time(time_t last);
+    size_t getLimitBodySize(size_t maxSize);
 };

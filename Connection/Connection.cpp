@@ -1,7 +1,5 @@
 #include "Connection.hpp"
 
-Connection::Connection():bodySize(0){}
-
 time_t Connection::get_last_access_time() const
 {
     return last_access_time;
@@ -11,14 +9,18 @@ void Connection::set_last_access_time(time_t last)
 {
     last_access_time = last;
 }
-Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize, struct epoll_event& epoll, int serversocket,time_t last):clientSocketId(fd), bodySize(maxSize), status(READING_PARSING),epollfd(epoll),last_access_time(last)
+size_t Connection::getLimitBodySize(size_t maxSize){
+    size_t temp = maxSize * MB;
+    return (temp < Connection::MAX_BODY_SIZE ? temp : Connection::MAX_BODY_SIZE);
+}
+Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize, struct epoll_event& epoll, int serversocket,time_t last):clientSocketId(fd), status(READING_PARSING),epollfd(epoll),last_access_time(last)
 {
+    limitBodySize = getLimitBodySize(maxSize);
     this->socketServer = serversocket;
     CLientAddress.sin_family = acceptedAddr.sin_family;
     CLientAddress.sin_port = acceptedAddr.sin_port;
     CLientAddress.sin_addr = acceptedAddr.sin_addr;
     fcntl(fd, F_SETFL, O_NONBLOCK);
-    (void)bodySize;
 }
 
 int Connection::getsocketserver() const
@@ -49,9 +51,9 @@ void Connection::parseRequest(){
     }
     else
     {
-        request.parse(buffer, readSize);
+        request.parse(buffer, readSize, limitBodySize);
         if (request.parsingCompleted())
-        status = PROCESSING;
+            status = PROCESSING;
     }
 }
 

@@ -53,11 +53,8 @@ bool HttpRequest::errorOccured() const {
     }
     return false;
 }
-/*
-    RFC 7230 Sec 3.1.1: Any VCHAR except delimiters
-    Valid: A-Z, a-z, 0-9, -, ., _, ~, !, $, &, ', (, ), *, +, ,, ;, =, :, @
-    No spaces, angle brackets, square brackets, curly brackets, quotes or backslash, ^ or `
-*/
+
+
 bool HttpRequest::isValidPathChar(uint8_t byte) {
     return (byte >= 33 && byte <= 126) &&
         byte != ' ' &&

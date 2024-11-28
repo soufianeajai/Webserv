@@ -8,8 +8,8 @@
 #include <cstdio>      // for remove
 #include <iostream>    // for std::cerr
 #define DEFAULTERROR "www/html/errorPages/DefaultError.html"
-#define DEFAULTDELETE "www/html/defaultpagedelete.html"
 #define DEFAULTINDEX "www/html/indexing.html"
+#define DEFAULTREDIRECT "www/html/redirection/newindex.html"
 #define SESSION "/session"
 extern char **environ;
 
@@ -53,6 +53,7 @@ private:
 
 public:
     HttpResponse();
+
     bool getCgi() const;
     pid_t getPid() const;
     //int getpipe() const;

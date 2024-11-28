@@ -16,7 +16,7 @@ private:
 public:
     Route();
     void setPath(std::string path);
-    std::string getPath() const;
+    std::string& getPath();
     void addAllowedMethod(std::string method);
     std::set<std::string> getAllowedMethods();
     void setRoot(std::string root);

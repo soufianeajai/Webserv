@@ -1,32 +1,30 @@
 #include "HttpRequest.hpp"
 
-// FIRST LINE STATE HANDLERS
 void HttpRequest::handleMethodStart(uint8_t byte) {
     if (byte == 'G' || byte == 'P' || byte == 'D') {
         method = byte;
         currentState = METHOD_PARSING;
+        if (byte == 'G')
+            holder = "GET";
+        else if (byte == 'P'){
+            holder = "POST";
+            statusCode = 201;
+        }
+        else{
+            holder = "DELETE";
+            statusCode = 204;
+        }
     }
     else
         currentState =  ERROR_INVALID_METHOD;
 }
 
 void HttpRequest::handleMethodParsing(uint8_t byte) {
-    std::string expectedMethod;
-    if (method[0] == 'G')
-        expectedMethod = "GET";
-    else if (method[0] == 'P'){
-        expectedMethod = "POST";
-        statusCode = 201;
-    }
-    else{
-        expectedMethod = "DELETE";
-        statusCode = 204;
-    }
     size_t methodNextByte = method.length();
-    if (methodNextByte < expectedMethod.length()) {
-        if (byte == expectedMethod[methodNextByte]) {
+    if (methodNextByte < holder.length()) {
+        if (byte == holder[methodNextByte]) {
             method += byte; 
-            if (method == expectedMethod)
+            if (method == holder)
                 currentState = FIRST_SP;
             return;
         }
@@ -35,6 +33,7 @@ void HttpRequest::handleMethodParsing(uint8_t byte) {
 }
 
 void HttpRequest::handleFirstSP(uint8_t byte) {
+    holder.clear();
     if (byte == ' ')
         currentState = URI_START;
     else
@@ -49,25 +48,16 @@ void HttpRequest::handleURIStart(uint8_t byte) {
         currentState = ERROR_INVALID_URI;
 }
 void HttpRequest::handleURIPathParsing(uint8_t byte) {
-// Check for end of URI (space before HTTP version)
     if (byte == ' ')
         currentState = VERSION_HTTP;
-// Check max length or invalid char
     else if (!isValidPathChar(byte) )
         currentState = ERROR_INVALID_URI;
-    else if (uri.length() >= HttpRequest::MAX_URI_LENGTH)
-        currentState = REQUEST_URI_TOO_LONG;
-// check for consecutive // in the uri if so ... do nothing 
     else if (byte == '/' && !uri.empty() && uri[uri.length() - 1] == '/')
         currentState = URI_PATH_PARSING;
     else if (byte == '%')
-    {
-        holder.clear();
         currentState = DECODE_URI;
-    }
-    else if (byte == '?') {
+    else if (byte == '?')
         currentState = URI_HANDLE_QUERY;
-    }
     else
         uri += byte;
 }
@@ -83,8 +73,7 @@ void HttpRequest::handleDecodeURI(uint8_t byte) {
         holder += byte;
         if (holder.length() == 2)
         {
-            int value = std::strtol(holder.c_str(), NULL, 16);
-            uri += static_cast<char>(value);
+            uri += static_cast<char>(std::strtol(holder.c_str(), NULL, 16));
             holder.clear();
             currentState = URI_PATH_PARSING;
         }
@@ -96,8 +85,9 @@ void HttpRequest::handleDecodeURI(uint8_t byte) {
 void HttpRequest::handleVersionHTTP(uint8_t byte) {
     std::string expectedHttpVersion = "HTTP/1.1";
     size_t versiondNextByte = version.length();
-    if (uriBehindRoot())
-        currentState = ERROR_BAD_REQUEST;
+    if (uriBehindRoot()){
+        currentState = ERROR_FORBIDDEN;
+    }
     else if (versiondNextByte < expectedHttpVersion.length()) {
         if (byte == expectedHttpVersion[versiondNextByte]) {
             version += byte; 
@@ -105,8 +95,9 @@ void HttpRequest::handleVersionHTTP(uint8_t byte) {
                 currentState = REQUEST_LINE_CR;
             return;
         }
-    }    
-    currentState = ERROR_INVALID_VERSION;
+    }
+    else    
+        currentState = ERROR_INVALID_VERSION;
 }
 
 void HttpRequest::handleRequestLineCR(uint8_t byte) {
@@ -171,9 +162,6 @@ void HttpRequest::handleHeaderLF(uint8_t byte) {
 }
 void HttpRequest::handleHeadersEndLF(uint8_t byte) {
     handleTransfer();
-    
-
-
     if (byte == '\n'){
         if (contentLength == 0)
             currentState = MESSAGE_COMPLETE;
@@ -208,17 +196,9 @@ void HttpRequest::handleChunkSizeStart(uint8_t byte) {
 }
 
 void HttpRequest::handleChunkSize(uint8_t byte) {
-    if (std::isxdigit(byte)) {
+    if (std::isxdigit(byte))
         holder += byte;
-        currentState = CHUNK_SIZE_CR;
-    }
     else if (byte == '\r')
-        currentState = CHUNK_SIZE_LF;
-    else
-        currentState = ERROR_CHUNK_SIZE;
-}
-void HttpRequest::handleChunkSizeCR(uint8_t byte) {
-    if (byte == '\r')
         currentState = CHUNK_SIZE_LF;
     else
         currentState = ERROR_CHUNK_SIZE;
@@ -251,15 +231,15 @@ void HttpRequest::handleChunkTrailerLF(uint8_t byte) {
 }
 
 void HttpRequest::handleChunkData(uint8_t byte) {
-    if (byte == '\r')
-        currentState = CHUNK_DATA_LF;
-    else if (chunkbytesread > chunkSize)
+    if (chunkbytesread > chunkSize)
         currentState = ERROR_CHUNK_SIZE;
-    else
+    else if (chunkbytesread < chunkSize)
     {
         body.push_back(byte);
         chunkbytesread++;
     }
+    else
+        currentState = CHUNK_DATA_LF;
 }
 
 void HttpRequest::handleChunkDataLF(uint8_t byte) {
@@ -272,11 +252,12 @@ void HttpRequest::handleChunkDataLF(uint8_t byte) {
 
 // NORMAL BODY STATE HANDLERS
 void    HttpRequest::handleBodyContentLength(uint8_t byte) {
-    if (contentLength < 0  || currentState == MESSAGE_COMPLETE)
-        currentState = ERROR_CONTENT_LENGTH;
+    // if (contentLength < 0  || currentState == MESSAGE_COMPLETE)
+    //     currentState = ERROR_CONTENT_LENGTH;
     body.push_back(byte);
-    bytesread++;
-    if (bytesread == contentLength)
+    // bytesread++;
+//    currentBodySize++;
+    if (body.size() == contentLength)
         currentState = MESSAGE_COMPLETE;
 }
 // MULTIPART/FORM-DATA BODY STATE HANDLERS
@@ -340,7 +321,6 @@ void HttpRequest::handleBodyPartHeaderName(uint8_t byte) {
 void HttpRequest::handleBodyPartHeaderValue(uint8_t byte) {
     if (byte == '\r') {
         parts.back().boundaryHeader[currentHeaderName] = holder;        
-        // Parse Content-Disposition header
         if (currentHeaderName == "Content-Disposition") {
             std::size_t namePos = holder.find("name=");
             std::size_t filenamePos = holder.find("filename=");

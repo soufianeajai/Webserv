@@ -1,30 +1,57 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        <title>405</title>
-        <link href="main.css" rel="stylesheet" type="text/css">
-    </head>
-
-    <body>
-        <div id="app">
-            <div>405</div>
-            <div class="txt">
-                Method Not Allowed<span class="blink">_</span>
-            </div>
-        </div>
-    </body>
-</html>
-
-
-
-<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<meta charset="utf-8"
-	<title>405 method not allowed</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>405 Method Not Allowed</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fdf6e4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            line-height: 1.6;
+        }
+        .error-container {
+            text-align: center;
+            max-width: 600px;
+            padding: 20px;
+        }
+        .error-container h1 {
+            font-size: 120px;
+            margin: 0;
+            color: #ff6f61;
+            line-height: 1;
+        }
+        .error-container h2 {
+            font-size: 32px;
+            color: #ff6f61;
+            margin: 10px 0;
+        }
+        .error-container p {
+            font-size: 18px;
+            color: #555;
+            margin: 15px 0 0;
+        }
+        .error-container hr {
+            border: 0;
+            border-top: 2px solid #ff6f61;
+            margin: 20px 0;
+            width: 50%;
+        }
+    </style>
 </head>
 <body>
-	<h1>this is 405 error page</h1>
+    <div class="error-container">
+        <h1>405</h1>
+        <h2>Method Not Allowed</h2>
+        <hr>
+        <p>The requested method is not supported by the server or the resource.</p>
+    </div>
 </body>
 </html>

@@ -21,6 +21,26 @@ pid_t HttpResponse::getPid() const
 {
     return pid;
 }
+
+// HttpResponse::~HttpResponse()
+// {
+//     for (size_t i = 0; i < envVars.size(); ++i)
+//         delete[] envVars[i]; 
+//     envVars.clear();
+//     cgiOutput.clear(); 
+//     if (pipefd[0] != -1)
+//         close(pipefd[0]);
+//     if (pipefd[1] != -1)
+//         close(pipefd[1]);
+//     Page.clear();
+//     PathCmd.clear();
+//     PATH_INFO.clear();
+//     PWD.clear();
+//     Cookies.clear();
+//     defaultErrors.clear();
+//     mimeTypes.clear();
+// }
+
 // int HttpResponse::getpipe() const
 // {
 //     if (cgi)
@@ -28,15 +48,15 @@ pid_t HttpResponse::getPid() const
 //     return -1;
 // }
 
-std::string getPWDVariable()
-{
-    for (char** current = environ; *current != NULL; ++current)
-    {
-        if (std::strncmp(*current, "PWD=", 4) == 0)
-            return std::string(*current + 4);
-    }
-    return ""; // Return an empty string if PATH is not found
-}
+// std::string getPWDVariable()
+// {
+//     for (char** current = environ; *current != NULL; ++current)
+//     {
+//         if (std::strncmp(*current, "PWD=", 4) == 0)
+//             return std::string(*current + 4);
+//     }
+//     return ""; // Return an empty string if PATH is not found
+// }
 
 HttpResponse::HttpResponse():statusCode(-1),totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable()),pid(-1),currenttime(0)
 {
@@ -87,18 +107,22 @@ void HttpResponse::handleRedirection(const Route &route)
     //Location: https://example.com/new-path ~~!!!
     if (route.getIsRedirection() && !route.getNewPathRedirection().empty())
     {
-        UpdateStatueCode(route.getstatusCodeRedirection());
-        Page = PWD + route.getNewPathRedirection();
+        //if() about path 
+        headers["Location"] = route.getNewPathRedirection();
+         UpdateStatueCode(route.getstatusCodeRedirection());
+         //totaSize = 0;
+        // UpdateStatueCode(route.getstatusCodeRedirection());
+        // Page = PWD + ;
+        // totaSize = Page.size();
     }
-    else
-        UpdateStatueCode(404);
+    // else
+    //     UpdateStatueCode(404);
 }
 
 void HttpResponse::UpdateStatueCode(int code)
 {
-    
     statusCode = code;
-    std::cout << "status :"<<statusCode<<"\n";
+    std::cout << "status response :"<<statusCode<<"\n";
     cgi = false;
     switch (statusCode)
     {  
@@ -111,6 +135,7 @@ void HttpResponse::UpdateStatueCode(int code)
         case 400: reasonPhrase = "Bad Request"; break;
         case 403: reasonPhrase = "Forbidden"; break;
         case 404: reasonPhrase = "Not Found"; break;
+        case 413: reasonPhrase = "File Too Large"; break;
         case 405: reasonPhrase = "Method Not Allowed"; break;
         case 500: reasonPhrase = "Internal Server Error"; break;
         case 501: reasonPhrase = "Not Implemented"; break; // for Unsupported CGI Extension
@@ -120,32 +145,37 @@ void HttpResponse::UpdateStatueCode(int code)
         case 204: reasonPhrase = "No Content"; break;
         default:  reasonPhrase = "OK"; break;
     }
-    std::map<int, std::string>::iterator it = defaultErrors.find(statusCode);
-    if (it != defaultErrors.end())
-        Page = it->second;
-    else
-        Page = DEFAULTERROR;
-    std::ifstream file(Page.c_str());
-    if (!file.is_open())
+
+    if (statusCode >=400)
     {
-        totaSize = 0; // this is last part we can do after check for error response , set it to -1 , then we check it in send response if equal to -1 so close connection no body for client !!
-        return ;
+        std::map<int, std::string>::iterator it = defaultErrors.find(statusCode);
+        if (it != defaultErrors.end())
+            Page = it->second;
+        else
+            Page = DEFAULTERROR;
+    
+        std::ifstream file(Page.c_str());
+        if (!file.is_open())
+        {
+            totaSize = 0;
+            return ;
+        }
+        file.seekg(0, std::ios::end);
+        totaSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+        file.close();
+        headers["Content-Length"] =  intToString(totaSize);
+        headers["Content-Type"] = "text/html";
     }
-    file.seekg(0, std::ios::end);
-    totaSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-    file.close();
-    headers["Content-Length"] =  intToString(totaSize);
-    headers["Content-Type"] = "text/html";
 }
 
-void HttpResponse::GeneratePageIndexing(std::string& fullpath,std::string& uri, std::vector<std::string>& files)
+void HttpResponse::GeneratePageIndexing(std::string& fullpath,std::string& path, std::vector<std::string>& files)
 {
     Page = DEFAULTINDEX;
     std::ofstream file(DEFAULTINDEX, std::ios::out | std::ios::trunc);
     if (!file)
     {
-        std::cerr << "Error: Could not open file for writing: " << uri << std::endl;
+        std::cerr << "[Error] ... Could not open file for writing: " << path << std::endl;
         UpdateStatueCode(404);
         return;
     }
@@ -153,26 +183,26 @@ void HttpResponse::GeneratePageIndexing(std::string& fullpath,std::string& uri, 
     html << "<html><head><title>Index of " << fullpath << "</title></head><body>";
     html << "<h1>Index of " << fullpath << "</h1><ul>";
     for (size_t i = 0; i < files.size(); ++i)
-        html << "<li><a href=\"" << files[i] << "\">" << files[i] << "</a></li>";
+        html << "<li><a href=\"" << ((path == "/") ?  "" : path ) + "/" + files[i] << "\">" << files[i] << "</a></li>";
     html << "</ul></body></html>";
 
     file << html.str();
     file.close();
 }
 
-void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
+void HttpResponse::HandleIndexing(std::string fullpath, std::string& path)
 {
     struct stat pathStat;
     if (stat(fullpath.c_str(), &pathStat) != 0 || !S_ISDIR(pathStat.st_mode))
     {
-        std::cerr << "Error: Path does not exist or is not a directory." << std::endl;
-        UpdateStatueCode(404);
+        std::cerr << "[Error] : Path does not exist or is not a directory." << std::endl;
+        UpdateStatueCode(500);
         return;
     }
     DIR* dir = opendir(fullpath.c_str());
     if (!dir) {
-        std::cerr << "Error: Unable to open directory." << std::endl;
-        UpdateStatueCode(404);
+        std::cerr << "[Error] : Unable to open directory." << std::endl;
+        UpdateStatueCode(500);
         return;
     }
 
@@ -185,7 +215,7 @@ void HttpResponse::HandleIndexing(std::string fullpath, std::string& uri)
             files.push_back(name);
     }
     closedir(dir);
-    GeneratePageIndexing(fullpath,uri, files);
+    GeneratePageIndexing(fullpath,path, files);
 }
 
 void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & request)
@@ -195,7 +225,13 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
     route.setRoot(PWD + route.getRoot());
     if(request.getUri().empty())
         uri = request.getUri() + "/";
-    if (statusCode ==  200 || statusCode ==  201)
+    if (statusCode ==  204)
+    {
+        std::cout << "[DELETE] ... "<<uri<<"\n";
+        totaSize = 0;
+        return ;
+    }   
+    else if (statusCode ==  200 || statusCode ==  201)
     {
         handleCookie(request);
         if (route.getPath() == uri)
@@ -207,8 +243,8 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
             }
             else if(route.getAutoindex())
             {
-                std::cout << "\n indexing ... \n";
-                HandleIndexing(route.getRoot(),request.getUri());
+                std::cout << "\n indexing ... uri:"<<route.getPath()<<"\n";
+                HandleIndexing(route.getRoot(),route.getPath());
             }
             else
                 UpdateStatueCode(404);
@@ -227,11 +263,6 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
         checkIfCGI(Page, route.getCgiExtensions());
         CheckExistingInServer();
     }
-    else if (statusCode ==  204)
-        std::cout << "[DELETE data] ... "<<Page<<"\n";
-    if(route.getIsRedirection())
-        handleRedirection(route);
-    
     if (cgi)
         createEnvChar(request, uri, host, intToString(port));
 }
@@ -270,12 +301,11 @@ void HttpResponse::handleCookie(HttpRequest & request)
 void HttpResponse::handleServerName(std::set<std::string>& serverNamesGetter, std::string hostrequest,std::string host)
 {
     hostrequest = hostrequest.substr(0,hostrequest.find(":"));
-    if (hostrequest == host || hostrequest == "localhost")
+    if (hostrequest == host)
         return;
     for (std::set<std::string>::iterator it = serverNamesGetter.begin(); it != serverNamesGetter.end(); ++it)
         if (*it == hostrequest)
             return ;
-
     UpdateStatueCode(400);
 }
 
@@ -283,11 +313,14 @@ void HttpResponse::ResponseGenerating(HttpRequest & request,std::set<std::string
                     std::map<int, std::string> &errorPages, Status& status,std::string& host, uint16_t port, time_t currenttime)
 {
     defaultErrors = errorPages;
+    this->currenttime = currenttime;
     UpdateStatueCode(request.GetStatusCode());
     std::map<std::string, std::string>::iterator it = request.getheaders().find("Host");
     if  (it != request.getheaders().end())
         handleServerName(serverNamesGetter, it->second, host);
-    this->currenttime = currenttime;
+    if(request.getCurrentRoute().getIsRedirection())
+        handleRedirection(request.getCurrentRoute());
+    else
     handleRequest(host,port, request);
     if (cgi)
     {
@@ -297,7 +330,9 @@ void HttpResponse::ResponseGenerating(HttpRequest & request,std::set<std::string
     }
     else
     {
-        headers["Content-Type"] = getMimeType(Page);
+        std::cout << "size :"<<intToString(totaSize)<<"\n";
+        if(!request.getCurrentRoute().getIsRedirection())
+            headers["Content-Type"] = getMimeType(Page);
         headers["Content-Length"] = intToString(totaSize);
     }
     headers["Date"] =  getCurrentTimeFormatted();
