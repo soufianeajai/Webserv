@@ -2,7 +2,7 @@
 
 HttpRequest::HttpRequest():HttpMessage(), currentState(METHOD_START), method(""), uri(""),  statusCode(200),
 holder(""), currentHeaderName(""), currentHeaderValue(""), isChunked(false), isMultipart(false), contentLength(0),
-boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), query(""){
+boundary(""), chunkSize(0), chunkbytesread(0), currentHandler(&HttpRequest::handleMethodStart), query(""), isContentLength(false){
 // FIRST LINE STATE HANDLERS
     stateHandlers.insert(std::make_pair(METHOD_START, &HttpRequest::handleMethodStart));
     stateHandlers.insert(std::make_pair(METHOD_PARSING, &HttpRequest::handleMethodParsing));
@@ -99,6 +99,6 @@ void HttpRequest::parse(uint8_t *buffer, int readSize, size_t limitBodySize)
     }
     if (body.size() > limitBodySize)
         currentState = ERROR_FILE_TOO_LARGE;
-                std::cout << "--------> "<< contentLength << std::endl;
+  //              std::cout << "--------> "<< contentLength << std::endl;
 
 }

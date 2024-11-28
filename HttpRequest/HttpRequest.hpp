@@ -107,6 +107,7 @@ private:
     int             chunkbytesread;
     StateHandler    currentHandler;
     std::string     query;
+    bool            isContentLength;
 private:
 // STATE HANDLERS
     void    handleMethodStart(uint8_t byte);

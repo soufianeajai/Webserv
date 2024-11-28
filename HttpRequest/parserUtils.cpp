@@ -5,11 +5,12 @@ void HttpRequest::handleTransfer(){
         isChunked = true;
     }
     if (headers.find("Content-Length") != headers.end()){
+        isContentLength = true;
         char c = 0;
+        long long temp;
         std::istringstream nbr(headers["Content-Length"]);
-        nbr >> contentLength >> c;
-        if (contentLength <= 0 || c)
-            contentLength = 0;            
+        nbr >> temp >> c;
+        contentLength =  (temp <= 0 || c) ? 0 : temp;
     }
     if (headers.find("Content-Type") != headers.end() && isValidMultipart(headers["Content-Type"])){
         isMultipart = true;

@@ -163,9 +163,9 @@ void HttpRequest::handleHeaderLF(uint8_t byte) {
 void HttpRequest::handleHeadersEndLF(uint8_t byte) {
     handleTransfer();
     if (byte == '\n'){
-        if (contentLength == 0)
-            currentState = MESSAGE_COMPLETE;
-        else
+        // if (contentLength == 0)
+        //     currentState = MESSAGE_COMPLETE;
+        // else
             currentState = BODY_START;
     }
     else
@@ -252,13 +252,14 @@ void HttpRequest::handleChunkDataLF(uint8_t byte) {
 
 // NORMAL BODY STATE HANDLERS
 void    HttpRequest::handleBodyContentLength(uint8_t byte) {
-    // if (contentLength < 0  || currentState == MESSAGE_COMPLETE)
-    //     currentState = ERROR_CONTENT_LENGTH;
+    if (!isContentLength)
+        currentState = ERROR_CONTENT_LENGTH;
+    if (isContentLength && !contentLength)
+        currentState = ERROR_BAD_REQUEST;
     body.push_back(byte);
-    // bytesread++;
-//    currentBodySize++;
-    if (body.size() == contentLength)
+    if ((body.size() == contentLength ) && contentLength){
         currentState = MESSAGE_COMPLETE;
+    }
 }
 // MULTIPART/FORM-DATA BODY STATE HANDLERS
 

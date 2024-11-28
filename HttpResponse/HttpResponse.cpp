@@ -143,6 +143,7 @@ void HttpResponse::UpdateStatueCode(int code)
         case 505: reasonPhrase = "HTTP Version Not Supported"; break;
         case 201: reasonPhrase = "Created"; break;
         case 204: reasonPhrase = "No Content"; break;
+        case 411: reasonPhrase = "Length Required"; break;
         default:  reasonPhrase = "OK"; break;
     }
 
