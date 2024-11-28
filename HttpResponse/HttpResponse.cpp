@@ -21,6 +21,26 @@ pid_t HttpResponse::getPid() const
 {
     return pid;
 }
+
+// HttpResponse::~HttpResponse()
+// {
+//     for (size_t i = 0; i < envVars.size(); ++i)
+//         delete[] envVars[i]; 
+//     envVars.clear();
+//     cgiOutput.clear(); 
+//     if (pipefd[0] != -1)
+//         close(pipefd[0]);
+//     if (pipefd[1] != -1)
+//         close(pipefd[1]);
+//     Page.clear();
+//     PathCmd.clear();
+//     PATH_INFO.clear();
+//     PWD.clear();
+//     Cookies.clear();
+//     defaultErrors.clear();
+//     mimeTypes.clear();
+// }
+
 // int HttpResponse::getpipe() const
 // {
 //     if (cgi)

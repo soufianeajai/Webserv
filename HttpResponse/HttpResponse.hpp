@@ -53,6 +53,7 @@ private:
 
 public:
     HttpResponse();
+
     bool getCgi() const;
     pid_t getPid() const;
     //int getpipe() const;

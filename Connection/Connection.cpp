@@ -9,8 +9,13 @@ void Connection::set_last_access_time(time_t last)
 {
     last_access_time = last;
 }
-Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize, struct epoll_event& epoll, int serversocket,time_t last):clientSocketId(fd), limitBodySize(maxSize * 1048576), status(READING_PARSING),epollfd(epoll),last_access_time(last)
+size_t Connection::getLimitBodySize(size_t maxSize){
+    size_t temp = maxSize * MB;
+    return (temp < Connection::MAX_BODY_SIZE ? temp : Connection::MAX_BODY_SIZE);
+}
+Connection::Connection(int fd, const sockaddr_in &acceptedAddr, size_t maxSize, struct epoll_event& epoll, int serversocket,time_t last):clientSocketId(fd), status(READING_PARSING),epollfd(epoll),last_access_time(last)
 {
+    limitBodySize = getLimitBodySize(maxSize);
     this->socketServer = serversocket;
     CLientAddress.sin_family = acceptedAddr.sin_family;
     CLientAddress.sin_port = acceptedAddr.sin_port;
