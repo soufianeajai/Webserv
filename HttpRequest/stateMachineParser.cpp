@@ -163,9 +163,9 @@ void HttpRequest::handleHeaderLF(uint8_t byte) {
 void HttpRequest::handleHeadersEndLF(uint8_t byte) {
     handleTransfer();
     if (byte == '\n'){
-        // if (contentLength == 0)
-        //     currentState = MESSAGE_COMPLETE;
-        // else
+        if (method != "POST")
+            currentState = MESSAGE_COMPLETE;
+        else
             currentState = BODY_START;
     }
     else
