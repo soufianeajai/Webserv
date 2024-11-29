@@ -1,19 +1,13 @@
 #pragma once
-#include "../HttpMessage/HttpMessage.hpp"
 #include "../HttpRequest/HttpRequest.hpp"
 #include "../Route/Route.hpp"
-#include <ctime>
-#include <errno.h>
-#include <sys/wait.h> // for waitpid
-#include <cstdio>      // for remove
-#include <iostream>    // for std::cerr
 #define DEFAULTERROR "www/html/errorPages/DefaultError.html"
 #define DEFAULTINDEX "www/html/indexing.html"
 #define DEFAULTREDIRECT "www/html/redirection/newindex.html"
 #define SESSION "/session"
 extern char **environ;
 
-#define TIMEOUT 5
+#define TIMEOUT 3
 class HttpResponse :  public HttpMessage{
 private:
     int statusCode;
@@ -35,22 +29,6 @@ private:
     time_t currenttime;
     bool ChildFInish;
     std::string Cookies;
-
-    // cgi
-    /* example full url possible
-     /cgi/script.php/test/more/path?param1=value1&param2=value2
-    scriptName = "/cgi/script.php";
-    pathInfo = "/test/more/path";
-    queryString = "param1=value1&param2=value2";
-    REQUEST_METHOD from request status line
-    CONTENT_TYPE and CONTENT_LENGTH: If it’s a POST request
-    SERVER_PROTOCOL: Set to version from httpmessage :HTTP/1.1
-    GATEWAY_INTERFACE: CGI version, typically set to CGI/1.1.
-    REMOTE_ADDR and REMOTE_PORT: Set to the client’s IP address and port if available.
-    SERVER_NAME and SERVER_PORT: Server’s hostname and port.
-    
-    */
-
 public:
     HttpResponse();
 

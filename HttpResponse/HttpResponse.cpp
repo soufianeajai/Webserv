@@ -1,18 +1,5 @@
 #include "HttpResponse.hpp"
 
-//1xx (Informational): The request was received, continuing process
-//2xx (Successful): The request was successfully received,
-//understood, and accepted
-//3xx (Redirection): Further action needs to be taken in order to
-//complete the request
-//4xx (Client Error): The request contains bad syntax or cannot be
-//fulfilled
-//5xx (Server Error): The server failed to fulfill an apparently
-//valid request
-// size_t HttpResponse::getOffset()
-// {
-//     return offset;
-// }
 bool HttpResponse::getCgi() const
 {
     return cgi;
@@ -22,41 +9,6 @@ pid_t HttpResponse::getPid() const
     return pid;
 }
 
-// HttpResponse::~HttpResponse()
-// {
-//     for (size_t i = 0; i < envVars.size(); ++i)
-//         delete[] envVars[i]; 
-//     envVars.clear();
-//     cgiOutput.clear(); 
-//     if (pipefd[0] != -1)
-//         close(pipefd[0]);
-//     if (pipefd[1] != -1)
-//         close(pipefd[1]);
-//     Page.clear();
-//     PathCmd.clear();
-//     PATH_INFO.clear();
-//     PWD.clear();
-//     Cookies.clear();
-//     defaultErrors.clear();
-//     mimeTypes.clear();
-// }
-
-// int HttpResponse::getpipe() const
-// {
-//     if (cgi)
-//         return pipefd[0];
-//     return -1;
-// }
-
-// std::string getPWDVariable()
-// {
-//     for (char** current = environ; *current != NULL; ++current)
-//     {
-//         if (std::strncmp(*current, "PWD=", 4) == 0)
-//             return std::string(*current + 4);
-//     }
-//     return ""; // Return an empty string if PATH is not found
-// }
 
 HttpResponse::HttpResponse():statusCode(-1),totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable()),pid(-1),currenttime(0)
 {
@@ -104,31 +56,23 @@ std::string getCurrentTimeFormatted()
 
 void HttpResponse::handleRedirection(const Route &route)
 {
-    //Location: https://example.com/new-path ~~!!!
     if (route.getIsRedirection() && !route.getNewPathRedirection().empty())
     {
-        //if() about path 
         headers["Location"] = route.getNewPathRedirection();
          UpdateStatueCode(route.getstatusCodeRedirection());
-         //totaSize = 0;
-        // UpdateStatueCode(route.getstatusCodeRedirection());
-        // Page = PWD + ;
-        // totaSize = Page.size();
     }
-    // else
-    //     UpdateStatueCode(404);
 }
 
 void HttpResponse::UpdateStatueCode(int code)
 {
+    struct stat buffer;
     statusCode = code;
-    std::cout << "status response :"<<statusCode<<"\n";
     cgi = false;
     switch (statusCode)
     {  
-        case 100: reasonPhrase = "Continue"; break; // The server expects the client to continue sending the request, and the body is empty in this response.
+        case 100: reasonPhrase = "Continue"; break;
         case 301: reasonPhrase = "Moved Permanently"; break;
-        case 302: reasonPhrase = "Found"; break;  // Also called "Temporary Redirect" in some contexts
+        case 302: reasonPhrase = "Found"; break; 
         case 303: reasonPhrase = "See Other"; break;
         case 307: reasonPhrase = "Temporary Redirect"; break;
         case 308: reasonPhrase = "Permanent Redirect"; break;
@@ -138,7 +82,7 @@ void HttpResponse::UpdateStatueCode(int code)
         case 413: reasonPhrase = "File Too Large"; break;
         case 405: reasonPhrase = "Method Not Allowed"; break;
         case 500: reasonPhrase = "Internal Server Error"; break;
-        case 501: reasonPhrase = "Not Implemented"; break; // for Unsupported CGI Extension
+        case 501: reasonPhrase = "Not Implemented"; break; 
         case 504: reasonPhrase = "Gateway Timeout";break;
         case 505: reasonPhrase = "HTTP Version Not Supported"; break;
         case 201: reasonPhrase = "Created"; break;
@@ -146,11 +90,10 @@ void HttpResponse::UpdateStatueCode(int code)
         case 411: reasonPhrase = "Length Required"; break;
         default:  reasonPhrase = "OK"; break;
     }
-
     if (statusCode >=400)
     {
         std::map<int, std::string>::iterator it = defaultErrors.find(statusCode);
-        if (it != defaultErrors.end())
+        if (it != defaultErrors.end() && !stat(it->second.c_str(), &buffer))
             Page = it->second;
         else
             Page = DEFAULTERROR;
@@ -186,7 +129,6 @@ void HttpResponse::GeneratePageIndexing(std::string& fullpath,std::string& path,
     for (size_t i = 0; i < files.size(); ++i)
         html << "<li><a href=\"" << ((path == "/") ?  "" : path ) + "/" + files[i] << "\">" << files[i] << "</a></li>";
     html << "</ul></body></html>";
-
     file << html.str();
     file.close();
 }
@@ -228,7 +170,6 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
         uri = request.getUri() + "/";
     if (statusCode ==  204)
     {
-        std::cout << "[DELETE] ... "<<uri<<"\n";
         totaSize = 0;
         return ;
     }   
@@ -243,10 +184,7 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
                 uri += (uri[uri.size() - 1] != '/') ? "/" +  route.getDefaultFile() : route.getDefaultFile(); // need delete this
             }
             else if(route.getAutoindex())
-            {
-                std::cout << "\n indexing ... uri:"<<route.getPath()<<"\n";
                 HandleIndexing(route.getRoot(),route.getPath());
-            }
             else
                 UpdateStatueCode(404);
         }
@@ -291,7 +229,6 @@ void HttpResponse::handleCookie(HttpRequest & request)
     std::string token = generateToken();
     if (it ==  request.getheaders().end() &&  request.getUri() ==  SESSION)
     {
-        std::cout << "[INFO] .... token created !\n";
         headers["Set-Cookie"] = "session_id="+token + ";" + "path=" + SESSION;
         Cookies = "session_id="+token;
     }
@@ -331,7 +268,6 @@ void HttpResponse::ResponseGenerating(HttpRequest & request,std::set<std::string
     }
     else
     {
-        std::cout << "size :"<<intToString(totaSize)<<"\n";
         if(!request.getCurrentRoute().getIsRedirection())
             headers["Content-Type"] = getMimeType(Page);
         headers["Content-Length"] = intToString(totaSize);

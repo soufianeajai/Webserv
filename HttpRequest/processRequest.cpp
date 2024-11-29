@@ -58,7 +58,7 @@ void HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes)
     if (found)
         currentState = processMethod(this->getMethod(), CurrentRoute);
     else
-        currentState = ERROR_INVALID_URI;
+        currentState = ERROR_NOT_FOUND;
 }
 
 bool ft_rmdir(const char *path)

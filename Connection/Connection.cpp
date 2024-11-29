@@ -40,7 +40,7 @@ void Connection::parseRequest(){
     uint8_t    buffer[Connection::CHUNK_SIZE];
     int     readSize = 0;
     int clientSocket = getClientSocketId();
-    memset(buffer, 0, Connection::CHUNK_SIZE);
+    std::memset(buffer, 0, Connection::CHUNK_SIZE);
     readSize = recv(clientSocket, buffer, Connection::CHUNK_SIZE, MSG_DONTWAIT);
     if (readSize == 0)
         return;

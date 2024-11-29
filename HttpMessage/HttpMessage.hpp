@@ -1,6 +1,5 @@
 #pragma once
-#include <string>
-#include <map>
+#include <cstring>
 #include <map>
 #include <set>
 #include <sys/types.h>
@@ -8,10 +7,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <sstream>
 #include <cstddef>
 #include <stdexcept>
-#include <cstring>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,6 +17,12 @@
 #include <fcntl.h>
 #include <sys/stat.h>  
 #include <dirent.h>
+#include <ctime>
+#include <errno.h>
+#include <sys/wait.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/epoll.h>
 
 typedef unsigned char uint8_t;
 

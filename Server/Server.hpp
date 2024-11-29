@@ -40,22 +40,12 @@ public:
     void addSocket(int socket);
     int SearchSockets(int id);
     void closeConnection(int fd);
-
     void addConnection(int socket, Connection* connection);
     Connection* GetConnection(int client);
     bool removeConnection(int socket);
-    
     void portEraser(int pos);
     bool hasClient(int client) const;
     void setIpaddress(std::string addr);
     in_addr_t getIpaddress();
-
     std::map<int, Connection*>& GetCoonections() ;
-        // Server();
-    // Server(const std::string& host, const std::vector<int>& ports) 
-    //     : host(host), ports(ports) {}
-
-    // bool setup(); // Sets up the server
-    // bool listen(); // Starts listening for connections
-    // void addNewConnection(Connection newConnection);
 };

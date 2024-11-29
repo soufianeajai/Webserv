@@ -1,8 +1,8 @@
-#include "ServerSetup.hpp"
+#include "../ParsingConfig/ParsingConfig.hpp"
+#include "../Connection/Connection.hpp"
 
 
 #define MAX_CLIENTS 
-
 void ft_error(std::string err, int fd)
 {
     if  (fd != -1)
@@ -44,7 +44,7 @@ void bindAndListen(int socket, int port, in_addr_t host)
     serverAddress.sin_addr.s_addr = host;
     if (bind(socket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0)
 			ft_error("fail to bind local port", socket);
-    if (listen(socket, 10) < 0)
+    if (listen(socket, 100) < 0)
 			ft_error("fail to listen for connection",-1);
 }
 
@@ -83,7 +83,6 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
             {
                 if(check_fd_timeout(conn_it->second->get_last_access_time()))
                 {
-                    std::cout << "time out \n";
                     if(conn_it->second->getResponse().getPid() != -1)
                         kill(conn_it->second->getResponse().getPid() , SIGKILL);
                     it->closeConnection(conn_it->first);

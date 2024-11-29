@@ -45,24 +45,20 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
             if (statusParent == -1)
                 return;
             else if (statusParent == 1)
-            {
-                std::cout << "[Timeout] ... \n";
                 UpdateStatueCode(504);
-            }
         }
         SendHeaders(clientSocketId, status, heads);
         size_t chunkSize = (totaSize < Connection::CHUNK_SIZE) ? totaSize : Connection::CHUNK_SIZE;
         std::ifstream file(Page.c_str(), std::ios::binary);
         if (!file.is_open() || totaSize == 0)
         {
-            std::cerr << "[info] ... no body for client :"<<clientSocketId << std::endl;
             status = DONE; 
             return;
         }
-        file.seekg(offset, std::ios::beg); // go to position actual
-        body.resize(chunkSize); // resize for chunck n 
+        file.seekg(offset, std::ios::beg);
+        body.resize(chunkSize);
         file.read(reinterpret_cast<char*>(body.data()), chunkSize);
-        chunkSize = file.gcount(); // Get the number of bytes actually read
+        chunkSize = file.gcount();
         offset += chunkSize;
         if (chunkSize > 0)
         {
@@ -71,7 +67,7 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
             { 
                 std::cerr << "[Error] ... 1 Send failed to client "<<clientSocketId << std::endl;
                 file.close();
-                status = DONE;  // handle error as needed
+                status = DONE;
                 return;
             }
         }
@@ -85,6 +81,5 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
     {
         std::cerr << "[Error] ... Exception in sending data: " << e.what() << std::endl;
         status = DONE;
-        // Handle any other standard exceptions that may occur
     }
 }
