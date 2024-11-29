@@ -28,9 +28,7 @@ void HttpResponse::SendHeaders(int clientSocketId, Status& status, std::vector<u
 
 void HttpResponse::sendData(int clientSocketId, Status& status)
 {
-    ssize_t SentedBytes = 0;
     std::vector<uint8_t> heads;
-    std::vector<uint8_t> body;
     int statusParent;
     try{
         if (cgi)
@@ -48,38 +46,42 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
                 UpdateStatueCode(504);
         }
         SendHeaders(clientSocketId, status, heads);
-        size_t chunkSize = (totaSize < Connection::CHUNK_SIZE) ? totaSize : Connection::CHUNK_SIZE;
-        std::ifstream file(Page.c_str(), std::ios::binary);
-        if (!file.is_open() || totaSize == 0)
-        {
-            status = DONE; 
-            return;
-        }
-        file.seekg(offset, std::ios::beg);
-        body.resize(chunkSize);
-        file.read(reinterpret_cast<char*>(body.data()), chunkSize);
-        chunkSize = file.gcount();
-        offset += chunkSize;
-        if (chunkSize > 0)
-        {
-            SentedBytes = send(clientSocketId, reinterpret_cast<char*>(body.data()), chunkSize, MSG_NOSIGNAL);
-            if (SentedBytes < 0)
-            { 
-                std::cerr << "[Error] ... 1 Send failed to client "<<clientSocketId << std::endl;
-                file.close();
-                status = DONE;
-                return;
-            }
-        }
-        if (chunkSize == 0 || offset >= static_cast<size_t>(totaSize))
-        {
-            file.close();            
-            status = DONE;
-        }
+        status = sendFileChunk(clientSocketId);
     }
     catch (const std::exception& e)
     {
         std::cerr << "[Error] ... Exception in sending data: " << e.what() << std::endl;
         status = DONE;
     }
+}
+
+
+Status HttpResponse::sendFileChunk(int clientSocketId)
+{
+    ssize_t SentedBytes = 0;
+    size_t chunkSize = (totalSize < Connection::CHUNK_SIZE) ? totalSize : Connection::CHUNK_SIZE;
+    std::ifstream file(Page.c_str(), std::ios::binary);
+    if (!file.is_open() || totalSize == 0)
+        return DONE;
+    file.seekg(offset, std::ios::beg);
+    body.resize(chunkSize);
+    file.read(reinterpret_cast<char*>(body.data()), chunkSize);
+    chunkSize = file.gcount();
+    offset += chunkSize;
+    if (chunkSize > 0)
+    {
+        SentedBytes = send(clientSocketId, reinterpret_cast<char*>(body.data()), chunkSize, MSG_NOSIGNAL);
+        if (SentedBytes < 0)
+        { 
+            std::cerr << "[Error] ... 1 Send failed to client "<<clientSocketId << std::endl;
+            file.close();
+            return DONE;
+        }
+    }
+    if (chunkSize == 0 || offset >= static_cast<size_t>(totalSize))
+    {
+        file.close();            
+        return DONE;
+    }
+    return SENDING_RESPONSE;
 }

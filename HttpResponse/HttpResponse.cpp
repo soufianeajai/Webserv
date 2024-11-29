@@ -10,7 +10,7 @@ pid_t HttpResponse::getPid() const
 }
 
 
-HttpResponse::HttpResponse():statusCode(-1),totaSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable()),pid(-1),currenttime(0)
+HttpResponse::HttpResponse():statusCode(-1),totalSize(0),offset(0),headerSended(false),cgi(false),PathCmd(""),PWD(getPWDVariable()),pid(-1),currenttime(0)
 {
     version = "HTTP/1.1" ;
     Cookies = "";
@@ -59,7 +59,7 @@ void HttpResponse::handleRedirection(const Route &route)
     if (route.getIsRedirection() && !route.getNewPathRedirection().empty())
     {
         headers["Location"] = route.getNewPathRedirection();
-         UpdateStatueCode(route.getstatusCodeRedirection());
+        UpdateStatueCode(route.getstatusCodeRedirection());
     }
 }
 
@@ -101,14 +101,14 @@ void HttpResponse::UpdateStatueCode(int code)
         std::ifstream file(Page.c_str());
         if (!file.is_open())
         {
-            totaSize = 0;
+            totalSize = 0;
             return ;
         }
         file.seekg(0, std::ios::end);
-        totaSize = file.tellg();
+        totalSize = file.tellg();
         file.seekg(0, std::ios::beg);
         file.close();
-        headers["Content-Length"] =  intToString(totaSize);
+        headers["Content-Length"] =  intToString(totalSize);
         headers["Content-Type"] = "text/html";
     }
 }
@@ -170,7 +170,7 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
         uri = request.getUri() + "/";
     if (statusCode ==  204)
     {
-        totaSize = 0;
+        totalSize = 0;
         return ;
     }   
     else if (statusCode ==  200 || statusCode ==  201)
@@ -181,7 +181,7 @@ void HttpResponse::handleRequest(std::string& host, uint16_t port,HttpRequest & 
             if(!route.getDefaultFile().empty())
             {
                 Page =  route.getRoot() + "/" + route.getDefaultFile();
-                uri += (uri[uri.size() - 1] != '/') ? "/" +  route.getDefaultFile() : route.getDefaultFile(); // need delete this
+                uri += (uri[uri.size() - 1] != '/') ? "/" +  route.getDefaultFile() : route.getDefaultFile();
             }
             else if(route.getAutoindex())
                 HandleIndexing(route.getRoot(),route.getPath());
@@ -259,7 +259,7 @@ void HttpResponse::ResponseGenerating(HttpRequest & request,std::set<std::string
     if(request.getCurrentRoute().getIsRedirection())
         handleRedirection(request.getCurrentRoute());
     else
-    handleRequest(host,port, request);
+        handleRequest(host,port, request);
     if (cgi)
     {
         int res = executeCGI();
@@ -270,7 +270,7 @@ void HttpResponse::ResponseGenerating(HttpRequest & request,std::set<std::string
     {
         if(!request.getCurrentRoute().getIsRedirection())
             headers["Content-Type"] = getMimeType(Page);
-        headers["Content-Length"] = intToString(totaSize);
+        headers["Content-Length"] = intToString(totalSize);
     }
     headers["Date"] =  getCurrentTimeFormatted();
     headers["Server"] =  "WebServ1337";  
@@ -285,7 +285,7 @@ void HttpResponse::CheckExistingInServer()
     if (file.is_open())
     {
         file.seekg(0, std::ios::end);
-        totaSize = file.tellg();
+        totalSize = file.tellg();
         file.seekg(0, std::ios::beg);
         file.close();
     }

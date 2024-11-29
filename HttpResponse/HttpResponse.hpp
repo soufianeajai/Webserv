@@ -15,7 +15,7 @@ private:
     std::string Page;
     std::map<int, std::string> defaultErrors;
     std::map<std::string, std::string> mimeTypes;
-    ssize_t totaSize;
+    ssize_t totalSize;
     size_t offset;
     bool   headerSended;
     bool cgi;
@@ -34,28 +34,24 @@ public:
 
     bool getCgi() const;
     pid_t getPid() const;
-    //int getpipe() const;
-    //size_t getOffset();
     void ResponseGenerating(HttpRequest & request,std::set<std::string>& serverNamesGetter, std::map<int, std::string> &errorPages, 
                  Status& status,std::string& host, uint16_t port, time_t currenttime);
     void handleRequest(std::string& host, uint16_t port,HttpRequest & request);
-    //void HttpResponse::resolveRequestPath(HttpRequest& request, Route& route, std::string& uri, std::string& host, uint16_t port)
     std::string getMimeType(const std::string& filePath) const;
     void UpdateStatueCode(int code);
     void handleRedirection(const Route &route);
-    //void handleError(std::map<int, std::string>& errorPages);
-    void checkIfCGI(std::string& path, std::map<std::string, std::string> ExtensionsConfig );
     void HandleIndexing(std::string fullpath, std::string& uri);
     void GeneratePageIndexing(std::string& fullpath, std::string& uri, std::vector<std::string>& files);
-    //size_t getSendbytes();
+    Status sendFileChunk(int clientSocketId);
+    void checkIfCGI(std::string& path, std::map<std::string, std::string> ExtensionsConfig );
     int executeCGI();
     int parentProcess();
+    void ExtractHeaders();
     void sendCgi(int clientSocketId, Status& status);
     void createEnvChar(HttpRequest& request, std::string& uri,const std::string& host,const std::string& port);
     void CheckExistingInServer();
-    void sendData(int clientSocketId, Status& status); // this for building and set it in send syscall
+    void sendData(int clientSocketId, Status& status);
     void SendHeaders(int clientSocketId, Status& status,std::vector<uint8_t>& heads);
-    void ExtractHeaders();
     void handleCookie(HttpRequest & request);
     void handleServerName(std::set<std::string>& serverNamesGetter, std::string hostrequest,std::string host);
 };

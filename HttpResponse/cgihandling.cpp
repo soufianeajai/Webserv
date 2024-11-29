@@ -95,7 +95,7 @@ void HttpResponse::ExtractHeaders()
         }        
     }
     headers["Content-Length"] =  intToString(body.size());
-    totaSize = body.size();
+    totalSize = body.size();
 }
 
 int HttpResponse::parentProcess()
@@ -180,27 +180,26 @@ void HttpResponse::createEnvChar(HttpRequest& request, std::string& uri,const st
 void HttpResponse::sendCgi(int clientSocketId, Status& status)
 {
     int SentedBytes;
-    size_t chunkSize = (totaSize - offset < Connection::CHUNK_SIZE) 
-                   ? (totaSize - offset) 
+    size_t chunkSize = (totalSize - offset < Connection::CHUNK_SIZE) 
+                   ? (totalSize - offset) 
                    : Connection::CHUNK_SIZE;
     SentedBytes = send(clientSocketId, &body[offset], chunkSize, MSG_NOSIGNAL);
     if (SentedBytes < 0)
     { 
          std::cerr << "Send failed to client " << clientSocketId 
                   << ": " << strerror(errno) << std::endl;
-        status = DONE;  // handle error as needed
+        status = DONE;
         return;
     }
     if (SentedBytes == 0) 
     {
-        // If `send` returns 0, it means the connection might be closed
         std::cerr << "Connection closed by client " << clientSocketId << std::endl;
         status = DONE;
         return;
     }
     
     offset += SentedBytes;
-    if (offset >= static_cast<size_t>(totaSize))
+    if (offset >= static_cast<size_t>(totalSize))
     {
         status = DONE;
         return;
