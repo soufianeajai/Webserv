@@ -412,5 +412,7 @@ ParsingConfig parsingConfig(const char *configFile)
     parsingConfig.checkNecessary(FILE);
     FILE.close();
     parsingConfig.checkDefaultServer();
+    if (!parsingConfig.getServers().size())
+        ft_error("Error", FILE);
     return parsingConfig;
 }

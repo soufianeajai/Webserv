@@ -217,7 +217,7 @@ std::string generateToken()
 
     std::srand(static_cast<unsigned int>(std::time(0)));
     for (size_t i = 0; i < tokenLength; ++i) {
-        size_t index = std::rand() % charset.size(); // Random index in charset
+        size_t index = std::rand() % charset.size();
         token += charset[index];
     }
     return token;

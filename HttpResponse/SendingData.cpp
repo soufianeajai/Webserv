@@ -52,6 +52,8 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
                 return;
             else if (statusParent == 1)
                 UpdateStatueCode(504);
+            else if (statusParent == 2)
+                UpdateStatueCode(500);
         }
         SendHeaders(clientSocketId, status, heads);
         if(status !=  DONE) 
