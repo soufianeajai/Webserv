@@ -70,31 +70,12 @@ bool locationBlock(Server &server, std::ifstream &FILE, std::vector<std::string>
                 break;
             if (arr[0] == "location:")
             {
-                std::stringstream ss(str);
-                std::string to;
-                std::vector<std::string> arr;
-                while (getline(ss, to, ' '))
-                {
-                    if (!to.empty())
-                        arr.push_back(to);
-                }
                 server.addRoute(route);
                 if (locationBlock(server, FILE, arr))
                     return true;
             }
-            else if (str == "server")
-            {
-
-                FILE.seekg(-str.length() - 1, std::ios_base::cur); // Go back one line
-                if (FILE.fail()) {
-                    FILE.clear();
-                    FILE.seekg(0, std::ios_base::beg); // If seek fails, go to beginning
-                }
-                server.addRoute(route);
-                return true;  // Indicate that "server" was found to all recursive calls
-            }
             else if (arr[0] == "host:" || arr[0] == "port:"
-                || arr[0] == "server_names:"
+                || arr[0] == "server_names:" || str == "server"
                 || arr[0] == "error_page:" || arr[0] == "client_body_size:")
             {
                 FILE.seekg(-str.length() - 1, std::ios_base::cur); // Go back one line
@@ -412,5 +393,7 @@ ParsingConfig parsingConfig(const char *configFile)
     parsingConfig.checkNecessary(FILE);
     FILE.close();
     parsingConfig.checkDefaultServer();
+    if (!parsingConfig.getServers().size())
+        ft_error("Error", FILE);
     return parsingConfig;
 }
