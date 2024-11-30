@@ -1,4 +1,5 @@
 #pragma once
+#define REQTIMEOUT "HTTP/1.1 408 Request Timeout\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
 #include "../HttpRequest/HttpRequest.hpp"
 #include "../HttpResponse/HttpResponse.hpp"
 #include "../Server/Server.hpp"

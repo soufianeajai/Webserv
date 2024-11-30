@@ -173,7 +173,11 @@ void HttpRequest::handleHeadersEndLF(uint8_t byte) {
 }
 // CHECK TYPE OF BODY TRANSFER
 void HttpRequest::handleBodyStart(uint8_t byte) {
-    if (isChunked)
+    if (!isContentLength)
+        currentState = ERROR_CONTENT_LENGTH;
+    else if (isContentLength && !contentLength)
+        currentState = ERROR_BAD_REQUEST;
+    else if (isChunked)
         handleChunkSizeStart(byte);
     else if (isMultipart)
         handleBodyBoundaryStart(byte);
@@ -252,10 +256,6 @@ void HttpRequest::handleChunkDataLF(uint8_t byte) {
 
 // NORMAL BODY STATE HANDLERS
 void    HttpRequest::handleBodyContentLength(uint8_t byte) {
-    if (!isContentLength)
-        currentState = ERROR_CONTENT_LENGTH;
-    if (isContentLength && !contentLength)
-        currentState = ERROR_BAD_REQUEST;
     body.push_back(byte);
     if ((body.size() == contentLength ) && contentLength){
         currentState = MESSAGE_COMPLETE;

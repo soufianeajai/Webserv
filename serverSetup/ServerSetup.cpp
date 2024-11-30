@@ -1,7 +1,6 @@
 #include "../ParsingConfig/ParsingConfig.hpp"
 #include "../Connection/Connection.hpp"
 
-
 #define MAX_CLIENTS 
 void ft_error(std::string err, int fd)
 {
@@ -86,15 +85,7 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
                     if(conn_it->second->getResponse().getPid() != -1)
                         kill(conn_it->second->getResponse().getPid() , SIGKILL);
                     if (conn_it->second->getStatus() != DONE)
-                    {
-                        std::string res = 
-                            "HTTP/1.1 408 Request Timeout\r\n"
-                            "Content-Length: 0\r\n"
-                            "Connection: close\r\n\r\n";
-                        ssize_t ret = send(conn_it->first, res.c_str(), res.size(), MSG_NOSIGNAL);
-                        if (ret < 0)
-                            break;
-                    }
+                        send(conn_it->first, REQTIMEOUT, strlen(REQTIMEOUT), MSG_NOSIGNAL);
                     it->closeConnection(conn_it->first);
                 }
             }
