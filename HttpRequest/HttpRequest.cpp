@@ -90,6 +90,7 @@ void HttpRequest::parse(uint8_t *buffer, int readSize, size_t limitBodySize)
 {
     for(int i = 0; i < readSize && !errorOccured(); i++)
     {
+        std::cout << buffer[i];
         (this->*currentHandler)(buffer[i]);
         std::map<State, StateHandler>::const_iterator it = stateHandlers.find(currentState);
         if (it != stateHandlers.end())
@@ -99,5 +100,4 @@ void HttpRequest::parse(uint8_t *buffer, int readSize, size_t limitBodySize)
     }
     if (body.size() > limitBodySize)
         currentState = ERROR_FILE_TOO_LARGE;
-
 }

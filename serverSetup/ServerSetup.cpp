@@ -85,6 +85,16 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
                 {
                     if(conn_it->second->getResponse().getPid() != -1)
                         kill(conn_it->second->getResponse().getPid() , SIGKILL);
+                    if (conn_it->second->getStatus() != DONE)
+                    {
+                        std::string res = 
+                            "HTTP/1.1 408 Request Timeout\r\n"
+                            "Content-Length: 0\r\n"
+                            "Connection: close\r\n\r\n";
+                        ssize_t ret = send(conn_it->first, res.c_str(), res.size(), MSG_NOSIGNAL);
+                        if (ret < 0)
+                            break;
+                    }
                     it->closeConnection(conn_it->first);
                 }
             }
@@ -136,7 +146,6 @@ void ServerSetup(ParsingConfig &Config)
             clearConnections(Servers, false);
             ft_error("Epoll wait failed",-1);
         }
-
         for (int index = 0; index < epollEventsNumber; index++)
         {
             Server CurrentServer;

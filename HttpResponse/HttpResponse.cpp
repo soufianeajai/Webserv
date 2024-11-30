@@ -88,6 +88,7 @@ void HttpResponse::UpdateStatueCode(int code)
         case 201: reasonPhrase = "Created"; break;
         case 204: reasonPhrase = "No Content"; break;
         case 411: reasonPhrase = "Length Required"; break;
+        case 408: reasonPhrase = "Request Timeout";break;
         default:  reasonPhrase = "OK"; break;
     }
     if (statusCode >=400)
