@@ -20,8 +20,15 @@ void HttpResponse::SendHeaders(int clientSocketId, Status& status, std::vector<u
             status = DONE;
             return;
         }
+        if (SentedBytes == 0) 
+        {
+            std::cerr << "Connection closed by client " << clientSocketId << std::endl;
+            close(clientSocketId);
+            clientSocketId = -1;
+            status = DONE;
+            return;
+        }
         headerSended = true;
-
         heads.clear();
     }
 }
@@ -37,7 +44,8 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
             if (ChildFInish)
             {
                 SendHeaders(clientSocketId, status, heads);
-                sendCgi(clientSocketId, status);
+                if(status !=  DONE) 
+                    sendCgi(clientSocketId, status);
                 return ;
             }
             if (statusParent == -1)
@@ -46,7 +54,8 @@ void HttpResponse::sendData(int clientSocketId, Status& status)
                 UpdateStatueCode(504);
         }
         SendHeaders(clientSocketId, status, heads);
-        status = sendFileChunk(clientSocketId);
+        if(status !=  DONE) 
+            status = sendFileChunk(clientSocketId);
     }
     catch (const std::exception& e)
     {
@@ -75,6 +84,11 @@ Status HttpResponse::sendFileChunk(int clientSocketId)
         { 
             std::cerr << "[Error] ... 1 Send failed to client "<<clientSocketId << std::endl;
             file.close();
+            return DONE;
+        }
+        if (SentedBytes == 0) 
+        {
+            std::cerr << "Connection closed by client " << clientSocketId << std::endl;
             return DONE;
         }
     }

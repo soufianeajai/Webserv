@@ -69,8 +69,7 @@ void HttpResponse::UpdateStatueCode(int code)
     statusCode = code;
     cgi = false;
     switch (statusCode)
-    {  
-        case 100: reasonPhrase = "Continue"; break;
+    {
         case 301: reasonPhrase = "Moved Permanently"; break;
         case 302: reasonPhrase = "Found"; break; 
         case 303: reasonPhrase = "See Other"; break;
@@ -89,7 +88,7 @@ void HttpResponse::UpdateStatueCode(int code)
         case 204: reasonPhrase = "No Content"; break;
         case 411: reasonPhrase = "Length Required"; break;
         case 408: reasonPhrase = "Request Timeout";break;
-        default:  reasonPhrase = "OK"; break;
+        case 200: reasonPhrase = "OK";break;
     }
     if (statusCode >=400)
     {
@@ -257,6 +256,9 @@ void HttpResponse::ResponseGenerating(HttpRequest & request,std::set<std::string
     std::map<std::string, std::string>::iterator it = request.getheaders().find("Host");
     if  (it != request.getheaders().end())
         handleServerName(serverNamesGetter, it->second, host);
+    else
+        UpdateStatueCode(400);
+    
     if(request.getCurrentRoute().getIsRedirection())
         handleRedirection(request.getCurrentRoute());
     else

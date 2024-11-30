@@ -186,14 +186,15 @@ void HttpResponse::sendCgi(int clientSocketId, Status& status)
     SentedBytes = send(clientSocketId, &body[offset], chunkSize, MSG_NOSIGNAL);
     if (SentedBytes < 0)
     { 
-         std::cerr << "Send failed to client " << clientSocketId 
-                  << ": " << strerror(errno) << std::endl;
+        std::cerr << "Send failed to client " << clientSocketId << std::endl;
         status = DONE;
         return;
     }
     if (SentedBytes == 0) 
     {
         std::cerr << "Connection closed by client " << clientSocketId << std::endl;
+        close(clientSocketId);
+        clientSocketId = -1;
         status = DONE;
         return;
     }

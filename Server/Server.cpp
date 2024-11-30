@@ -142,7 +142,8 @@ void Server::closeConnection(int fd){
     if (it != connections.end()){
         delete connections[fd];
         connections.erase(fd);
-        close(fd);
+        if (fd > 0)
+            close(fd);
     }
 }
 

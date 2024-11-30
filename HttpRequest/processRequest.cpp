@@ -55,7 +55,9 @@ void HttpRequest::handleProcessUri_Method(std::map<std::string, Route>& routes)
         }
 
     }
-    if (found)
+    if (found && CurrentRoute.getIsRedirection())
+        uri = CurrentRoute.getNewPathRedirection();
+    else if (found)
         currentState = processMethod(this->getMethod(), CurrentRoute);
     else
         currentState = ERROR_NOT_FOUND;

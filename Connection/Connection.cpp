@@ -42,11 +42,15 @@ void Connection::parseRequest(){
     int clientSocket = getClientSocketId();
     std::memset(buffer, 0, Connection::CHUNK_SIZE);
     readSize = recv(clientSocket, buffer, Connection::CHUNK_SIZE, MSG_DONTWAIT);
-    if (readSize == 0)
+    if (readSize == 0){
+        std::cerr << "Client closed the connection." << std::endl;
+        close(clientSocket);
+        clientSocket = -1;
         return;
+    }
     else if (readSize < 0)
     {
-        std::cerr << " no data to read but connection still opened " << std::endl;
+        std::cerr << "No data to read but connection still opened " << std::endl;
         return ;
     }
     else

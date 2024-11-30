@@ -85,7 +85,11 @@ void clearConnections(std::vector<Server>& Servers, bool timout){
                     if(conn_it->second->getResponse().getPid() != -1)
                         kill(conn_it->second->getResponse().getPid() , SIGKILL);
                     if (conn_it->second->getStatus() != DONE)
-                        send(conn_it->first, REQTIMEOUT, strlen(REQTIMEOUT), MSG_NOSIGNAL);
+                    {
+                        ssize_t SentedBytes = send(conn_it->first, REQTIMEOUT, strlen(REQTIMEOUT), MSG_NOSIGNAL);
+                        if (SentedBytes <= 0)
+                            std::cerr << "[Error] ... "<<conn_it->first << std::endl;
+                    }
                     it->closeConnection(conn_it->first);
                 }
             }
