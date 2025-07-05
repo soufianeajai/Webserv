@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  webserver:
+    build: .
+    ports:
+      - "2020:2020"
+    restart: unless-stopped
